@@ -9,6 +9,9 @@ Home Assistant integration for Legends of Idleon account and character stats.
 This custom integration is experimental. It is not official to Legends of Idleon,
 Lavaflame2, or any Idleon service provider.
 
+The project icon includes a small Idleon logo element for recognizability, but
+this project remains unofficial and community-maintained.
+
 ## ✨ What It Does
 
 HA Idleon reads a JSON representation of your Idleon account data and creates
