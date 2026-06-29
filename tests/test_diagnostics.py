@@ -49,4 +49,3 @@ async def test_diagnostics_redaction(
     assert diagnostics["account"]["character_count"] == 2
     assert "raw" not in diagnostics
     assert "characters" not in diagnostics["account"]
-

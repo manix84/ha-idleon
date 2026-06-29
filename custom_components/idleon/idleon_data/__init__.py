@@ -17,4 +17,3 @@ __all__ = [
     "IdleonInvalidSchema",
     "parse_idleon_account",
 ]
-

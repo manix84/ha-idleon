@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from logging import Logger, getLogger
+from logging import getLogger
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -51,4 +51,3 @@ class IdleonDataUpdateCoordinator(DataUpdateCoordinator[IdleonAccount]):
         self.last_error_type = None
         self.last_error_message = None
         return account
-

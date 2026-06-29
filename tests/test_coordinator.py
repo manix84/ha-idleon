@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -67,4 +66,3 @@ async def test_coordinator_failed_update(hass: HomeAssistant) -> None:
 
     assert coordinator.last_error_type == "IdleonCannotConnect"
     assert coordinator.last_error_message == "source failed"
-

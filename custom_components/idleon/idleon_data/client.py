@@ -7,7 +7,6 @@ from json import JSONDecodeError
 from typing import Any
 
 from aiohttp import ClientError, ClientTimeout
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -70,4 +69,3 @@ class IdleonClient:
             return json.loads(text)
         except JSONDecodeError as err:
             raise IdleonInvalidJson("Remote URL did not return valid JSON") from err
-

@@ -15,7 +15,9 @@ def parse_idleon_account(raw_data: Any) -> IdleonAccount:
     if not isinstance(raw_data, Mapping):
         raise IdleonInvalidSchema("Top-level Idleon data must be an object")
 
-    account_data = _first_mapping(raw_data, ("account", "profile", "player")) or raw_data
+    account_data = (
+        _first_mapping(raw_data, ("account", "profile", "player")) or raw_data
+    )
     characters_raw = _first_value(
         account_data,
         ("characters", "chars", "players"),
@@ -162,7 +164,7 @@ def _first_int(data: Mapping[str, Any], keys: tuple[str, ...]) -> int | None:
         return None
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -173,7 +175,7 @@ def _first_float(data: Mapping[str, Any], keys: tuple[str, ...]) -> float | None
         return None
     try:
         return float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -207,5 +209,7 @@ def _parse_datetime(value: Any) -> datetime | None:
 
 def _slugify(value: str) -> str:
     """Create a stable simple identifier from a character name."""
-    slug = "".join(character.lower() if character.isalnum() else "_" for character in value)
+    slug = "".join(
+        character.lower() if character.isalnum() else "_" for character in value
+    )
     return "_".join(part for part in slug.split("_") if part)

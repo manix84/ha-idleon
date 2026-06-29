@@ -230,6 +230,7 @@ def _character_device_identifier(
 
 def _slugify(value: str) -> str:
     """Create a stable entity-safe identifier."""
-    slug = "".join(character.lower() if character.isalnum() else "_" for character in value)
+    slug = "".join(
+        character.lower() if character.isalnum() else "_" for character in value
+    )
     return "_".join(part for part in slug.split("_") if part)
-

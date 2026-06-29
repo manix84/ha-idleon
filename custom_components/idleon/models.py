@@ -46,4 +46,3 @@ class IdleonAccount:
     def character_count(self) -> int:
         """Return the number of parsed characters."""
         return len(self.characters)
-

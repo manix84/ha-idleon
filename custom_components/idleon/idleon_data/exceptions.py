@@ -17,4 +17,3 @@ class IdleonInvalidJson(IdleonDataError):
 
 class IdleonInvalidSchema(IdleonDataError):
     """Raised when JSON cannot be parsed into supported Idleon models."""
-

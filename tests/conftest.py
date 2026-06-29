@@ -24,4 +24,3 @@ def fixture_path() -> Path:
 def sample_data_path(fixture_path: Path) -> Path:
     """Return the sample Idleon data fixture path."""
     return fixture_path / "sample_idleon_data.json"
-

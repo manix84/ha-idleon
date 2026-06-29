@@ -14,7 +14,6 @@ from .const import (
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
     PLATFORMS,
 )
 from .coordinator import IdleonDataUpdateCoordinator
@@ -72,4 +71,3 @@ def _data_source_from_entry(entry: ConfigEntry) -> IdleonDataSource:
         remote_url=entry.data.get(CONF_REMOTE_URL),
         scan_interval=entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
     )
-

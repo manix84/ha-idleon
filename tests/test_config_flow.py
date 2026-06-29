@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Self
 
 from aiohttp import ClientError
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.idleon.const import (
     CONF_DATA_SOURCE_TYPE,
@@ -27,7 +28,7 @@ class _FakeResponse:
         self._text = text
         self._error = error
 
-    async def __aenter__(self) -> "_FakeResponse":
+    async def __aenter__(self) -> Self:
         if self._error:
             raise self._error
         return self
@@ -69,7 +70,7 @@ async def test_config_flow_success_local_file(
         },
     )
 
-    assert result["type"] is config_entries.FlowResultType.CREATE_ENTRY
+    assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Idleon Local File"
     assert result["data"][CONF_LOCAL_FILE_PATH] == str(sample_data_path)
 
@@ -86,7 +87,7 @@ async def test_config_flow_invalid_file(hass: HomeAssistant, tmp_path: Path) -> 
         },
     )
 
-    assert result["type"] is config_entries.FlowResultType.FORM
+    assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
 
@@ -111,7 +112,7 @@ async def test_config_flow_success_remote_url(
         },
     )
 
-    assert result["type"] is config_entries.FlowResultType.CREATE_ENTRY
+    assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Idleon Remote URL"
 
 
@@ -137,6 +138,5 @@ async def test_config_flow_invalid_url(
         },
     )
 
-    assert result["type"] is config_entries.FlowResultType.FORM
+    assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
-

@@ -6,7 +6,6 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
@@ -69,7 +68,7 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_json"
             except IdleonInvalidSchema:
                 errors["base"] = "invalid_schema"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
