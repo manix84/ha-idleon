@@ -1,6 +1,6 @@
-# What's New
+# 📰 What's New
 
-## 0.1.0
+## 🚀 0.1.0
 
 Initial experimental MVP.
 
@@ -15,6 +15,5 @@ Initial experimental MVP.
 - Added diagnostics with source redaction.
 - Added HACS custom repository metadata.
 
-v1 does not ask for Idleon credentials and does not implement login, Steam
+🔒 v1 does not ask for Idleon credentials and does not implement login, Steam
 login, browser scraping, session/token scraping, write actions, or services.
-

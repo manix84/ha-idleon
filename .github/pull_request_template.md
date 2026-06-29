@@ -1,8 +1,8 @@
-## Summary
+## 📝 Summary
 
 Describe the change and why it is needed.
 
-## Scope Check
+## 🎯 Scope Check
 
 - [ ] This keeps HA Idleon read-only.
 - [ ] This does not add Idleon login, Steam login, browser scraping, session scraping, or token scraping.
@@ -10,14 +10,13 @@ Describe the change and why it is needed.
 - [ ] This does not expose raw account JSON as entity attributes.
 - [ ] Any new noisy entities are disabled by default.
 
-## Testing
+## 🧪 Testing
 
 - [ ] `ruff check .`
 - [ ] `ruff format --check .`
 - [ ] `python -m pytest`
 
-## Privacy
+## 🔐 Privacy
 
 - [ ] No real Idleon account exports are included.
 - [ ] No private URLs, tokens, cookies, usernames, or local file paths are included.
-
