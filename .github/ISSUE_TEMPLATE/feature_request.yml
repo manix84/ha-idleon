@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a focused HA Idleon improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        v1 is read-only and does not implement Idleon login, Steam login, browser scraping, session scraping, token scraping, write actions, or services.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature
+      description: Describe the user-facing capability you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: Explain the Home Assistant workflow this would improve.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: entity_volume
+    attributes:
+      label: Entity volume
+      description: Should this create default entities?
+      options:
+        - No new default entities
+        - A small number of default entities
+        - Disabled-by-default entities only
+    validations:
+      required: true
+
+  - type: textarea
+    id: data_shape
+    attributes:
+      label: Sanitized data shape
+      description: Include a fake/sanitized JSON shape if the request depends on parser support.
+      render: json
+

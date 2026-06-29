@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible HA Idleon problem.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include real Idleon account exports, private URLs, session tokens, browser cookies, Home Assistant secrets, or local file paths that expose usernames.
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: HA Idleon version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: home_assistant_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.6.4"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: data_source_type
+    attributes:
+      label: Data source type
+      options:
+        - local_file
+        - remote_url
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe what happened and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest set of steps that reproduces the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Paste only sanitized Home Assistant logs.
+      render: text
+
+  - type: textarea
+    id: sample_json_shape
+    attributes:
+      label: Sanitized JSON shape
+      description: Include a minimal fake/sanitized JSON shape only if parsing is failing.
+      render: json
+

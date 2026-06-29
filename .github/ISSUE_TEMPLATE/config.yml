@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support guidance
+    url: https://github.com/manix84/ha-idleon/blob/main/SUPPORT.md
+    about: Read this before opening a bug report.
+  - name: Privacy guidance
+    url: https://github.com/manix84/ha-idleon/blob/main/PRIVACY.md
+    about: Review what not to share in public issues.
+
