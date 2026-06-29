@@ -1,0 +1,13 @@
+{
+  "domain": "idleon",
+  "name": "HA Idleon",
+  "codeowners": ["@manix84"],
+  "config_flow": true,
+  "documentation": "https://github.com/manix84/ha-idleon",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/manix84/ha-idleon/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
+

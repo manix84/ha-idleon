@@ -1,0 +1,65 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Legends of Idleon",
+        "description": "Configure a read-only Idleon account data source.",
+        "data": {
+          "data_source_type": "Data source type",
+          "local_file_path": "Local JSON file path",
+          "remote_url": "Remote JSON URL",
+          "scan_interval": "Scan interval in seconds"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to or read the data source.",
+      "invalid_json": "The data source did not return valid JSON.",
+      "invalid_schema": "The data source JSON does not look like Idleon account data.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This data source is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "account_total_level": {
+        "name": "Total level"
+      },
+      "account_character_count": {
+        "name": "Character count"
+      },
+      "account_gems": {
+        "name": "Gems"
+      },
+      "account_last_updated": {
+        "name": "Last updated"
+      },
+      "character_level": {
+        "name": "Level"
+      },
+      "character_class": {
+        "name": "Class"
+      },
+      "character_current_map": {
+        "name": "Current map"
+      },
+      "character_current_activity": {
+        "name": "Current activity"
+      },
+      "character_afk_hours": {
+        "name": "AFK hours"
+      }
+    },
+    "binary_sensor": {
+      "character_inventory_full": {
+        "name": "Inventory full"
+      },
+      "character_needs_attention": {
+        "name": "Needs attention"
+      }
+    }
+  }
+}
+

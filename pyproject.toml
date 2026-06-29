@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ha-idleon"
+version = "0.1.0"
+description = "Home Assistant integration for Legends of Idleon account and character stats."
+readme = "README.md"
+requires-python = ">=3.14.2"
+license = "MIT"
+authors = [
+  { name = "Rob Taylor" }
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.14",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+  "ASYNC",
+  "B",
+  "C4",
+  "E",
+  "F",
+  "I",
+  "N",
+  "PERF",
+  "PIE",
+  "PYI",
+  "RUF",
+  "SIM",
+  "T20",
+  "UP",
+  "W",
+]
+ignore = [
+  "N818"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
