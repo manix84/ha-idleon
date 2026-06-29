@@ -1,7 +1,7 @@
 # 🕹️ HA Idleon
 
 <p align="center">
-  <img src="assets/project-icon.png" alt="HA Idleon project icon" width="160">
+  <img src="assets/project-icon-transparent.png" alt="HA Idleon project icon" width="160">
 </p>
 
 Home Assistant integration for Legends of Idleon account and character stats.
