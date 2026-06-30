@@ -9,6 +9,7 @@ from aiohttp import ClientError
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.idleon.const import (
     CONF_DATA_SOURCE_TYPE,
@@ -327,19 +328,16 @@ async def test_options_flow_updates_source(
 async def _create_local_file_entry(
     hass: HomeAssistant,
     sample_data_path: Path,
-) -> config_entries.ConfigEntry:
-    """Create a local file config entry through the config flow."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": config_entries.SOURCE_USER},
-        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
+) -> MockConfigEntry:
+    """Create a local file config entry without setting it up."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
             CONF_LOCAL_FILE_PATH: str(sample_data_path),
             CONF_SCAN_INTERVAL: 3600,
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
         },
     )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    return result["result"]
+    entry.add_to_hass(hass)
+    return entry

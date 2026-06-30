@@ -20,6 +20,7 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
 sys.path.insert(0, str(ROOT))
 
 from custom_components.idleon.idleon_data import parse_idleon_account
+from custom_components.idleon.models import IdleonAccount
 
 
 def main() -> int:
@@ -28,12 +29,19 @@ def main() -> int:
         description="Summarize a raw Idleon JSON export for HA Idleon mapping work.",
     )
     parser.add_argument("path", type=Path, help="Path to a raw Idleon JSON export")
+    parser.add_argument(
+        "--compare",
+        type=Path,
+        help="Optional second export to compare against the first",
+    )
     args = parser.parse_args()
 
-    raw_data = json.loads(args.path.read_text())
-    if not isinstance(raw_data, Mapping):
-        sys.stderr.write("Top-level export data must be a JSON object.\n")
-        return 2
+    raw_data = _load_export(args.path)
+    if args.compare:
+        compare_data = _load_export(args.compare)
+        sys.stdout.write("\n".join(_compare_exports(raw_data, compare_data)))
+        sys.stdout.write("\n")
+        return 0
 
     account = parse_idleon_account(raw_data)
     lines: list[str] = [
@@ -76,17 +84,142 @@ def main() -> int:
     return 0
 
 
+def _load_export(path: Path) -> Mapping[str, Any]:
+    """Load a raw Idleon export."""
+    raw_data = json.loads(path.read_text())
+    if not isinstance(raw_data, Mapping):
+        msg = f"{path}: top-level export data must be a JSON object"
+        raise TypeError(msg)
+    return raw_data
+
+
+def _compare_exports(
+    before_data: Mapping[str, Any],
+    after_data: Mapping[str, Any],
+) -> list[str]:
+    """Return a compact comparison of two raw exports."""
+    before_account = parse_idleon_account(before_data)
+    after_account = parse_idleon_account(after_data)
+
+    lines: list[str] = [
+        "Normalized account changes",
+        *_account_change_lines(before_account, after_account),
+        "",
+        "Normalized character changes",
+        *_character_change_lines(before_account, after_account),
+        "",
+        "Indexed raw field changes",
+        *_indexed_field_change_lines(before_data, after_data),
+        "",
+        "Changed top-level keys",
+        *_changed_key_lines(before_data, after_data),
+    ]
+    return lines
+
+
+def _account_change_lines(
+    before_account: IdleonAccount,
+    after_account: IdleonAccount,
+) -> list[str]:
+    """Return normalized account field changes."""
+    fields = (
+        ("gems", before_account.gems, after_account.gems),
+        ("total_level", before_account.total_level, after_account.total_level),
+        (
+            "character_count",
+            before_account.character_count,
+            after_account.character_count,
+        ),
+        (
+            "source_updated_at",
+            before_account.source_updated_at,
+            after_account.source_updated_at,
+        ),
+    )
+    return _field_change_lines(fields)
+
+
+def _character_change_lines(
+    before_account: IdleonAccount,
+    after_account: IdleonAccount,
+) -> list[str]:
+    """Return normalized character field changes."""
+    before_characters = {
+        character.character_id: character for character in before_account.characters
+    }
+    after_characters = {
+        character.character_id: character for character in after_account.characters
+    }
+
+    lines: list[str] = []
+    for character_id in sorted(set(before_characters) | set(after_characters)):
+        before = before_characters.get(character_id)
+        after = after_characters.get(character_id)
+        if before is None or after is None:
+            lines.append(f"  {character_id}: present={before is not None} -> {after is not None}")
+            continue
+
+        fields = (
+            ("name", before.name, after.name),
+            ("level", before.level, after.level),
+            ("class", before.character_class, after.character_class),
+            ("map", before.current_map, after.current_map),
+            ("activity", before.current_activity, after.current_activity),
+            ("afk_hours", before.afk_hours, after.afk_hours),
+        )
+        changes = _field_change_lines(fields, indent="    ")
+        if changes:
+            lines.append(f"  {character_id}:")
+            lines.extend(changes)
+
+    return lines or ["  none"]
+
+
+def _indexed_field_change_lines(
+    before_data: Mapping[str, Any],
+    after_data: Mapping[str, Any],
+) -> list[str]:
+    """Return changed indexed raw fields."""
+    indexes = _indexed_character_ids(before_data) | _indexed_character_ids(after_data)
+    fields = ("Lv0", "CharacterClass", "CurrentMap", "AFKtarget", "PTimeAway")
+
+    lines: list[str] = []
+    for index in sorted(indexes):
+        changes: list[str] = []
+        for field in fields:
+            before = _indexed_raw_value(before_data, field, index)
+            after = _indexed_raw_value(after_data, field, index)
+            if before != after:
+                changes.append(f"{field}: {before!r} -> {after!r}")
+        if changes:
+            lines.append(f"  {index}: " + "; ".join(changes))
+
+    return lines or ["  none"]
+
+
+def _changed_key_lines(
+    before_data: Mapping[str, Any],
+    after_data: Mapping[str, Any],
+) -> list[str]:
+    """Return changed top-level keys without dumping values."""
+    changed = [
+        key
+        for key in sorted(set(before_data) | set(after_data))
+        if before_data.get(key) != after_data.get(key)
+    ]
+    if not changed:
+        return ["  none"]
+
+    lines = [f"  count: {len(changed)}"]
+    lines.extend(f"  {key}" for key in changed[:80])
+    if len(changed) > 80:
+        lines.append(f"  ... {len(changed) - 80} more")
+    return lines
+
+
 def _indexed_field_lines(raw_data: Mapping[str, Any]) -> list[str]:
     """Return a compact summary of known indexed raw export fields."""
-    indexes: set[int] = set()
-    for key in raw_data:
-        for prefix in ("Lv0_", "CharacterClass_", "CurrentMap_", "AFKtarget_"):
-            if key.startswith(prefix):
-                try:
-                    indexes.add(int(key.removeprefix(prefix)))
-                except ValueError:
-                    continue
-
+    indexes = _indexed_character_ids(raw_data)
     if not indexes:
         return ["  none found"]
 
@@ -103,6 +236,40 @@ def _indexed_field_lines(raw_data: Mapping[str, Any]) -> list[str]:
             f"PTimeAway={raw_data.get(f'PTimeAway_{index}')!r}"
         )
     return lines
+
+
+def _indexed_character_ids(raw_data: Mapping[str, Any]) -> set[int]:
+    """Return indexed character IDs found in raw export fields."""
+    indexes: set[int] = set()
+    for key in raw_data:
+        for prefix in ("Lv0_", "CharacterClass_", "CurrentMap_", "AFKtarget_"):
+            if key.startswith(prefix):
+                try:
+                    indexes.add(int(key.removeprefix(prefix)))
+                except ValueError:
+                    continue
+    return indexes
+
+
+def _indexed_raw_value(raw_data: Mapping[str, Any], field: str, index: int) -> Any:
+    """Return a comparable value for an indexed raw field."""
+    if field == "Lv0":
+        level = _first_list_value(raw_data.get(f"Lv0_{index}"))
+        return level
+    return raw_data.get(f"{field}_{index}")
+
+
+def _field_change_lines(
+    fields: tuple[tuple[str, Any, Any], ...],
+    *,
+    indent: str = "  ",
+) -> list[str]:
+    """Return formatted changes for field tuples."""
+    return [
+        f"{indent}{name}: {before!r} -> {after!r}"
+        for name, before, after in fields
+        if before != after
+    ]
 
 
 def _candidate_player_name_lines(raw_data: Mapping[str, Any]) -> list[str]:

@@ -11,4 +11,4 @@ coverage.xml
 htmlcov/
 
 # Local raw Idleon exports may contain sensitive account details.
-examples/real_data.json
+examples/real_data*.json

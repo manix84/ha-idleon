@@ -75,6 +75,15 @@ scripts/inspect-idleon-export examples/real_data.json
 This prints the normalized account and character values HA Idleon can currently
 parse, plus candidate player-name fields that still need manual validation.
 
+To compare two captures after changing something in game, run:
+
+```sh
+scripts/inspect-idleon-export examples/real_data.json --compare examples/real_data2.json
+```
+
+This prints normalized changes and changed indexed fields without dumping the
+full raw export.
+
 ## 🌐 Test With A Remote URL
 
 Serve the sample file from a machine that Home Assistant can reach:
