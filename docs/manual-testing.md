@@ -44,6 +44,24 @@ Assistant is usually:
 /config/idleon_sample.json
 ```
 
+## 🌐 Test With A Remote URL
+
+Serve the sample file from a machine that Home Assistant can reach:
+
+```sh
+python -m http.server 8124 --directory examples
+```
+
+Then configure HA Idleon with `remote_url` and a URL like:
+
+```txt
+http://<your-lan-ip>:8124/sample_idleon_data.json
+```
+
+If Home Assistant runs in a container, avoid `localhost` unless the HTTP server
+is running inside the same container. Use a LAN IP or hostname that resolves
+from the Home Assistant instance.
+
 ## ⚙️ Add The Integration
 
 1. Go to Settings -> Devices & services.
