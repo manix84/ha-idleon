@@ -128,6 +128,48 @@ async def test_remote_config_entry_sets_up_entities(
     assert hass.states.get(character_level_entity_id).state == "210"
 
 
+async def test_indexed_export_config_entry_sets_up_entities(
+    hass: HomeAssistant,
+    fixture_path: Path,
+) -> None:
+    """Test an indexed raw export config entry sets up entities."""
+    indexed_data_path = fixture_path / "indexed_idleon_export_sample.json"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(indexed_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    total_level_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_total_level",
+    )
+    character_level_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_character_0_character_level",
+    )
+    character_class_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_character_0_character_class",
+    )
+
+    assert hass.states.get(total_level_entity_id).state == "2232"
+    assert hass.states.get(character_level_entity_id).state == "1134"
+    assert hass.states.get(character_class_entity_id).state == "Class 14"
+
+
 async def test_failed_refresh_marks_entities_unavailable_then_recovers(
     hass: HomeAssistant,
     sample_data_path: Path,

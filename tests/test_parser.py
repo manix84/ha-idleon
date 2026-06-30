@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
@@ -83,3 +85,41 @@ def test_parser_defaults_invalid_numbers() -> None:
     assert account.gems == 0
     assert account.characters[0].level == 0
     assert account.characters[0].afk_hours == 0.0
+
+
+def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
+    """Test parser accepts indexed raw Idleon export data."""
+    raw_data = json.loads(
+        (fixture_path / "indexed_idleon_export_sample.json").read_text()
+    )
+
+    account = parse_idleon_account(raw_data)
+
+    assert account.account_id == "idleon_account"
+    assert account.name == "Legends of Idleon Account"
+    assert account.gems == 3467
+    assert account.total_level == 2232
+    assert account.character_count == 2
+    assert account.source_updated_at == datetime.fromtimestamp(
+        1782760865.1540005,
+        tz=UTC,
+    )
+
+    first_character = account.characters[0]
+    assert first_character.character_id == "character_0"
+    assert first_character.name == "Character 1"
+    assert first_character.level == 1134
+    assert first_character.character_class == "Class 14"
+    assert first_character.current_map == "Map 216"
+    assert first_character.current_activity == "AFK target caveB"
+    assert first_character.afk_hours == 2.0
+    assert first_character.inventory_full is False
+    assert first_character.needs_attention is False
+
+    second_character = account.characters[1]
+    assert second_character.character_id == "character_1"
+    assert second_character.level == 1098
+    assert second_character.character_class == "Class 34"
+    assert second_character.current_map == "Map 325"
+    assert second_character.current_activity == "AFK target w7b11"
+    assert second_character.afk_hours == 0.5

@@ -44,6 +44,28 @@ Assistant is usually:
 /config/idleon_sample.json
 ```
 
+## 🧾 Test With A Raw Idleon Export
+
+If you have a raw Idleon export like `examples/real_data.json`, keep it local.
+Raw exports may contain sensitive account details and are ignored by git.
+
+Copy the file into your Home Assistant config directory:
+
+```sh
+cp examples/real_data.json /path/to/homeassistant/config/idleon_real_data.json
+```
+
+Then configure HA Idleon with:
+
+```txt
+data_source_type: local_file
+local_file_path: /config/idleon_real_data.json
+```
+
+For the current indexed export shape, character names are not present in the raw
+data. HA Idleon will create `Character 1`, `Character 2`, and so on until a
+reliable name field is identified.
+
 ## 🌐 Test With A Remote URL
 
 Serve the sample file from a machine that Home Assistant can reach:

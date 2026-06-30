@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping
+from contextlib import suppress
 from datetime import UTC, datetime
 from typing import Any
 
@@ -14,6 +16,9 @@ def parse_idleon_account(raw_data: Any) -> IdleonAccount:
     """Parse raw JSON into a normalized Idleon account model."""
     if not isinstance(raw_data, Mapping):
         raise IdleonInvalidSchema("Top-level Idleon data must be an object")
+
+    if _looks_like_indexed_export(raw_data):
+        return _parse_indexed_export(raw_data)
 
     account_data = (
         _first_mapping(raw_data, ("account", "profile", "player")) or raw_data
@@ -62,6 +67,85 @@ def parse_idleon_account(raw_data: Any) -> IdleonAccount:
             )
         ),
     )
+
+
+def _looks_like_indexed_export(raw_data: Mapping[str, Any]) -> bool:
+    """Return whether data looks like an indexed raw Idleon export."""
+    return any(
+        key.startswith(("CharacterClass_", "Lv0_", "CurrentMap_")) for key in raw_data
+    )
+
+
+def _parse_indexed_export(raw_data: Mapping[str, Any]) -> IdleonAccount:
+    """Parse indexed raw Idleon export data."""
+    character_indexes = _indexed_character_ids(raw_data)
+    if not character_indexes:
+        raise IdleonInvalidSchema("Indexed Idleon data must contain characters")
+
+    characters = tuple(
+        _parse_indexed_character(raw_data, character_index)
+        for character_index in character_indexes
+    )
+
+    source_updated_at = _parse_indexed_source_updated_at(raw_data)
+
+    return IdleonAccount(
+        account_id="idleon_account",
+        name="Legends of Idleon Account",
+        total_level=sum(character.level for character in characters),
+        gems=_coerce_int(raw_data.get("GemsOwned")) or 0,
+        characters=characters,
+        source_updated_at=source_updated_at,
+    )
+
+
+def _indexed_character_ids(raw_data: Mapping[str, Any]) -> tuple[int, ...]:
+    """Return sorted character indexes from raw export fields."""
+    indexes: set[int] = set()
+    for key in raw_data:
+        for prefix in ("CharacterClass_", "Lv0_", "CurrentMap_", "AFKtarget_"):
+            if key.startswith(prefix):
+                with suppress(ValueError):
+                    indexes.add(int(key.removeprefix(prefix)))
+    return tuple(sorted(indexes))
+
+
+def _parse_indexed_character(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> IdleonCharacter:
+    """Parse one indexed raw export character."""
+    level_data = raw_data.get(f"Lv0_{character_index}")
+    if isinstance(level_data, str):
+        level_data = _parse_json_string(level_data)
+    level = _coerce_int(level_data[0]) if isinstance(level_data, list) else None
+
+    class_value = raw_data.get(f"CharacterClass_{character_index}")
+    current_map = raw_data.get(f"CurrentMap_{character_index}")
+    afk_target = raw_data.get(f"AFKtarget_{character_index}")
+    afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
+
+    return IdleonCharacter(
+        character_id=f"character_{character_index}",
+        name=f"Character {character_index + 1}",
+        level=level or 0,
+        character_class=_numbered_label("Class", class_value),
+        current_map=_numbered_label("Map", current_map),
+        current_activity=(f"AFK target {afk_target}" if afk_target else "Unknown"),
+        afk_hours=round(afk_seconds / 3600, 2),
+        inventory_full=False,
+        needs_attention=False,
+    )
+
+
+def _parse_indexed_source_updated_at(raw_data: Mapping[str, Any]) -> datetime | None:
+    """Parse source update time from raw export time fields."""
+    time_away = raw_data.get("TimeAway")
+    if isinstance(time_away, str):
+        time_away = _parse_json_string(time_away)
+    if isinstance(time_away, Mapping):
+        return _parse_datetime(time_away.get("GlobalTime"))
+    return None
 
 
 def _parse_character(
@@ -159,7 +243,16 @@ def _first_value(data: Mapping[str, Any], keys: tuple[str, ...]) -> Any:
 
 def _first_int(data: Mapping[str, Any], keys: tuple[str, ...]) -> int | None:
     """Return the first value coerced to an integer."""
-    value = _first_value(data, keys)
+    return _coerce_int(_first_value(data, keys))
+
+
+def _first_float(data: Mapping[str, Any], keys: tuple[str, ...]) -> float | None:
+    """Return the first value coerced to a float."""
+    return _coerce_float(_first_value(data, keys))
+
+
+def _coerce_int(value: Any) -> int | None:
+    """Return a value coerced to an integer."""
     if value is None:
         return None
     try:
@@ -168,9 +261,8 @@ def _first_int(data: Mapping[str, Any], keys: tuple[str, ...]) -> int | None:
         return None
 
 
-def _first_float(data: Mapping[str, Any], keys: tuple[str, ...]) -> float | None:
-    """Return the first value coerced to a float."""
-    value = _first_value(data, keys)
+def _coerce_float(value: Any) -> float | None:
+    """Return a value coerced to a float."""
     if value is None:
         return None
     try:
@@ -191,6 +283,22 @@ def _first_bool(data: Mapping[str, Any], keys: tuple[str, ...]) -> bool | None:
     if isinstance(value, str):
         return value.lower() in {"1", "true", "yes", "on"}
     return None
+
+
+def _parse_json_string(value: str) -> Any:
+    """Parse a JSON string field from raw Idleon exports."""
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+
+def _numbered_label(label: str, value: Any) -> str:
+    """Return a conservative label for numeric raw export identifiers."""
+    number = _coerce_int(value)
+    if number is None:
+        return "Unknown"
+    return f"{label} {number}"
 
 
 def _parse_datetime(value: Any) -> datetime | None:
