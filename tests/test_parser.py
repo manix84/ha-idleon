@@ -145,7 +145,7 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     assert first_character.name == "Alpha Archer"
     assert first_character.level == 101
     assert first_character.character_class == "Bowman"
-    assert first_character.current_map == "Map 7"
+    assert first_character.current_map == "Freefall Caverns"
     assert first_character.current_activity == "Fighting: Green Mushroom"
     assert first_character.afk_hours == 1.0
     assert first_character.inventory_full is True

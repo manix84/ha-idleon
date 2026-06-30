@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from contextlib import suppress
+from functools import lru_cache
+from typing import Any
+
+from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
+
 # Source: examples/websiteData.json, classes[index].
 # Placeholder values such as "Nope" and "Filler" are omitted.
 CLASS_NAMES: dict[int, str] = {
@@ -59,6 +66,7 @@ CLASS_NAMES: dict[int, str] = {
 # Source: https://github.com/Morta1/IdleonToolbox/blob/main/data/website-data.json
 # License: GPL-3.0, see https://github.com/Morta1/IdleonToolbox/blob/main/LICENSE
 MAP_NAMES: dict[int, str] = {
+    7: "Freefall_Caverns",
     216: "The_Hole",
     312: "Coralcave_Perimeter",
     325: "Pirate_Mess_Hall",
@@ -82,3 +90,118 @@ MONSTERS: dict[str, dict[str, str]] = {
         "afk_type": "FIGHTING",
     },
 }
+
+PLACEHOLDER_LABELS = {"", "0", "_", "error", "filler", "nope", "z"}
+
+
+def class_name_label(value: Any) -> str:
+    """Return an Idleon class display label from a raw class identifier."""
+    class_id = _coerce_int(value)
+    if class_id is None:
+        return "Unknown"
+
+    class_name = _website_class_name(class_id) or CLASS_NAMES.get(class_id)
+    if not _is_real_label(class_name):
+        return f"Class {class_id}"
+    return display_name(str(class_name))
+
+
+def map_name_label(value: Any) -> str:
+    """Return an Idleon map display label from a raw map identifier."""
+    map_id = _coerce_int(value)
+    if map_id is None:
+        return "Unknown"
+
+    map_name = _website_map_name(map_id) or MAP_NAMES.get(map_id)
+    if not _is_real_label(map_name):
+        return f"Map {map_id}"
+    return display_name(str(map_name))
+
+
+def afk_activity_label(value: Any) -> str:
+    """Return a display activity for a raw Idleon AFK target."""
+    if value is None:
+        return "Unknown"
+
+    target = str(value)
+    monster = _website_monster(target) or MONSTERS.get(target)
+    if not isinstance(monster, Mapping):
+        return f"AFK target {target}"
+
+    monster_name = monster.get("Name") or monster.get("name")
+    afk_type = monster.get("AFKtype") or monster.get("afk_type")
+    if not _is_real_label(monster_name):
+        return f"AFK target {target}"
+    if not _is_real_label(afk_type):
+        return display_name(str(monster_name))
+
+    return f"{display_name(str(afk_type))}: {display_name(str(monster_name))}"
+
+
+def display_name(value: str) -> str:
+    """Return a user-facing label from an Idleon data key."""
+    return value.replace("_", " ").title()
+
+
+@lru_cache(maxsize=1)
+def _website_classes() -> Sequence[Any]:
+    """Return split websiteData classes when available."""
+    with suppress(WebsiteDataNotFoundError, OSError, ValueError, TypeError):
+        classes = load_default_website_data_part("classes")
+        if isinstance(classes, Sequence) and not isinstance(classes, str):
+            return classes
+    return ()
+
+
+@lru_cache(maxsize=1)
+def _website_map_names() -> Mapping[str, Any]:
+    """Return split websiteData map names when available."""
+    with suppress(WebsiteDataNotFoundError, OSError, ValueError, TypeError):
+        map_names = load_default_website_data_part("mapNames")
+        if isinstance(map_names, Mapping):
+            return map_names
+    return {}
+
+
+@lru_cache(maxsize=1)
+def _website_monsters() -> Mapping[str, Any]:
+    """Return split websiteData monsters when available."""
+    with suppress(WebsiteDataNotFoundError, OSError, ValueError, TypeError):
+        monsters = load_default_website_data_part("monsters")
+        if isinstance(monsters, Mapping):
+            return monsters
+    return {}
+
+
+def _website_class_name(class_id: int) -> Any:
+    """Return a raw class name from split websiteData."""
+    classes = _website_classes()
+    with suppress(IndexError):
+        return classes[class_id]
+    return None
+
+
+def _website_map_name(map_id: int) -> Any:
+    """Return a raw map name from split websiteData."""
+    return _website_map_names().get(str(map_id))
+
+
+def _website_monster(target: str) -> Any:
+    """Return raw monster data from split websiteData."""
+    return _website_monsters().get(target)
+
+
+def _coerce_int(value: Any) -> int | None:
+    """Coerce a raw value into an integer."""
+    if isinstance(value, bool) or value is None:
+        return None
+    with suppress(TypeError, ValueError):
+        return int(float(value))
+    return None
+
+
+def _is_real_label(value: Any) -> bool:
+    """Return whether a websiteData label is usable."""
+    if value is None:
+        return False
+    return str(value).strip().lower() not in PLACEHOLDER_LABELS

@@ -1,0 +1,59 @@
+"""Tests for websiteData-backed Idleon label lookups."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
+from custom_components.idleon.idleon_data import game_maps
+from custom_components.idleon.idleon_data.website_data import WebsiteDataNotFoundError
+
+
+@pytest.fixture(autouse=True)
+def clear_website_data_caches():
+    """Clear websiteData lookup caches around each test."""
+    game_maps._website_classes.cache_clear()
+    game_maps._website_map_names.cache_clear()
+    game_maps._website_monsters.cache_clear()
+    yield
+    game_maps._website_classes.cache_clear()
+    game_maps._website_map_names.cache_clear()
+    game_maps._website_monsters.cache_clear()
+
+
+def test_game_maps_use_split_website_data_labels(monkeypatch) -> None:
+    """Test label helpers use the same indexes as TypeScript @website-data."""
+
+    def load_part(key: str) -> Any:
+        if key == "classes":
+            return ["0", "Beginner", "Journeyman", "Maestro", "Voidwalker"]
+        if key == "mapNames":
+            return {"7": "Freefall_Caverns", "216": "The_Hole"}
+        if key == "monsters":
+            return {
+                "mushG": {
+                    "AFKtype": "FIGHTING",
+                    "Name": "Green_Mushroom",
+                }
+            }
+        raise WebsiteDataNotFoundError(key)
+
+    monkeypatch.setattr(game_maps, "load_default_website_data_part", load_part)
+
+    assert game_maps.class_name_label(4) == "Voidwalker"
+    assert game_maps.map_name_label(7) == "Freefall Caverns"
+    assert game_maps.afk_activity_label("mushG") == "Fighting: Green Mushroom"
+
+
+def test_game_maps_fall_back_to_packaged_labels(monkeypatch) -> None:
+    """Test lookup helpers still work without local split websiteData."""
+
+    def load_part(key: str) -> Any:
+        raise WebsiteDataNotFoundError(key)
+
+    monkeypatch.setattr(game_maps, "load_default_website_data_part", load_part)
+
+    assert game_maps.class_name_label(14) == "Death Bringer"
+    assert game_maps.map_name_label(216) == "The Hole"
+    assert game_maps.afk_activity_label("caveB") == "Fighting: Gloomie Mushroom"

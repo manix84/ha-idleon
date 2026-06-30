@@ -10,7 +10,7 @@ from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
 from .exceptions import IdleonInvalidSchema
-from .game_maps import CLASS_NAMES, MAP_NAMES, MONSTERS
+from .game_maps import afk_activity_label, class_name_label, map_name_label
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -380,53 +380,19 @@ def _maybe_json(value: Any) -> Any:
     return value
 
 
-def _numbered_label(label: str, value: Any) -> str:
-    """Return a conservative label for numeric raw export identifiers."""
-    number = _coerce_int(value)
-    if number is None:
-        return "Unknown"
-    return f"{label} {number}"
-
-
 def _map_name(value: Any) -> str:
     """Return a display name for a raw Idleon map identifier."""
-    map_id = _coerce_int(value)
-    if map_id is None:
-        return "Unknown"
-    map_name = MAP_NAMES.get(map_id)
-    if map_name is None:
-        return _numbered_label("Map", map_id)
-    return _display_name(map_name)
+    return map_name_label(value)
 
 
 def _afk_activity(value: Any) -> str:
     """Return a display activity for a raw Idleon AFK target."""
-    if value is None:
-        return "Unknown"
-    target = str(value)
-    monster = MONSTERS.get(target)
-    if monster is None:
-        return f"AFK target {target}"
-
-    monster_name = _display_name(monster["name"])
-    afk_type = _display_name(monster["afk_type"])
-    return f"{afk_type}: {monster_name}"
+    return afk_activity_label(value)
 
 
 def _class_name(value: Any) -> str:
     """Return an Idleon class name from a raw class identifier."""
-    class_id = _coerce_int(value)
-    if class_id is None:
-        return "Unknown"
-    class_name = CLASS_NAMES.get(class_id)
-    if class_name is None:
-        return f"Class {class_id}"
-    return _display_name(class_name)
-
-
-def _display_name(value: str) -> str:
-    """Return a user-facing label from an Idleon data key."""
-    return value.replace("_", " ").title()
+    return class_name_label(value)
 
 
 def _parse_datetime(value: Any) -> datetime | None:
