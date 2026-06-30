@@ -123,3 +123,37 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert second_character.current_map == "Map 325"
     assert second_character.current_activity == "AFK target w7b11"
     assert second_character.afk_hours == 0.5
+
+
+def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
+    """Test parser accepts wrapped exports from Idleon API Downloader."""
+    raw_data = json.loads(
+        (fixture_path / "wrapped_idleon_export_sample.json").read_text()
+    )
+
+    account = parse_idleon_account(raw_data)
+
+    assert account.gems == 123
+    assert account.total_level == 303
+    assert account.character_count == 2
+    assert account.source_updated_at == datetime.fromtimestamp(
+        1782760865.1540005,
+        tz=UTC,
+    )
+
+    first_character = account.characters[0]
+    assert first_character.name == "Alpha Archer"
+    assert first_character.level == 101
+    assert first_character.character_class == "Bowman"
+    assert first_character.current_map == "Map 7"
+    assert first_character.current_activity == "AFK target mushG"
+    assert first_character.afk_hours == 1.0
+    assert first_character.inventory_full is True
+    assert first_character.needs_attention is True
+
+    second_character = account.characters[1]
+    assert second_character.name == "Beta Mage"
+    assert second_character.level == 202
+    assert second_character.character_class == "Elemental Sorcerer"
+    assert second_character.inventory_full is False
+    assert second_character.needs_attention is False

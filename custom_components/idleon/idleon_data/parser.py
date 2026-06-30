@@ -72,39 +72,68 @@ def parse_idleon_account(raw_data: Any) -> IdleonAccount:
 
 def _looks_like_indexed_export(raw_data: Mapping[str, Any]) -> bool:
     """Return whether data looks like an indexed raw Idleon export."""
+    fields = _indexed_export_fields(raw_data)
     return any(
-        key.startswith(("CharacterClass_", "Lv0_", "CurrentMap_")) for key in raw_data
+        key.startswith(("CharacterClass_", "PVStatList_", "Lv0_", "CurrentMap_"))
+        for key in fields
     )
 
 
 def _parse_indexed_export(raw_data: Mapping[str, Any]) -> IdleonAccount:
     """Parse indexed raw Idleon export data."""
-    character_indexes = _indexed_character_ids(raw_data)
+    fields = _indexed_export_fields(raw_data)
+    character_names = _indexed_character_names(raw_data)
+    character_indexes = _indexed_character_ids(fields)
     if not character_indexes:
         raise IdleonInvalidSchema("Indexed Idleon data must contain characters")
 
     characters = tuple(
-        _parse_indexed_character(raw_data, character_index)
+        _parse_indexed_character(fields, character_index, character_names)
         for character_index in character_indexes
     )
 
-    source_updated_at = _parse_indexed_source_updated_at(raw_data)
+    source_updated_at = _parse_indexed_source_updated_at(fields)
 
     return IdleonAccount(
         account_id="idleon_account",
         name="Legends of Idleon Account",
         total_level=sum(character.level for character in characters),
-        gems=_coerce_int(raw_data.get("GemsOwned")) or 0,
+        gems=_coerce_int(fields.get("GemsOwned")) or 0,
         characters=characters,
         source_updated_at=source_updated_at,
     )
+
+
+def _indexed_export_fields(raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Return the field mapping from flat or wrapped Idleon exports."""
+    save_data = raw_data.get("saveData")
+    if isinstance(save_data, Mapping):
+        return save_data
+    return raw_data
+
+
+def _indexed_character_names(raw_data: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return character names from wrapped Idleon exports when present."""
+    char_name_data = raw_data.get("charNameData")
+    if not isinstance(char_name_data, Iterable) or isinstance(
+        char_name_data,
+        str | bytes,
+    ):
+        return ()
+    return tuple(str(name) for name in char_name_data)
 
 
 def _indexed_character_ids(raw_data: Mapping[str, Any]) -> tuple[int, ...]:
     """Return sorted character indexes from raw export fields."""
     indexes: set[int] = set()
     for key in raw_data:
-        for prefix in ("CharacterClass_", "Lv0_", "CurrentMap_", "AFKtarget_"):
+        for prefix in (
+            "CharacterClass_",
+            "PVStatList_",
+            "Lv0_",
+            "CurrentMap_",
+            "AFKtarget_",
+        ):
             if key.startswith(prefix):
                 with suppress(ValueError):
                     indexes.add(int(key.removeprefix(prefix)))
@@ -114,36 +143,84 @@ def _indexed_character_ids(raw_data: Mapping[str, Any]) -> tuple[int, ...]:
 def _parse_indexed_character(
     raw_data: Mapping[str, Any],
     character_index: int,
+    character_names: tuple[str, ...] = (),
 ) -> IdleonCharacter:
     """Parse one indexed raw export character."""
-    level_data = raw_data.get(f"Lv0_{character_index}")
-    if isinstance(level_data, str):
-        level_data = _parse_json_string(level_data)
-    level = _coerce_int(level_data[0]) if isinstance(level_data, list) else None
-
+    level = _indexed_character_level(raw_data, character_index)
     class_value = raw_data.get(f"CharacterClass_{character_index}")
     current_map = raw_data.get(f"CurrentMap_{character_index}")
     afk_target = raw_data.get(f"AFKtarget_{character_index}")
     afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
+    inventory_full = _indexed_inventory_full(raw_data, character_index)
+    character_name = _indexed_character_name(character_index, character_names)
 
     return IdleonCharacter(
         character_id=f"character_{character_index}",
-        name=f"Character {character_index + 1}",
+        name=character_name,
         level=level or 0,
         character_class=_class_name(class_value),
         current_map=_numbered_label("Map", current_map),
         current_activity=(f"AFK target {afk_target}" if afk_target else "Unknown"),
         afk_hours=round(afk_seconds / 3600, 2),
-        inventory_full=False,
-        needs_attention=False,
+        inventory_full=inventory_full,
+        needs_attention=inventory_full,
     )
+
+
+def _indexed_character_level(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> int | None:
+    """Return character level from raw Idleon character stats."""
+    stat_data = _maybe_json(raw_data.get(f"PVStatList_{character_index}"))
+    if isinstance(stat_data, list) and len(stat_data) > 4:
+        level = _coerce_int(stat_data[4])
+        if level is not None:
+            return level
+
+    skill_level_data = _maybe_json(raw_data.get(f"Lv0_{character_index}"))
+    if isinstance(skill_level_data, list) and skill_level_data:
+        return _coerce_int(skill_level_data[0])
+
+    return None
+
+
+def _indexed_character_name(
+    character_index: int,
+    character_names: tuple[str, ...],
+) -> str:
+    """Return character name from export metadata or a stable fallback."""
+    with suppress(IndexError):
+        name = character_names[character_index].strip()
+        if name:
+            return name
+    return f"Character {character_index + 1}"
+
+
+def _indexed_inventory_full(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> bool:
+    """Return whether a character's inventory appears full."""
+    inventory = _maybe_json(raw_data.get(f"InventoryOrder_{character_index}"))
+    if not isinstance(inventory, list) or not inventory:
+        return False
+    return all(_inventory_slot_has_item(slot) for slot in inventory)
+
+
+def _inventory_slot_has_item(value: Any) -> bool:
+    """Return whether an inventory slot value looks occupied."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        return normalized not in {"", "0", "none", "null", "blank", "empty"}
+    return bool(value)
 
 
 def _parse_indexed_source_updated_at(raw_data: Mapping[str, Any]) -> datetime | None:
     """Parse source update time from raw export time fields."""
-    time_away = raw_data.get("TimeAway")
-    if isinstance(time_away, str):
-        time_away = _parse_json_string(time_away)
+    time_away = _maybe_json(raw_data.get("TimeAway"))
     if isinstance(time_away, Mapping):
         return _parse_datetime(time_away.get("GlobalTime"))
     return None
@@ -292,6 +369,15 @@ def _parse_json_string(value: str) -> Any:
         return json.loads(value)
     except json.JSONDecodeError:
         return None
+
+
+def _maybe_json(value: Any) -> Any:
+    """Parse a JSON string value when needed."""
+    if isinstance(value, str):
+        parsed = _parse_json_string(value)
+        if parsed is not None:
+            return parsed
+    return value
 
 
 def _numbered_label(label: str, value: Any) -> str:

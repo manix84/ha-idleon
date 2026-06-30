@@ -1,0 +1,21 @@
+{
+  "charNameData": ["Alpha Archer", "Beta Mage"],
+  "saveData": {
+    "AFKtarget_0": "mushG",
+    "AFKtarget_1": "w7b11",
+    "CharacterClass_0": 20,
+    "CharacterClass_1": 34,
+    "CurrentMap_0": 7,
+    "CurrentMap_1": 325,
+    "GemsOwned": "123",
+    "InventoryOrder_0": ["EquipmentHats1", "FoodHealth1"],
+    "InventoryOrder_1": ["EquipmentHats1", ""],
+    "Lv0_0": [99, 1, 2],
+    "Lv0_1": [88, 1, 2],
+    "PVStatList_0": [10, 11, 12, 13, 101],
+    "PVStatList_1": "[20, 21, 22, 23, 202]",
+    "PTimeAway_0": 3600,
+    "PTimeAway_1": 7200,
+    "TimeAway": "{\"GlobalTime\":1782760865.1540005}"
+  }
+}
