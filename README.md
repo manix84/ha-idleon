@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.14-blue" alt="Version 0.1.14">
+  <img src="https://img.shields.io/badge/version-0.1.15-blue" alt="Version 0.1.15">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -218,6 +218,19 @@ Assistant does not depend on the ignored example data directory.
 The source file and generated directory are ignored because the data is large
 and only used as a local mapping reference.
 
+If you have the IdleonToolbox checkout at
+`/Users/rob/Workspace/Personal/IdleonToolbox/parsers`, refresh the Python parser
+definition snapshot with:
+
+```sh
+scripts/import-toolbox-parsers
+```
+
+This creates the full metadata-mode parser surface under
+`custom_components/idleon/idleon_data/toolbox_parsers/`, including parser IDs,
+source paths, exported function names, raw Idleon fields, and websiteData
+dependencies.
+
 Individual checks are available as:
 
 ```sh
@@ -239,8 +252,10 @@ open debug/parsed-data.html
 
 By default this reads `examples/rawData.json` and `examples/real_data*.json`
 when present. If `examples/cleanData.json` exists, the HTML report includes it
-as a clean parsed reference. The generated `debug/` directory is ignored because
-parsed output from real exports can still contain private account details.
+as a clean parsed reference. The report also includes an IdleonToolbox parser
+section table showing which generated parser sections matched raw fields in the
+capture. The generated `debug/` directory is ignored because parsed output from
+real exports can still contain private account details.
 
 The local pre-commit hook bumps versions automatically for release-affecting
 changes:

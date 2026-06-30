@@ -36,7 +36,15 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
     assert rendered[0]["parsed"]["characters"][0]["current_activity"] == (
         "Fighting: Green Mushroom"
     )
+    assert rendered[0]["toolbox_sections"]["character"]["source_path"] == (
+        "character.ts"
+    )
+    assert (
+        "CharacterClass"
+        in rendered[0]["toolbox_sections"]["character"]["matched_raw_fields"]
+    )
 
     html = html_path.read_text()
     assert "HA Idleon Parsed Data Debug" in html
     assert "Alpha Archer" in html
+    assert "IdleonToolbox Parser Sections" in html
