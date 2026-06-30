@@ -10,7 +10,7 @@ from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
 from .exceptions import IdleonInvalidSchema
-from .game_maps import CLASS_NAMES
+from .game_maps import CLASS_NAMES, MAP_NAMES, MONSTERS
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -159,8 +159,8 @@ def _parse_indexed_character(
         name=character_name,
         level=level or 0,
         character_class=_class_name(class_value),
-        current_map=_numbered_label("Map", current_map),
-        current_activity=(f"AFK target {afk_target}" if afk_target else "Unknown"),
+        current_map=_map_name(current_map),
+        current_activity=_afk_activity(afk_target),
         afk_hours=round(afk_seconds / 3600, 2),
         inventory_full=inventory_full,
         needs_attention=inventory_full,
@@ -388,12 +388,42 @@ def _numbered_label(label: str, value: Any) -> str:
     return f"{label} {number}"
 
 
+def _map_name(value: Any) -> str:
+    """Return a display name for a raw Idleon map identifier."""
+    map_id = _coerce_int(value)
+    if map_id is None:
+        return "Unknown"
+    map_name = MAP_NAMES.get(map_id)
+    if map_name is None:
+        return _numbered_label("Map", map_id)
+    return _display_name(map_name)
+
+
+def _afk_activity(value: Any) -> str:
+    """Return a display activity for a raw Idleon AFK target."""
+    if value is None:
+        return "Unknown"
+    target = str(value)
+    monster = MONSTERS.get(target)
+    if monster is None:
+        return f"AFK target {target}"
+
+    monster_name = _display_name(monster["name"])
+    afk_type = _display_name(monster["afk_type"])
+    return f"{afk_type}: {monster_name}"
+
+
 def _class_name(value: Any) -> str:
     """Return an Idleon class name from a raw class identifier."""
     class_id = _coerce_int(value)
     if class_id is None:
         return "Unknown"
     return CLASS_NAMES.get(class_id, f"Class {class_id}")
+
+
+def _display_name(value: str) -> str:
+    """Return a user-facing label from an Idleon data key."""
+    return value.replace("_", " ").title()
 
 
 def _parse_datetime(value: Any) -> datetime | None:

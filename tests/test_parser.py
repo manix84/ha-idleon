@@ -110,8 +110,8 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert first_character.name == "Character 1"
     assert first_character.level == 1134
     assert first_character.character_class == "Filler"
-    assert first_character.current_map == "Map 216"
-    assert first_character.current_activity == "AFK target caveB"
+    assert first_character.current_map == "The Hole"
+    assert first_character.current_activity == "Fighting: Gloomie Mushroom"
     assert first_character.afk_hours == 2.0
     assert first_character.inventory_full is False
     assert first_character.needs_attention is False
@@ -120,8 +120,8 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert second_character.character_id == "character_1"
     assert second_character.level == 1098
     assert second_character.character_class == "Elemental Sorcerer"
-    assert second_character.current_map == "Map 325"
-    assert second_character.current_activity == "AFK target w7b11"
+    assert second_character.current_map == "Pirate Mess Hall"
+    assert second_character.current_activity == "Fighting: Pirate Deckhand"
     assert second_character.afk_hours == 0.5
 
 
@@ -146,7 +146,7 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     assert first_character.level == 101
     assert first_character.character_class == "Bowman"
     assert first_character.current_map == "Map 7"
-    assert first_character.current_activity == "AFK target mushG"
+    assert first_character.current_activity == "Fighting: Green Mushroom"
     assert first_character.afk_hours == 1.0
     assert first_character.inventory_full is True
     assert first_character.needs_attention is True

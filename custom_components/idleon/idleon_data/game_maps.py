@@ -47,3 +47,30 @@ CLASS_NAMES: dict[int, str] = {
     40: "Filler",
     41: "Filler",
 }
+
+# Source: https://github.com/Morta1/IdleonToolbox/blob/main/data/website-data.json
+# License: GPL-3.0, see https://github.com/Morta1/IdleonToolbox/blob/main/LICENSE
+MAP_NAMES: dict[int, str] = {
+    216: "The_Hole",
+    312: "Coralcave_Perimeter",
+    325: "Pirate_Mess_Hall",
+}
+
+MONSTERS: dict[str, dict[str, str]] = {
+    "caveB": {
+        "name": "Gloomie_Mushroom",
+        "afk_type": "FIGHTING",
+    },
+    "mushG": {
+        "name": "Green_Mushroom",
+        "afk_type": "FIGHTING",
+    },
+    "w7a12": {
+        "name": "Coralcave_Guardian",
+        "afk_type": "FIGHTING",
+    },
+    "w7b11": {
+        "name": "Pirate_Deckhand",
+        "afk_type": "FIGHTING",
+    },
+}
