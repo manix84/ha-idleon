@@ -5,7 +5,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/manix84/ha-idleon/actions/workflows/ci.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
+  <a href="https://github.com/manix84/ha-idleon/actions/workflows/type-check.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/type-check.yml/badge.svg" alt="Type Check status"></a>
+  <a href="https://github.com/manix84/ha-idleon/actions/workflows/test.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/test.yml/badge.svg" alt="Test status"></a>
+  <a href="https://github.com/manix84/ha-idleon/actions/workflows/release-check.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/release-check.yml/badge.svg" alt="Release Check status"></a>
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
   <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version 0.1.0">
