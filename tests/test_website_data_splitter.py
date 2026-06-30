@@ -26,6 +26,13 @@ def test_website_data_splitter_writes_top_level_files(tmp_path: Path) -> None:
         json.dumps(
             {
                 "classes": ["0", "Beginner", "Journeyman"],
+                "invBags": {
+                    "InvBag1": {
+                        "capacity": 1,
+                        "displayName": "Inventory_Bag_A",
+                        "sellPrice": 200,
+                    }
+                },
                 "mapNames": {"0": "Blunder_Hills"},
                 "weird key!": {"value": 1},
             }
@@ -39,6 +46,13 @@ def test_website_data_splitter_writes_top_level_files(tmp_path: Path) -> None:
 
 declare module "@website-data" {
   export const classes: string[];
+  export const invBags: {
+    [key: string]: {
+      displayName: string;
+      sellPrice: number;
+      capacity: number;
+    };
+  };
   export const mapNames: Record<string, string>;
   export const missingFromJson: number[];
   export const weird key!: { value: number };
@@ -61,7 +75,7 @@ declare module "@website-data" {
         text=True,
     )
 
-    assert "Wrote 8 websiteData files" in result.stdout
+    assert "Wrote 11 websiteData files" in result.stdout
     assert json.loads((output_dir / "classes.json").read_text()) == [
         "0",
         "Beginner",
@@ -86,6 +100,15 @@ declare module "@website-data" {
     assert (
         "WebsiteDataMapNames: TypeAlias = dict[str, str]"
         in (output_dir / "mapNames.pyi").read_text()
+    )
+    inv_bags_type = (output_dir / "invBags.pyi").read_text()
+    assert "class WebsiteDataInvBagsItem(TypedDict):" in inv_bags_type
+    assert "    displayName: str" in inv_bags_type
+    assert "    sellPrice: int | float" in inv_bags_type
+    assert "    capacity: int | float" in inv_bags_type
+    assert (
+        "WebsiteDataInvBags: TypeAlias = dict[str, WebsiteDataInvBagsItem]"
+        in inv_bags_type
     )
 
     manifest = json.loads((output_dir / "_manifest.json").read_text())

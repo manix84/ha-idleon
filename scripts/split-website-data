@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import keyword
 import os
 import re
 import sys
@@ -127,9 +128,7 @@ def _write_manifest(
     files = {}
     for key in sorted(data):
         filename = _safe_filename(key)
-        type_filename = (
-            f"{filename}{TYPE_SUFFIX}" if key in type_declarations else None
-        )
+        type_filename = f"{filename}{TYPE_SUFFIX}" if key in type_declarations else None
         python_type_filename = (
             f"{filename}{PYTHON_TYPE_SUFFIX}" if key in type_declarations else None
         )
@@ -264,13 +263,43 @@ def _render_type_file(key: str, declaration: str) -> str:
 def _render_python_type_file(key: str, declaration: str) -> str:
     """Render a split Python type stub file."""
     type_name = f"WebsiteData{_pascal_case(key)}"
-    python_type = _typescript_to_python_type(declaration)
+    body = _render_python_type_body(type_name, declaration)
     return (
         "# Auto-generated from examples/websiteData.d.json.ts\n"
         "# Do not edit manually.\n\n"
-        "from typing import Any, TypeAlias\n\n"
-        f"{type_name}: TypeAlias = {python_type}\n"
+        "from typing import Any, NotRequired, TypeAlias, TypedDict\n\n"
+        f"{body}\n"
     )
+
+
+def _render_python_type_body(type_name: str, declaration: str) -> str:
+    """Render Python type declarations for a TypeScript type."""
+    normalized = " ".join(declaration.strip().split())
+    index_signature = _parse_index_signature_object(normalized)
+    if index_signature is not None:
+        key_type, value_type = index_signature
+        item_type_name = f"{type_name}Item"
+        item_definition = _render_typed_dict(item_type_name, value_type)
+        return (
+            f"{item_definition}\n\n"
+            f"{type_name}: TypeAlias = "
+            f"dict[{_convert_typescript_type(key_type)}, {item_type_name}]"
+        )
+
+    object_fields = _parse_object_fields(normalized)
+    homogeneous_value_type = _homogeneous_object_value_type(object_fields)
+    if homogeneous_value_type is not None:
+        item_type_name = f"{type_name}Item"
+        item_definition = _render_typed_dict(item_type_name, homogeneous_value_type)
+        return (
+            f"{item_definition}\n\n{type_name}: TypeAlias = dict[str, {item_type_name}]"
+        )
+
+    if object_fields:
+        return _render_typed_dict(type_name, normalized)
+
+    python_type = _typescript_to_python_type(declaration)
+    return f"{type_name}: TypeAlias = {python_type}"
 
 
 def _typescript_to_python_type(declaration: str) -> str:
@@ -290,9 +319,7 @@ def _convert_typescript_type(value: str) -> str:
 
     union_parts = _split_top_level(value, "|")
     if len(union_parts) > 1:
-        converted = " | ".join(
-            _convert_typescript_type(part) for part in union_parts
-        )
+        converted = " | ".join(_convert_typescript_type(part) for part in union_parts)
     elif value == "string":
         converted = "str"
     elif value == "number":
@@ -304,7 +331,15 @@ def _convert_typescript_type(value: str) -> str:
     elif value.startswith("Record<") and value.endswith(">"):
         converted = _convert_record_type(value)
     elif value.startswith("{") and value.endswith("}"):
-        converted = "dict[str, Any]"
+        index_signature = _parse_index_signature_object(value)
+        if index_signature is None:
+            converted = "dict[str, Any]"
+        else:
+            key_type, value_type = index_signature
+            converted = (
+                f"dict[{_convert_typescript_type(key_type)}, "
+                f"{_convert_typescript_type(value_type)}]"
+            )
     elif value.startswith("[") and value.endswith("]"):
         converted = "tuple[Any, ...]"
     else:
@@ -324,6 +359,163 @@ def _convert_record_type(value: str) -> str:
     key_type = _convert_typescript_type(parts[0])
     value_type = _convert_typescript_type(parts[1])
     return f"dict[{key_type}, {value_type}]"
+
+
+def _render_typed_dict(type_name: str, declaration: str) -> str:
+    """Render a Python TypedDict for a TypeScript object literal."""
+    fields = _parse_object_fields(declaration)
+    if not fields:
+        return f"{type_name}: TypeAlias = dict[str, Any]"
+
+    if all(_is_python_identifier(field_name) for field_name, _, _ in fields):
+        lines = [f"class {type_name}(TypedDict):"]
+        for field_name, field_type, required in fields:
+            python_type = _convert_typescript_type(field_type)
+            if not required:
+                python_type = f"NotRequired[{python_type}]"
+            lines.append(f"    {field_name}: {python_type}")
+        return "\n".join(lines)
+
+    field_items = []
+    for field_name, field_type, required in fields:
+        python_type = _convert_typescript_type(field_type)
+        if not required:
+            python_type = f"NotRequired[{python_type}]"
+        field_items.append(f"        {field_name!r}: {python_type},")
+    fields_text = "\n".join(field_items)
+    return (
+        f"{type_name} = TypedDict(\n"
+        f"    {type_name!r},\n"
+        "    {\n"
+        f"{fields_text}\n"
+        "    },\n"
+        ")"
+    )
+
+
+def _parse_index_signature_object(value: str) -> tuple[str, str] | None:
+    """Return key and value types for a TypeScript index-signature object."""
+    inner = _object_inner(value)
+    if inner is None or not inner.startswith("["):
+        return None
+
+    closing_bracket_index = inner.find("]")
+    if closing_bracket_index == -1:
+        return None
+
+    key_signature = inner[1:closing_bracket_index].strip()
+    key_parts = _split_top_level(key_signature, ":")
+    if len(key_parts) != 2:
+        return None
+
+    remainder = inner[closing_bracket_index + 1 :].strip()
+    if not remainder.startswith(":"):
+        return None
+
+    value_type = remainder[1:].strip()
+    if value_type.endswith(";"):
+        value_type = value_type[:-1].strip()
+    return key_parts[1], value_type
+
+
+def _parse_object_fields(declaration: str) -> list[tuple[str, str, bool]]:
+    """Parse simple TypeScript object-literal fields."""
+    inner = _object_inner(declaration)
+    if inner is None:
+        return []
+
+    fields: list[tuple[str, str, bool]] = []
+    for part in _split_top_level(inner, ";"):
+        field = part.strip()
+        if not field or field.startswith("["):
+            continue
+
+        separator_index = _find_top_level_char(field, ":")
+        if separator_index == -1:
+            continue
+
+        raw_name = field[:separator_index].strip().strip("'\"")
+        field_type = field[separator_index + 1 :].strip()
+        required = not raw_name.endswith("?")
+        field_name = raw_name.removesuffix("?")
+        if field_name and field_type:
+            fields.append((field_name, field_type, required))
+
+    return fields
+
+
+def _homogeneous_object_value_type(
+    fields: list[tuple[str, str, bool]],
+) -> str | None:
+    """Return repeated object field type when an object is map-like."""
+    if len(fields) < 2:
+        return None
+
+    first_signature: tuple[tuple[str, str, bool], ...] | None = None
+    first_type: str | None = None
+    for _, field_type, required in fields:
+        if not required:
+            return None
+        nested_fields = _parse_object_fields(field_type)
+        if not nested_fields:
+            return None
+        signature = tuple(nested_fields)
+        if first_signature is None:
+            first_signature = signature
+            first_type = field_type
+        elif signature != first_signature:
+            return None
+
+    return first_type
+
+
+def _object_inner(value: str) -> str | None:
+    """Return the content inside a wrapping TypeScript object literal."""
+    value = value.strip()
+    if not (value.startswith("{") and value.endswith("}")):
+        return None
+    return value[1:-1].strip()
+
+
+def _find_top_level_char(value: str, target: str) -> int:
+    """Return the index of a character outside nested type syntax."""
+    angle_depth = 0
+    brace_depth = 0
+    bracket_depth = 0
+    paren_depth = 0
+
+    for index, character in enumerate(value):
+        if character == "<":
+            angle_depth += 1
+        elif character == ">":
+            angle_depth -= 1
+        elif character == "{":
+            brace_depth += 1
+        elif character == "}":
+            brace_depth -= 1
+        elif character == "[":
+            bracket_depth += 1
+        elif character == "]":
+            bracket_depth -= 1
+        elif character == "(":
+            paren_depth += 1
+        elif character == ")":
+            paren_depth -= 1
+        elif (
+            character == target
+            and angle_depth == 0
+            and brace_depth == 0
+            and bracket_depth == 0
+            and paren_depth == 0
+        ):
+            return index
+
+    return -1
+
+
+def _is_python_identifier(value: str) -> bool:
+    """Return whether a value can be used as a Python class field name."""
+    return value.isidentifier() and not keyword.iskeyword(value)
 
 
 def _split_top_level(value: str, separator: str) -> list[str]:
