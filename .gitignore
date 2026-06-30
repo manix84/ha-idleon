@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 coverage.xml
 htmlcov/
+debug/
 
 # Local raw Idleon exports may contain sensitive account details.
 examples/real_data*.json

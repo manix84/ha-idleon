@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.3-blue" alt="Version 0.1.3">
+  <img src="https://img.shields.io/badge/version-0.1.4-blue" alt="Version 0.1.4">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -160,6 +160,18 @@ scripts/type-check
 scripts/test
 scripts/release-check
 ```
+
+To inspect how the current parser sees local example data, generate ignored
+debug files:
+
+```sh
+scripts/render-debug-parsed-data
+open debug/parsed-data.html
+```
+
+By default this reads `examples/real_data*.json` when present. The generated
+`debug/` directory is ignored because parsed output from real exports can still
+contain private account details.
 
 The local pre-commit hook bumps versions automatically for release-affecting
 changes:

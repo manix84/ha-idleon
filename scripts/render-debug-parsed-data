@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+"""Render parsed Idleon example data for local debugging."""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import html
+import json
+import os
+import sys
+from collections.abc import Iterable, Mapping
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+VENV_PYTHON = ROOT / ".venv/bin/python"
+if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
+    os.execv(VENV_PYTHON, [str(VENV_PYTHON), *sys.argv])
+
+sys.path.insert(0, str(ROOT))
+
+from custom_components.idleon.idleon_data import parse_idleon_account
+from custom_components.idleon.models import IdleonAccount
+
+DEFAULT_INPUT_GLOB = "examples/real_data*.json"
+DEFAULT_OUTPUT_DIR = ROOT / "debug"
+
+
+def main() -> int:
+    """Render local debug output for parsed Idleon example data."""
+    parser = argparse.ArgumentParser(
+        description="Render parsed HA Idleon data from local example JSON files.",
+    )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        help=f"Input JSON files. Defaults to {DEFAULT_INPUT_GLOB}.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory for parsed-data.json and parsed-data.html.",
+    )
+    args = parser.parse_args()
+
+    input_paths = tuple(args.paths) or _default_input_paths()
+    if not input_paths:
+        sys.stderr.write(f"No input files found for {DEFAULT_INPUT_GLOB}\n")
+        return 1
+
+    rendered = [_render_source(path) for path in input_paths]
+    output_dir = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    json_path = output_dir / "parsed-data.json"
+    html_path = output_dir / "parsed-data.html"
+    json_path.write_text(json.dumps(rendered, indent=2) + "\n")
+    html_path.write_text(_render_html(rendered))
+
+    sys.stdout.write(f"Wrote {json_path}\n")
+    sys.stdout.write(f"Wrote {html_path}\n")
+    return 0
+
+
+def _default_input_paths() -> tuple[Path, ...]:
+    """Return default local raw export paths."""
+    return tuple(sorted(ROOT.glob(DEFAULT_INPUT_GLOB)))
+
+
+def _render_source(path: Path) -> dict[str, Any]:
+    """Return parsed debug output for one source file."""
+    raw_data = _load_json(path)
+    account = parse_idleon_account(raw_data)
+    return {
+        "source": str(path),
+        "raw_summary": _raw_summary(raw_data),
+        "parsed": _account_to_dict(account),
+    }
+
+
+def _load_json(path: Path) -> Mapping[str, Any]:
+    """Load one JSON object from disk."""
+    raw_data = json.loads(path.read_text())
+    if not isinstance(raw_data, Mapping):
+        msg = f"{path}: expected top-level JSON object"
+        raise TypeError(msg)
+    return raw_data
+
+
+def _raw_summary(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a private-data-light summary of raw input shape."""
+    fields = _indexed_export_fields(raw_data)
+    indexed_fields = _indexed_field_counts(fields)
+    return {
+        "top_level_key_count": len(raw_data),
+        "field_count": len(fields),
+        "wrapped_save_data": fields is not raw_data,
+        "char_name_count": _char_name_count(raw_data),
+        "indexed_character_count": len(_indexed_character_ids(fields)),
+        "indexed_field_counts": indexed_fields,
+    }
+
+
+def _indexed_export_fields(raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Return raw fields from flat or wrapped exports."""
+    save_data = raw_data.get("saveData")
+    if isinstance(save_data, Mapping):
+        return save_data
+    return raw_data
+
+
+def _char_name_count(raw_data: Mapping[str, Any]) -> int:
+    """Return the number of wrapped character names."""
+    char_names = raw_data.get("charNameData")
+    if isinstance(char_names, Iterable) and not isinstance(char_names, str | bytes):
+        return len(tuple(char_names))
+    return 0
+
+
+def _indexed_field_counts(raw_data: Mapping[str, Any]) -> dict[str, int]:
+    """Return counts for key indexed fields without dumping raw values."""
+    prefixes = (
+        "CharacterClass",
+        "PVStatList",
+        "Lv0",
+        "CurrentMap",
+        "AFKtarget",
+        "PTimeAway",
+        "InventoryOrder",
+    )
+    return {
+        prefix: sum(1 for key in raw_data if key.startswith(f"{prefix}_"))
+        for prefix in prefixes
+    }
+
+
+def _indexed_character_ids(raw_data: Mapping[str, Any]) -> set[int]:
+    """Return indexed character IDs found in raw export fields."""
+    indexes: set[int] = set()
+    for key in raw_data:
+        for prefix in ("CharacterClass_", "PVStatList_", "Lv0_", "CurrentMap_"):
+            if not key.startswith(prefix):
+                continue
+            try:
+                indexes.add(int(key.removeprefix(prefix)))
+            except ValueError:
+                continue
+    return indexes
+
+
+def _account_to_dict(account: IdleonAccount) -> dict[str, Any]:
+    """Return a JSON-serializable parsed account model."""
+    data = dataclasses.asdict(account)
+    data["character_count"] = account.character_count
+    return _json_safe(data)
+
+
+def _json_safe(value: Any) -> Any:
+    """Return a JSON-safe representation of dataclass values."""
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, tuple | list):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _render_html(rendered: list[dict[str, Any]]) -> str:
+    """Return a standalone HTML debug report."""
+    sections = "\n".join(_render_source_section(source) for source in rendered)
+    payload = html.escape(json.dumps(rendered, indent=2))
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HA Idleon Parsed Data Debug</title>
+  <style>
+    body {{
+      background: #f7f8fa;
+      color: #1f2933;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      padding: 32px;
+    }}
+    main {{
+      margin: 0 auto;
+      max-width: 1180px;
+    }}
+    h1, h2, h3 {{
+      line-height: 1.2;
+    }}
+    section {{
+      background: #ffffff;
+      border: 1px solid #d9e2ec;
+      border-radius: 8px;
+      margin: 20px 0;
+      padding: 20px;
+    }}
+    table {{
+      border-collapse: collapse;
+      margin: 12px 0;
+      width: 100%;
+    }}
+    th, td {{
+      border-bottom: 1px solid #edf2f7;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }}
+    th {{
+      background: #f0f4f8;
+      font-weight: 600;
+    }}
+    code, pre {{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }}
+    pre {{
+      background: #102a43;
+      border-radius: 8px;
+      color: #f0f4f8;
+      overflow: auto;
+      padding: 16px;
+    }}
+    .muted {{
+      color: #627d98;
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>HA Idleon Parsed Data Debug</h1>
+    <p class="muted">
+      Local debug output from the current parser. Treat this file as private if
+      it was generated from real Idleon account exports.
+    </p>
+    {sections}
+    <section>
+      <h2>Full Parsed JSON</h2>
+      <pre>{payload}</pre>
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+
+def _render_source_section(source: dict[str, Any]) -> str:
+    """Return one HTML source section."""
+    parsed = source["parsed"]
+    raw_summary = source["raw_summary"]
+    characters = parsed["characters"]
+    character_rows = "\n".join(_render_character_row(character) for character in characters)
+    summary_rows = "\n".join(
+        _render_key_value_row(key, value) for key, value in raw_summary.items()
+    )
+    account_rows = "\n".join(
+        _render_key_value_row(key, value)
+        for key, value in parsed.items()
+        if key != "characters"
+    )
+    return f"""<section>
+  <h2>{html.escape(source["source"])}</h2>
+  <h3>Account</h3>
+  <table>
+    <tbody>
+      {account_rows}
+    </tbody>
+  </table>
+  <h3>Characters</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Level</th>
+        <th>Class</th>
+        <th>Map</th>
+        <th>Activity</th>
+        <th>AFK Hours</th>
+        <th>Inventory Full</th>
+        <th>Needs Attention</th>
+      </tr>
+    </thead>
+    <tbody>
+      {character_rows}
+    </tbody>
+  </table>
+  <h3>Raw Shape Summary</h3>
+  <table>
+    <tbody>
+      {summary_rows}
+    </tbody>
+  </table>
+</section>"""
+
+
+def _render_character_row(character: Mapping[str, Any]) -> str:
+    """Return one character table row."""
+    cells = (
+        character["character_id"],
+        character["name"],
+        character["level"],
+        character["character_class"],
+        character["current_map"],
+        character["current_activity"],
+        character["afk_hours"],
+        character["inventory_full"],
+        character["needs_attention"],
+    )
+    return "<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells) + "</tr>"
+
+
+def _render_key_value_row(key: str, value: Any) -> str:
+    """Return one key/value table row."""
+    if isinstance(value, Mapping | list):
+        rendered_value = json.dumps(value, indent=2)
+    else:
+        rendered_value = str(value)
+    return (
+        "<tr>"
+        f"<th>{html.escape(str(key))}</th>"
+        f"<td><code>{html.escape(rendered_value)}</code></td>"
+        "</tr>"
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
