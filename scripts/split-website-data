@@ -22,6 +22,7 @@ DEFAULT_TYPES_SOURCE = ROOT / "examples/websiteData.d.json.ts"
 DEFAULT_OUTPUT_DIR = ROOT / "examples/websiteData"
 JSON_SUFFIX = ".json"
 TYPE_SUFFIX = ".d.ts"
+PYTHON_TYPE_SUFFIX = ".pyi"
 MANIFEST_FILENAME = "_manifest.json"
 
 
@@ -106,6 +107,10 @@ def _write_split_files(
             type_path.write_text(_render_type_file(key, declaration))
             written_paths.add(type_path.resolve())
 
+            python_type_path = output_dir / f"{filename}{PYTHON_TYPE_SUFFIX}"
+            python_type_path.write_text(_render_python_type_file(key, declaration))
+            written_paths.add(python_type_path.resolve())
+
     return written_paths
 
 
@@ -125,9 +130,13 @@ def _write_manifest(
         type_filename = (
             f"{filename}{TYPE_SUFFIX}" if key in type_declarations else None
         )
+        python_type_filename = (
+            f"{filename}{PYTHON_TYPE_SUFFIX}" if key in type_declarations else None
+        )
         files[key] = {
             "json": f"{filename}{JSON_SUFFIX}",
             "type": type_filename,
+            "python_type": python_type_filename,
         }
 
     manifest = {
@@ -145,6 +154,7 @@ def _remove_stale_files(output_dir: Path, written_paths: set[Path]) -> None:
     stale_candidates = [
         *output_dir.glob(f"*{JSON_SUFFIX}"),
         *output_dir.glob(f"*{TYPE_SUFFIX}"),
+        *output_dir.glob(f"*{PYTHON_TYPE_SUFFIX}"),
     ]
     for path in stale_candidates:
         if path.resolve() not in written_paths:
@@ -249,6 +259,124 @@ def _render_type_file(key: str, declaration: str) -> str:
         f"declare const data: {type_name};\n"
         "export default data;\n"
     )
+
+
+def _render_python_type_file(key: str, declaration: str) -> str:
+    """Render a split Python type stub file."""
+    type_name = f"WebsiteData{_pascal_case(key)}"
+    python_type = _typescript_to_python_type(declaration)
+    return (
+        "# Auto-generated from examples/websiteData.d.json.ts\n"
+        "# Do not edit manually.\n\n"
+        "from typing import Any, TypeAlias\n\n"
+        f"{type_name}: TypeAlias = {python_type}\n"
+    )
+
+
+def _typescript_to_python_type(declaration: str) -> str:
+    """Return a conservative Python type expression for a TypeScript type."""
+    normalized = " ".join(declaration.strip().split())
+    return _convert_typescript_type(normalized)
+
+
+def _convert_typescript_type(value: str) -> str:
+    """Convert common TypeScript type syntax into Python type syntax."""
+    value = _strip_wrapping_parentheses(value.strip())
+
+    array_depth = 0
+    while value.endswith("[]"):
+        array_depth += 1
+        value = _strip_wrapping_parentheses(value[:-2].strip())
+
+    union_parts = _split_top_level(value, "|")
+    if len(union_parts) > 1:
+        converted = " | ".join(
+            _convert_typescript_type(part) for part in union_parts
+        )
+    elif value == "string":
+        converted = "str"
+    elif value == "number":
+        converted = "int | float"
+    elif value == "boolean":
+        converted = "bool"
+    elif value in {"any", "unknown"}:
+        converted = "Any"
+    elif value.startswith("Record<") and value.endswith(">"):
+        converted = _convert_record_type(value)
+    elif value.startswith("{") and value.endswith("}"):
+        converted = "dict[str, Any]"
+    elif value.startswith("[") and value.endswith("]"):
+        converted = "tuple[Any, ...]"
+    else:
+        converted = "Any"
+
+    for _ in range(array_depth):
+        converted = f"list[{converted}]"
+    return converted
+
+
+def _convert_record_type(value: str) -> str:
+    """Convert TypeScript Record<K, V> into dict[K, V]."""
+    inner = value.removeprefix("Record<").removesuffix(">")
+    parts = _split_top_level(inner, ",")
+    if len(parts) != 2:
+        return "dict[str, Any]"
+    key_type = _convert_typescript_type(parts[0])
+    value_type = _convert_typescript_type(parts[1])
+    return f"dict[{key_type}, {value_type}]"
+
+
+def _split_top_level(value: str, separator: str) -> list[str]:
+    """Split a type expression by a separator outside nested syntax."""
+    parts: list[str] = []
+    start = 0
+    angle_depth = 0
+    brace_depth = 0
+    bracket_depth = 0
+    paren_depth = 0
+
+    for index, character in enumerate(value):
+        if character == "<":
+            angle_depth += 1
+        elif character == ">":
+            angle_depth -= 1
+        elif character == "{":
+            brace_depth += 1
+        elif character == "}":
+            brace_depth -= 1
+        elif character == "[":
+            bracket_depth += 1
+        elif character == "]":
+            bracket_depth -= 1
+        elif character == "(":
+            paren_depth += 1
+        elif character == ")":
+            paren_depth -= 1
+        elif (
+            character == separator
+            and angle_depth == 0
+            and brace_depth == 0
+            and bracket_depth == 0
+            and paren_depth == 0
+        ):
+            parts.append(value[start:index].strip())
+            start = index + 1
+
+    if parts:
+        parts.append(value[start:].strip())
+        return parts
+    return [value]
+
+
+def _strip_wrapping_parentheses(value: str) -> str:
+    """Remove one or more balanced wrapping parentheses."""
+    while value.startswith("(") and value.endswith(")"):
+        inner = value[1:-1].strip()
+        if _split_top_level(inner, "|") == [inner]:
+            value = inner
+        else:
+            break
+    return value
 
 
 def _pascal_case(value: str) -> str:

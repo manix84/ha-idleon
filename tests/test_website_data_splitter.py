@@ -17,9 +17,11 @@ def test_website_data_splitter_writes_top_level_files(tmp_path: Path) -> None:
     output_dir = tmp_path / "websiteData"
     stale_file = output_dir / "stale.json"
     stale_type_file = output_dir / "stale.d.ts"
+    stale_python_type_file = output_dir / "stale.pyi"
     output_dir.mkdir()
     stale_file.write_text("{}\n")
     stale_type_file.write_text("export type Stale = unknown;\n")
+    stale_python_type_file.write_text("Stale = object\n")
     source.write_text(
         json.dumps(
             {
@@ -59,7 +61,7 @@ declare module "@website-data" {
         text=True,
     )
 
-    assert "Wrote 6 websiteData files" in result.stdout
+    assert "Wrote 8 websiteData files" in result.stdout
     assert json.loads((output_dir / "classes.json").read_text()) == [
         "0",
         "Beginner",
@@ -77,14 +79,24 @@ declare module "@website-data" {
         "export type WebsiteDataMapNames = Record<string, string>;"
         in (output_dir / "mapNames.d.ts").read_text()
     )
+    assert (
+        "WebsiteDataClasses: TypeAlias = list[str]"
+        in (output_dir / "classes.pyi").read_text()
+    )
+    assert (
+        "WebsiteDataMapNames: TypeAlias = dict[str, str]"
+        in (output_dir / "mapNames.pyi").read_text()
+    )
 
     manifest = json.loads((output_dir / "_manifest.json").read_text())
     assert manifest["files"]["classes"] == {
         "json": "classes.json",
+        "python_type": "classes.pyi",
         "type": "classes.d.ts",
     }
     assert manifest["files"]["weird key!"] == {
         "json": "weird-key.json",
+        "python_type": None,
         "type": None,
     }
     assert load_website_data_part("classes", base_path=output_dir) == [
@@ -94,3 +106,4 @@ declare module "@website-data" {
     ]
     assert not stale_file.exists()
     assert not stale_type_file.exists()
+    assert not stale_python_type_file.exists()
