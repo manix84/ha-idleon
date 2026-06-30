@@ -47,7 +47,12 @@ def test_website_data_splitter_writes_top_level_files(tmp_path: Path) -> None:
 declare module "@website-data" {
   export const classes: string[];
   export const invBags: {
-    [key: string]: {
+    InvBag1: {
+      displayName: string;
+      sellPrice: number;
+      capacity: number;
+    };
+    InvBag2: {
       displayName: string;
       sellPrice: number;
       capacity: number;
@@ -93,6 +98,13 @@ declare module "@website-data" {
         "export type WebsiteDataMapNames = Record<string, string>;"
         in (output_dir / "mapNames.d.ts").read_text()
     )
+    inv_bags_declaration = (output_dir / "invBags.d.ts").read_text()
+    assert "InvBag1:" not in inv_bags_declaration
+    assert "InvBag2:" not in inv_bags_declaration
+    assert "  [key: string]: {" in inv_bags_declaration
+    assert "    displayName: string;" in inv_bags_declaration
+    assert "    sellPrice: number;" in inv_bags_declaration
+    assert "    capacity: number;" in inv_bags_declaration
     assert (
         "WebsiteDataClasses: TypeAlias = list[str]"
         in (output_dir / "classes.pyi").read_text()

@@ -251,13 +251,44 @@ def _find_declaration_end(source: str, start: int) -> int:
 def _render_type_file(key: str, declaration: str) -> str:
     """Render a split TypeScript declaration file."""
     type_name = f"WebsiteData{_pascal_case(key)}"
+    simplified_declaration = _simplify_typescript_declaration(declaration)
     return (
         "// Auto-generated from examples/websiteData.d.json.ts\n"
         "// Do not edit manually.\n\n"
-        f"export type {type_name} = {declaration};\n\n"
+        f"export type {type_name} = {simplified_declaration};\n\n"
         f"declare const data: {type_name};\n"
         "export default data;\n"
     )
+
+
+def _simplify_typescript_declaration(declaration: str) -> str:
+    """Simplify obvious generated TypeScript declaration repetition."""
+    fields = _parse_object_fields(declaration)
+    homogeneous_value_type = _homogeneous_object_value_type(fields)
+    if homogeneous_value_type is None:
+        return declaration
+
+    rendered_value_type = _render_typescript_type(homogeneous_value_type, 2)
+    return f"{{\n  [key: string]: {rendered_value_type};\n}}"
+
+
+def _render_typescript_type(declaration: str, indent_level: int) -> str:
+    """Render a TypeScript type with stable indentation."""
+    fields = _parse_object_fields(declaration)
+    if not fields:
+        return " ".join(declaration.strip().split())
+
+    indent = " " * indent_level
+    field_indent = " " * (indent_level + 2)
+    lines = ["{"]
+    for field_name, field_type, required in fields:
+        optional = "" if required else "?"
+        lines.append(
+            f"{field_indent}{field_name}{optional}: "
+            f"{_render_typescript_type(field_type, indent_level + 2)};"
+        )
+    lines.append(f"{indent}}}")
+    return "\n".join(lines)
 
 
 def _render_python_type_file(key: str, declaration: str) -> str:
