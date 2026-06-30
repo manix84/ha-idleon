@@ -1,4 +1,4 @@
-.PHONY: build check debug format format-check inspect lint release release-check restart run test type-check validate
+.PHONY: build check debug debug-watch format format-check inspect lint release release-check restart run test type-check validate
 
 DEBUG_ARGS ?=
 INSPECT_FILE ?= examples/rawData.json
@@ -12,6 +12,9 @@ check:
 
 debug:
 	just debug $(DEBUG_ARGS)
+
+debug-watch:
+	just debug-watch $(DEBUG_ARGS)
 
 format:
 	just format

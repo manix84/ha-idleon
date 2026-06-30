@@ -9,6 +9,7 @@ import html
 import json
 import os
 import sys
+import time
 from collections.abc import Iterable, Mapping
 from datetime import datetime
 from pathlib import Path
@@ -21,8 +22,8 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
 
 sys.path.insert(0, str(ROOT))
 
-from custom_components.idleon.idleon_data import parse_idleon_account
-from custom_components.idleon.models import IdleonAccount
+from custom_components.idleon.idleon_data import parse_idleon_account  # noqa: E402
+from custom_components.idleon.models import IdleonAccount  # noqa: E402
 
 DEFAULT_INPUT_GLOBS = ("examples/rawData.json", "examples/real_data*.json")
 DEFAULT_CLEAN_REFERENCE = ROOT / "examples/cleanData.json"
@@ -52,26 +53,120 @@ def main() -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Directory for parsed-data.json and parsed-data.html.",
     )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Regenerate debug output when parser or example files change.",
+    )
+    parser.add_argument(
+        "--poll-interval",
+        type=float,
+        default=1.0,
+        help="Seconds between file checks in watch mode.",
+    )
+    parser.add_argument(
+        "--html-refresh",
+        type=int,
+        default=2,
+        help="Browser refresh interval, in seconds, for watch-mode HTML output.",
+    )
     args = parser.parse_args()
 
     input_paths = tuple(args.paths) or _default_input_paths()
     if not input_paths:
-        sys.stderr.write(f"No input files found for {DEFAULT_INPUT_GLOB}\n")
+        patterns = ", ".join(DEFAULT_INPUT_GLOBS)
+        sys.stderr.write(f"No input files found for {patterns}\n")
         return 1
 
-    clean_reference = _load_clean_reference(args.clean_reference)
+    if args.watch:
+        return _watch(
+            input_paths=input_paths,
+            clean_reference_path=args.clean_reference,
+            output_dir=args.output_dir,
+            poll_interval=args.poll_interval,
+            html_refresh=args.html_refresh,
+        )
+
+    _render_debug_files(
+        input_paths=input_paths,
+        clean_reference_path=args.clean_reference,
+        output_dir=args.output_dir,
+    )
+    return 0
+
+
+def _render_debug_files(
+    *,
+    input_paths: tuple[Path, ...],
+    clean_reference_path: Path,
+    output_dir: Path,
+    html_refresh: int | None = None,
+) -> None:
+    """Render JSON and HTML debug files once."""
+    clean_reference = _load_clean_reference(clean_reference_path)
     rendered = [_render_source(path, clean_reference) for path in input_paths]
-    output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
     json_path = output_dir / "parsed-data.json"
     html_path = output_dir / "parsed-data.html"
     json_path.write_text(json.dumps(rendered, indent=2) + "\n")
-    html_path.write_text(_render_html(rendered))
+    html_path.write_text(_render_html(rendered, refresh_seconds=html_refresh))
 
     sys.stdout.write(f"Wrote {json_path}\n")
     sys.stdout.write(f"Wrote {html_path}\n")
-    return 0
+
+
+def _watch(
+    *,
+    input_paths: tuple[Path, ...],
+    clean_reference_path: Path,
+    output_dir: Path,
+    poll_interval: float,
+    html_refresh: int,
+) -> int:
+    """Watch parser and example files, then regenerate debug output."""
+    sys.stdout.write("Watching Idleon parser inputs. Press Ctrl+C to stop.\n")
+    watched_paths = _watch_paths(input_paths, clean_reference_path)
+    last_snapshot: dict[Path, float | None] = {}
+
+    try:
+        while True:
+            snapshot = _mtime_snapshot(watched_paths)
+            if snapshot != last_snapshot:
+                _render_debug_files(
+                    input_paths=input_paths,
+                    clean_reference_path=clean_reference_path,
+                    output_dir=output_dir,
+                    html_refresh=html_refresh,
+                )
+                last_snapshot = snapshot
+            time.sleep(poll_interval)
+    except KeyboardInterrupt:
+        sys.stdout.write("Stopped debug watch.\n")
+        return 0
+
+
+def _watch_paths(
+    input_paths: tuple[Path, ...],
+    clean_reference_path: Path,
+) -> tuple[Path, ...]:
+    """Return files that should trigger debug regeneration."""
+    paths: list[Path] = [*input_paths, clean_reference_path]
+    paths.extend((ROOT / "custom_components/idleon").rglob("*.py"))
+    paths.extend((ROOT / "tests/fixtures").glob("*.json"))
+    paths.append(Path(__file__))
+    return tuple(dict.fromkeys(path.resolve() for path in paths))
+
+
+def _mtime_snapshot(paths: tuple[Path, ...]) -> dict[Path, float | None]:
+    """Return file mtimes for watch comparisons."""
+    snapshot: dict[Path, float | None] = {}
+    for path in paths:
+        try:
+            snapshot[path] = path.stat().st_mtime
+        except FileNotFoundError:
+            snapshot[path] = None
+    return snapshot
 
 
 def _default_input_paths() -> tuple[Path, ...]:
@@ -240,14 +335,24 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
-def _render_html(rendered: list[dict[str, Any]]) -> str:
+def _render_html(
+    rendered: list[dict[str, Any]],
+    *,
+    refresh_seconds: int | None = None,
+) -> str:
     """Return a standalone HTML debug report."""
     sections = "\n".join(_render_source_section(source) for source in rendered)
     payload = html.escape(json.dumps(rendered, indent=2))
+    refresh_tag = (
+        f'  <meta http-equiv="refresh" content="{refresh_seconds}">\n'
+        if refresh_seconds
+        else ""
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
+{refresh_tag}  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HA Idleon Parsed Data Debug</title>
   <style>
     body {{
@@ -326,7 +431,9 @@ def _render_source_section(source: dict[str, Any]) -> str:
     parsed = source["parsed"]
     raw_summary = source["raw_summary"]
     characters = parsed["characters"]
-    character_rows = "\n".join(_render_character_row(character) for character in characters)
+    character_rows = "\n".join(
+        _render_character_row(character) for character in characters
+    )
     summary_rows = "\n".join(
         _render_key_value_row(key, value) for key, value in raw_summary.items()
     )
@@ -426,7 +533,11 @@ def _render_clean_character_row(character: Mapping[str, Any]) -> str:
         character.get("timeAway"),
         character.get("inventory_slots"),
     )
-    return "<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells) + "</tr>"
+    return (
+        "<tr>"
+        + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells)
+        + "</tr>"
+    )
 
 
 def _render_character_row(character: Mapping[str, Any]) -> str:
@@ -442,7 +553,11 @@ def _render_character_row(character: Mapping[str, Any]) -> str:
         character["inventory_full"],
         character["needs_attention"],
     )
-    return "<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells) + "</tr>"
+    return (
+        "<tr>"
+        + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells)
+        + "</tr>"
+    )
 
 
 def _render_key_value_row(key: str, value: Any) -> str:

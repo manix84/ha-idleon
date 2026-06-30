@@ -32,6 +32,20 @@
       "problemMatcher": []
     },
     {
+      "label": "Build Debug HTML",
+      "type": "shell",
+      "command": "just debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch Debug HTML",
+      "type": "shell",
+      "command": "just debug-watch",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "Lint",
       "type": "shell",
       "command": "just lint",

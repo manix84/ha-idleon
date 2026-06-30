@@ -51,6 +51,10 @@ release:
 debug *args:
     scripts/render-debug-parsed-data {{args}}
 
+# Watch parser/example files and regenerate debug output.
+debug-watch *args:
+    scripts/render-debug-parsed-data --watch {{args}}
+
 # Inspect one Idleon export. Override with: just inspect path/to/export.json
 inspect file="examples/rawData.json":
     scripts/inspect-idleon-export {{file}}
