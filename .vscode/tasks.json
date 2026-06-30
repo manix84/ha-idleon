@@ -46,6 +46,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Split Website Data",
+      "type": "shell",
+      "command": "just website-data-split",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Lint",
       "type": "shell",
       "command": "just lint",

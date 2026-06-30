@@ -418,7 +418,10 @@ def _class_name(value: Any) -> str:
     class_id = _coerce_int(value)
     if class_id is None:
         return "Unknown"
-    return CLASS_NAMES.get(class_id, f"Class {class_id}")
+    class_name = CLASS_NAMES.get(class_id)
+    if class_name is None:
+        return f"Class {class_id}"
+    return _display_name(class_name)
 
 
 def _display_name(value: str) -> str:

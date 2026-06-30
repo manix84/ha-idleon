@@ -109,7 +109,7 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert first_character.character_id == "character_0"
     assert first_character.name == "Character 1"
     assert first_character.level == 1134
-    assert first_character.character_class == "Class 14"
+    assert first_character.character_class == "Death Bringer"
     assert first_character.current_map == "The Hole"
     assert first_character.current_activity == "Fighting: Gloomie Mushroom"
     assert first_character.afk_hours == 2.0

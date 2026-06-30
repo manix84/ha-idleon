@@ -1,4 +1,4 @@
-.PHONY: build check debug debug-watch format format-check inspect lint release release-check restart run test type-check validate
+.PHONY: build check debug debug-watch format format-check inspect lint release release-check restart run test type-check validate website-data-split
 
 DEBUG_ARGS ?=
 INSPECT_FILE ?= examples/rawData.json
@@ -48,3 +48,6 @@ run:
 
 validate:
 	just validate
+
+website-data-split:
+	just website-data-split

@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.8-blue" alt="Version 0.1.8">
+  <img src="https://img.shields.io/badge/version-0.1.9-blue" alt="Version 0.1.9">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -171,6 +171,7 @@ just format
 just typecheck
 just debug
 just debug-watch
+just website-data-split
 just build
 ```
 
@@ -192,6 +193,7 @@ just test tests/test_parser.py
 just inspect examples/rawData.json
 just debug --output-dir /tmp/idleon-debug
 just debug-watch
+just website-data-split
 ```
 
 `just debug` builds `debug/parsed-data.html` once. `just debug-watch` keeps
@@ -199,6 +201,11 @@ running and regenerates `debug/parsed-data.html` when parser code, fixtures, or
 local example data changes. In watch mode the generated HTML includes a short
 browser refresh interval, so an open `debug/parsed-data.html` tab updates as you
 work.
+
+If you have a local `examples/websiteData.json` capture, `just
+website-data-split` writes one file per top-level key into
+`examples/websiteData/`. The source file and generated directory are ignored
+because the data is large and only used as a local mapping reference.
 
 Individual checks are available as:
 

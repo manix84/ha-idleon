@@ -17,3 +17,6 @@ dist/
 examples/cleanData.json
 examples/rawData.json
 examples/real_data*.json
+examples/websiteData.d.json.ts
+examples/websiteData.json
+examples/websiteData/

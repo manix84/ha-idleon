@@ -58,3 +58,7 @@ debug-watch *args:
 # Inspect one Idleon export. Override with: just inspect path/to/export.json
 inspect file="examples/rawData.json":
     scripts/inspect-idleon-export {{file}}
+
+# Split examples/websiteData.json into examples/websiteData/*.json.
+website-data-split *args:
+    scripts/split-website-data {{args}}
