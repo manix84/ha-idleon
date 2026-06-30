@@ -21,12 +21,13 @@ Use Python 3.14.2 or newer.
 
 ```sh
 python -m pip install -r requirements_test.txt
-ruff check .
-ruff format .
-python -m pytest
+scripts/check
 ```
 
 If your system does not provide `python`, use `python3`.
+
+Individual checks are available as `scripts/lint`, `scripts/format-check`,
+`scripts/type-check`, `scripts/test`, and `scripts/release-check`.
 
 ## 📬 Pull Requests
 

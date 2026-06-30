@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+"$(python_bin)" - <<'PY'
+import json
+import tomllib
+from pathlib import Path
+
+root = Path.cwd()
+pyproject = tomllib.loads((root / "pyproject.toml").read_text())
+manifest = json.loads((root / "custom_components/idleon/manifest.json").read_text())
+
+project_version = pyproject["project"]["version"]
+manifest_version = manifest["version"]
+
+if project_version != manifest_version:
+    raise SystemExit(
+        "Version mismatch: "
+        f"pyproject.toml has {project_version}, manifest.json has {manifest_version}"
+    )
+
+print(f"Release metadata is consistent for version {project_version}.")
+print("Release publishing is not automated yet.")
+PY
+

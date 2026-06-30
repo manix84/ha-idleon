@@ -4,6 +4,14 @@
   <img src="assets/project-icon-transparent.png" alt="HA Idleon project icon" width="160">
 </p>
 
+<p align="center">
+  <a href="https://github.com/manix84/ha-idleon/actions/workflows/ci.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
+  <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
+  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version 0.1.0">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
+</p>
+
 Home Assistant integration for Legends of Idleon account and character stats.
 
 This custom integration is experimental. It is not official to Legends of Idleon,
@@ -131,7 +139,16 @@ future versions.
 Install test dependencies in a Python 3.14 environment, then run:
 
 ```sh
-ruff check .
-ruff format .
-python -m pytest
+python -m pip install -r requirements_test.txt
+scripts/check
+```
+
+Individual checks are available as:
+
+```sh
+scripts/lint
+scripts/format-check
+scripts/type-check
+scripts/test
+scripts/release-check
 ```
