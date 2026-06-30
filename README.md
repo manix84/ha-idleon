@@ -156,3 +156,6 @@ scripts/type-check
 scripts/test
 scripts/release-check
 ```
+
+For testing in a real Home Assistant instance, see
+[Manual Testing](docs/manual-testing.md).

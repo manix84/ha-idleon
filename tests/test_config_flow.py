@@ -63,8 +63,15 @@ async def test_config_flow_success_local_file(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_LOCAL_FILE_PATH: str(sample_data_path),
             CONF_SCAN_INTERVAL: 3600,
         },
@@ -72,6 +79,7 @@ async def test_config_flow_success_local_file(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Idleon Local File"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_LOCAL_FILE
     assert result["data"][CONF_LOCAL_FILE_PATH] == str(sample_data_path)
 
 
@@ -80,8 +88,12 @@ async def test_config_flow_invalid_file(hass: HomeAssistant, tmp_path: Path) -> 
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_LOCAL_FILE_PATH: str(tmp_path / "missing.json"),
             CONF_SCAN_INTERVAL: 3600,
         },
@@ -105,8 +117,15 @@ async def test_config_flow_success_remote_url(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL,
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_REMOTE_URL: "https://example.com/idleon.json?token=secret",
             CONF_SCAN_INTERVAL: 3600,
         },
@@ -114,6 +133,7 @@ async def test_config_flow_success_remote_url(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Idleon Remote URL"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_REMOTE_URL
 
 
 async def test_config_flow_invalid_url(
@@ -131,8 +151,12 @@ async def test_config_flow_invalid_url(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL,
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_REMOTE_URL: "https://example.com/idleon.json",
             CONF_SCAN_INTERVAL: 3600,
         },
@@ -140,3 +164,100 @@ async def test_config_flow_invalid_url(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_config_flow_duplicate_source_aborts(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+) -> None:
+    """Test configuring the same source twice aborts cleanly."""
+    first_result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+    first_result = await hass.config_entries.flow.async_configure(
+        first_result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    assert first_result["type"] is FlowResultType.CREATE_ENTRY
+
+    second_result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+    second_result = await hass.config_entries.flow.async_configure(
+        second_result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert second_result["type"] is FlowResultType.ABORT
+    assert second_result["reason"] == "already_configured"
+
+
+async def test_options_flow_updates_source(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+    tmp_path: Path,
+) -> None:
+    """Test options flow validates and stores updated source settings."""
+    updated_path = tmp_path / "updated_idleon_data.json"
+    updated_path.write_text(sample_data_path.read_text())
+
+    config_entry = await _create_local_file_entry(hass, sample_data_path)
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(updated_path),
+            CONF_SCAN_INTERVAL: 7200,
+        },
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {
+        CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+        CONF_LOCAL_FILE_PATH: str(updated_path),
+        CONF_SCAN_INTERVAL: 7200,
+    }
+
+
+async def _create_local_file_entry(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+) -> config_entries.ConfigEntry:
+    """Create a local file config entry through the config flow."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    return result["result"]

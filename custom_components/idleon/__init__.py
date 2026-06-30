@@ -50,6 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdleonConfigEntry) -> bo
         client=client,
         coordinator=coordinator,
     )
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -65,9 +66,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdleonConfigEntry) -> b
 
 def _data_source_from_entry(entry: ConfigEntry) -> IdleonDataSource:
     """Build a data source model from config entry data."""
+    data = {**entry.data, **entry.options}
     return IdleonDataSource(
-        source_type=entry.data[CONF_DATA_SOURCE_TYPE],
-        local_file_path=entry.data.get(CONF_LOCAL_FILE_PATH),
-        remote_url=entry.data.get(CONF_REMOTE_URL),
-        scan_interval=entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        source_type=data[CONF_DATA_SOURCE_TYPE],
+        local_file_path=data.get(CONF_LOCAL_FILE_PATH),
+        remote_url=data.get(CONF_REMOTE_URL),
+        scan_interval=data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
     )
+
+
+async def _async_update_listener(
+    hass: HomeAssistant,
+    entry: IdleonConfigEntry,
+) -> None:
+    """Reload the config entry when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)

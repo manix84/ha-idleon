@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
@@ -47,20 +47,102 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle an Idleon config flow."""
 
     VERSION = 1
+    _data_source_type: str | None = None
 
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
-        """Handle the initial setup step."""
+        """Select the data source type."""
+        if user_input is not None:
+            self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
+            return await self.async_step_source()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_source_type_schema(),
+        )
+
+    async def async_step_source(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle source details and validation."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             try:
-                normalized_input = _normalize_user_input(user_input)
+                normalized_input = _normalize_user_input(
+                    self._data_source_type,
+                    user_input,
+                )
                 data_source = _data_source_from_input(normalized_input)
+                await _async_validate_source(self.hass, data_source)
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonInvalidJson:
+                errors["base"] = "invalid_json"
+            except IdleonInvalidSchema:
+                errors["base"] = "invalid_schema"
+            except Exception:
+                errors["base"] = "unknown"
+            else:
                 await self.async_set_unique_id(_source_unique_id(data_source))
                 self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=_entry_title(data_source),
+                    data=normalized_input,
+                )
+
+        return self.async_show_form(
+            step_id="source",
+            data_schema=_source_details_schema(self._data_source_type),
+            errors=errors,
+        )
+
+    @staticmethod
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        """Create the options flow."""
+        return IdleonOptionsFlow(config_entry)
+
+
+class IdleonOptionsFlow(OptionsFlow):
+    """Handle Idleon options."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize the options flow."""
+        self._config_entry = config_entry
+        current_data = {**config_entry.data, **config_entry.options}
+        self._data_source_type = current_data[CONF_DATA_SOURCE_TYPE]
+
+    async def async_step_init(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Select the data source type."""
+        if user_input is not None:
+            self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
+            return await self.async_step_source()
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_source_type_schema(self._data_source_type),
+        )
+
+    async def async_step_source(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle source option details and validation."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            try:
+                normalized_input = _normalize_user_input(
+                    self._data_source_type,
+                    user_input,
+                )
+                data_source = _data_source_from_input(normalized_input)
                 await _async_validate_source(self.hass, data_source)
             except IdleonCannotConnect:
                 errors["base"] = "cannot_connect"
@@ -72,13 +154,14 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
-                    title=_entry_title(data_source),
+                    title="",
                     data=normalized_input,
                 )
 
+        current_data = {**self._config_entry.data, **self._config_entry.options}
         return self.async_show_form(
-            step_id="user",
-            data_schema=_data_schema(),
+            step_id="source",
+            data_schema=_source_details_schema(self._data_source_type, current_data),
             errors=errors,
         )
 
@@ -92,42 +175,72 @@ async def _async_validate_source(
     parse_idleon_account(raw_data)
 
 
-def _data_schema() -> vol.Schema:
-    """Return the config flow schema."""
+def _source_type_schema(default: str = DATA_SOURCE_LOCAL_FILE) -> vol.Schema:
+    """Return the source type selection schema."""
     return vol.Schema(
         {
             vol.Required(
                 CONF_DATA_SOURCE_TYPE,
-                default=DATA_SOURCE_LOCAL_FILE,
+                default=default,
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=DATA_SOURCE_TYPES,
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
-            vol.Optional(CONF_LOCAL_FILE_PATH): TextSelector(
-                TextSelectorConfig(type=TextSelectorType.TEXT)
-            ),
-            vol.Optional(CONF_REMOTE_URL): TextSelector(
-                TextSelectorConfig(type=TextSelectorType.URL)
-            ),
-            vol.Required(
-                CONF_SCAN_INTERVAL,
-                default=DEFAULT_SCAN_INTERVAL,
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=MIN_SCAN_INTERVAL,
-                    mode=NumberSelectorMode.BOX,
-                    unit_of_measurement="seconds",
-                )
-            ),
         }
     )
 
 
-def _normalize_user_input(user_input: dict[str, Any]) -> dict[str, Any]:
+def _source_details_schema(
+    data_source_type: str | None,
+    defaults: dict[str, Any] | None = None,
+) -> vol.Schema:
+    """Return the source details schema."""
+    defaults = defaults or {}
+    scan_interval = defaults.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+
+    fields: dict[vol.Marker, Any] = {}
+
+    if data_source_type == DATA_SOURCE_REMOTE_URL:
+        fields[
+            vol.Required(
+                CONF_REMOTE_URL,
+                default=defaults.get(CONF_REMOTE_URL, ""),
+            )
+        ] = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
+    else:
+        fields[
+            vol.Required(
+                CONF_LOCAL_FILE_PATH,
+                default=defaults.get(CONF_LOCAL_FILE_PATH, ""),
+            )
+        ] = TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT))
+
+    fields[
+        vol.Required(
+            CONF_SCAN_INTERVAL,
+            default=scan_interval,
+        )
+    ] = NumberSelector(
+        NumberSelectorConfig(
+            min=MIN_SCAN_INTERVAL,
+            mode=NumberSelectorMode.BOX,
+            unit_of_measurement="seconds",
+        )
+    )
+
+    return vol.Schema(fields)
+
+
+def _normalize_user_input(
+    data_source_type: str | None,
+    user_input: dict[str, Any],
+) -> dict[str, Any]:
     """Validate conditional fields and return normalized entry data."""
-    data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
+    if not data_source_type:
+        raise IdleonCannotConnect("Data source type is required")
+
     scan_interval = max(
         MIN_SCAN_INTERVAL,
         int(user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),

@@ -3,9 +3,15 @@
     "step": {
       "user": {
         "title": "Legends of Idleon",
-        "description": "Configure a read-only Idleon account data source.",
+        "description": "Choose where HA Idleon should read account data from.",
         "data": {
-          "data_source_type": "Data source type",
+          "data_source_type": "Data source type"
+        }
+      },
+      "source": {
+        "title": "Idleon data source",
+        "description": "Configure and validate the selected read-only data source.",
+        "data": {
           "local_file_path": "Local JSON file path",
           "remote_url": "Remote JSON URL",
           "scan_interval": "Scan interval in seconds"
@@ -20,6 +26,32 @@
     },
     "abort": {
       "already_configured": "This data source is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Idleon data source",
+        "description": "Choose the data source type to use.",
+        "data": {
+          "data_source_type": "Data source type"
+        }
+      },
+      "source": {
+        "title": "Idleon data source",
+        "description": "Update and validate the selected read-only data source.",
+        "data": {
+          "local_file_path": "Local JSON file path",
+          "remote_url": "Remote JSON URL",
+          "scan_interval": "Scan interval in seconds"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to or read the data source.",
+      "invalid_json": "The data source did not return valid JSON.",
+      "invalid_schema": "The data source JSON does not look like Idleon account data.",
+      "unknown": "Unexpected error"
     }
   },
   "entity": {
@@ -62,4 +94,3 @@
     }
   }
 }
-

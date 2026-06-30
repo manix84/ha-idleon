@@ -1,0 +1,33 @@
+{
+  "account": {
+    "account_id": "sample-account",
+    "name": "Sample Idleon Account",
+    "gems": 1234,
+    "last_updated": "2026-06-29T12:00:00+00:00",
+    "characters": [
+      {
+        "id": "bubo-main",
+        "name": "Bubo Main",
+        "level": 210,
+        "class": "Bubonic Conjuror",
+        "current_map": "Tremor Wurm Nest",
+        "current_activity": "AFK Fighting",
+        "afk_hours": 12.5,
+        "inventory_full": true,
+        "needs_attention": true
+      },
+      {
+        "id": "miner-alt",
+        "name": "Miner Alt",
+        "level": 155,
+        "class": "Squire",
+        "current_map": "Void Ore Cavern",
+        "current_activity": "Mining",
+        "afk_hours": 3.25,
+        "inventory_full": false,
+        "needs_attention": false
+      }
+    ]
+  }
+}
+
