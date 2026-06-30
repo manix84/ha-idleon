@@ -123,6 +123,9 @@ Raw Idleon account JSON may contain sensitive game/account details. Keep source
 files private and do not publish diagnostics that include unreviewed data from
 future versions.
 
+Third-party data notices are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## 🚧 Known Limitations
 
 - The parser is flexible but based on early fixture-style JSON.

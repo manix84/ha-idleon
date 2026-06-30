@@ -10,6 +10,7 @@ from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
 from .exceptions import IdleonInvalidSchema
+from .game_maps import CLASS_NAMES
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -129,7 +130,7 @@ def _parse_indexed_character(
         character_id=f"character_{character_index}",
         name=f"Character {character_index + 1}",
         level=level or 0,
-        character_class=_numbered_label("Class", class_value),
+        character_class=_class_name(class_value),
         current_map=_numbered_label("Map", current_map),
         current_activity=(f"AFK target {afk_target}" if afk_target else "Unknown"),
         afk_hours=round(afk_seconds / 3600, 2),
@@ -299,6 +300,14 @@ def _numbered_label(label: str, value: Any) -> str:
     if number is None:
         return "Unknown"
     return f"{label} {number}"
+
+
+def _class_name(value: Any) -> str:
+    """Return an Idleon class name from a raw class identifier."""
+    class_id = _coerce_int(value)
+    if class_id is None:
+        return "Unknown"
+    return CLASS_NAMES.get(class_id, f"Class {class_id}")
 
 
 def _parse_datetime(value: Any) -> datetime | None:
