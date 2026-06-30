@@ -12,4 +12,6 @@ htmlcov/
 debug/
 
 # Local raw Idleon exports may contain sensitive account details.
+examples/cleanData.json
+examples/rawData.json
 examples/real_data*.json

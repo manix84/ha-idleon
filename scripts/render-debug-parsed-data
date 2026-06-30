@@ -24,7 +24,8 @@ sys.path.insert(0, str(ROOT))
 from custom_components.idleon.idleon_data import parse_idleon_account
 from custom_components.idleon.models import IdleonAccount
 
-DEFAULT_INPUT_GLOB = "examples/real_data*.json"
+DEFAULT_INPUT_GLOBS = ("examples/rawData.json", "examples/real_data*.json")
+DEFAULT_CLEAN_REFERENCE = ROOT / "examples/cleanData.json"
 DEFAULT_OUTPUT_DIR = ROOT / "debug"
 
 
@@ -37,7 +38,13 @@ def main() -> int:
         "paths",
         nargs="*",
         type=Path,
-        help=f"Input JSON files. Defaults to {DEFAULT_INPUT_GLOB}.",
+        help="Input JSON files. Defaults to examples/rawData.json and real_data*.json.",
+    )
+    parser.add_argument(
+        "--clean-reference",
+        type=Path,
+        default=DEFAULT_CLEAN_REFERENCE,
+        help="Optional cleanData.json reference to show beside parsed output.",
     )
     parser.add_argument(
         "--output-dir",
@@ -52,7 +59,8 @@ def main() -> int:
         sys.stderr.write(f"No input files found for {DEFAULT_INPUT_GLOB}\n")
         return 1
 
-    rendered = [_render_source(path) for path in input_paths]
+    clean_reference = _load_clean_reference(args.clean_reference)
+    rendered = [_render_source(path, clean_reference) for path in input_paths]
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -68,18 +76,27 @@ def main() -> int:
 
 def _default_input_paths() -> tuple[Path, ...]:
     """Return default local raw export paths."""
-    return tuple(sorted(ROOT.glob(DEFAULT_INPUT_GLOB)))
+    paths: list[Path] = []
+    for pattern in DEFAULT_INPUT_GLOBS:
+        paths.extend(sorted(ROOT.glob(pattern)))
+    return tuple(dict.fromkeys(paths))
 
 
-def _render_source(path: Path) -> dict[str, Any]:
+def _render_source(
+    path: Path,
+    clean_reference: Mapping[str, Any] | None,
+) -> dict[str, Any]:
     """Return parsed debug output for one source file."""
     raw_data = _load_json(path)
     account = parse_idleon_account(raw_data)
-    return {
+    rendered = {
         "source": str(path),
         "raw_summary": _raw_summary(raw_data),
         "parsed": _account_to_dict(account),
     }
+    if clean_reference is not None:
+        rendered["clean_reference"] = _clean_reference_summary(clean_reference)
+    return rendered
 
 
 def _load_json(path: Path) -> Mapping[str, Any]:
@@ -89,6 +106,59 @@ def _load_json(path: Path) -> Mapping[str, Any]:
         msg = f"{path}: expected top-level JSON object"
         raise TypeError(msg)
     return raw_data
+
+
+def _load_clean_reference(path: Path) -> Mapping[str, Any] | None:
+    """Load optional clean parsed reference data."""
+    if not path.exists():
+        return None
+    return _load_json(path)
+
+
+def _clean_reference_summary(clean_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the relevant parsed fields from cleanData.json."""
+    characters = clean_data.get("characters")
+    if not isinstance(characters, list):
+        characters = []
+    clean_characters = [
+        _clean_character_summary(character)
+        for character in characters
+        if isinstance(character, Mapping)
+    ]
+    return {
+        "account": {
+            "character_count": len(clean_characters),
+            "total_level": sum(
+                _coerce_int(character.get("level")) or 0
+                for character in clean_characters
+            ),
+        },
+        "characters": clean_characters,
+    }
+
+
+def _clean_character_summary(character: Mapping[str, Any]) -> dict[str, Any]:
+    """Return cleanData character fields relevant to current HA entities."""
+    inventory = character.get("inventory")
+    return {
+        "name": character.get("name"),
+        "level": character.get("level"),
+        "class": character.get("class"),
+        "currentMap": character.get("currentMap"),
+        "AFKtarget": character.get("AFKtarget"),
+        "timeAway": character.get("timeAway"),
+        "inventory_slots": len(inventory) if isinstance(inventory, list) else None,
+    }
+
+
+def _coerce_int(value: Any) -> int | None:
+    """Return value coerced to int when possible."""
+    try:
+        return int(value)
+    except TypeError:
+        return None
+    except ValueError:
+        return None
 
 
 def _raw_summary(raw_data: Mapping[str, Any]) -> dict[str, Any]:
@@ -265,6 +335,10 @@ def _render_source_section(source: dict[str, Any]) -> str:
         for key, value in parsed.items()
         if key != "characters"
     )
+    clean_reference = source.get("clean_reference")
+    clean_html = ""
+    if isinstance(clean_reference, Mapping):
+        clean_html = _render_clean_reference(clean_reference)
     return f"""<section>
   <h2>{html.escape(source["source"])}</h2>
   <h3>Account</h3>
@@ -298,7 +372,61 @@ def _render_source_section(source: dict[str, Any]) -> str:
       {summary_rows}
     </tbody>
   </table>
+  {clean_html}
 </section>"""
+
+
+def _render_clean_reference(clean_reference: Mapping[str, Any]) -> str:
+    """Return clean parsed reference HTML."""
+    account = clean_reference.get("account")
+    characters = clean_reference.get("characters")
+    if not isinstance(account, Mapping) or not isinstance(characters, list):
+        return ""
+
+    account_rows = "\n".join(
+        _render_key_value_row(key, value) for key, value in account.items()
+    )
+    character_rows = "\n".join(
+        _render_clean_character_row(character)
+        for character in characters
+        if isinstance(character, Mapping)
+    )
+    return f"""<h3>Clean Reference</h3>
+  <table>
+    <tbody>
+      {account_rows}
+    </tbody>
+  </table>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Level</th>
+        <th>Class</th>
+        <th>Current Map ID</th>
+        <th>AFK Target</th>
+        <th>Time Away</th>
+        <th>Inventory Slots</th>
+      </tr>
+    </thead>
+    <tbody>
+      {character_rows}
+    </tbody>
+  </table>"""
+
+
+def _render_clean_character_row(character: Mapping[str, Any]) -> str:
+    """Return one clean reference character table row."""
+    cells = (
+        character.get("name"),
+        character.get("level"),
+        character.get("class"),
+        character.get("currentMap"),
+        character.get("AFKtarget"),
+        character.get("timeAway"),
+        character.get("inventory_slots"),
+    )
+    return "<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells) + "</tr>"
 
 
 def _render_character_row(character: Mapping[str, Any]) -> str:

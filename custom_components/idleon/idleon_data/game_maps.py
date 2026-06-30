@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-# Source: https://github.com/Corbeno/idleon-data/blob/main/maps/classNames.json
-# License: MIT, package metadata at https://github.com/Corbeno/idleon-data
+# Source:
+# /Users/rob/Workspace/Personal/Idleon-Api-Downloader/src/js/maps/classTalentMap.ts
 CLASS_NAMES: dict[int, str] = {
     1: "Beginner",
     2: "Journeyman",
@@ -18,10 +18,6 @@ CLASS_NAMES: dict[int, str] = {
     11: "Death Bringer",
     12: "Divine Knight",
     13: "Royal Guardian",
-    14: "Filler",
-    15: "Filler",
-    16: "Filler",
-    17: "Filler",
     18: "Calm Basics",
     19: "Archer",
     20: "Bowman",
@@ -30,10 +26,6 @@ CLASS_NAMES: dict[int, str] = {
     23: "Mayheim",
     24: "Wind Walker",
     25: "Beast Master",
-    26: "Filler",
-    27: "Filler",
-    28: "Filler",
-    29: "Filler",
     30: "Savvy Basics",
     31: "Mage",
     32: "Wizard",
@@ -42,10 +34,18 @@ CLASS_NAMES: dict[int, str] = {
     35: "Spiritual Monk",
     36: "Bubonic Conjuror",
     37: "Arcane Cultist",
-    38: "Filler",
-    39: "Filler",
-    40: "Filler",
-    41: "Filler",
+    42: "Mining",
+    43: "Smithing",
+    44: "Chopping",
+    45: "Fishing",
+    46: "Alchemy",
+    47: "Bug Catching",
+    48: "Trapping",
+    49: "Construction",
+    50: "Worship",
+    51: "Cooking",
+    52: "Breeding",
+    53: "Laboratory",
 }
 
 # Source: https://github.com/Morta1/IdleonToolbox/blob/main/data/website-data.json

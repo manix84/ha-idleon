@@ -167,7 +167,7 @@ async def test_indexed_export_config_entry_sets_up_entities(
 
     assert hass.states.get(total_level_entity_id).state == "2232"
     assert hass.states.get(character_level_entity_id).state == "1134"
-    assert hass.states.get(character_class_entity_id).state == "Filler"
+    assert hass.states.get(character_class_entity_id).state == "Class 14"
 
 
 async def test_failed_refresh_marks_entities_unavailable_then_recovers(
