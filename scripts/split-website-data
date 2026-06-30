@@ -18,8 +18,11 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
     os.execv(VENV_PYTHON, [str(VENV_PYTHON), *sys.argv])
 
 DEFAULT_SOURCE = ROOT / "examples/websiteData.json"
+DEFAULT_TYPES_SOURCE = ROOT / "examples/websiteData.d.json.ts"
 DEFAULT_OUTPUT_DIR = ROOT / "examples/websiteData"
-GENERATED_SUFFIX = ".json"
+JSON_SUFFIX = ".json"
+TYPE_SUFFIX = ".d.ts"
+MANIFEST_FILENAME = "_manifest.json"
 
 
 def main() -> int:
@@ -39,10 +42,25 @@ def main() -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Directory to write split JSON files into.",
     )
+    parser.add_argument(
+        "--types-source",
+        type=Path,
+        default=DEFAULT_TYPES_SOURCE,
+        help="Source websiteData TypeScript declaration file.",
+    )
     args = parser.parse_args()
 
     data = _load_source(args.source)
-    written_paths = _write_split_files(data, args.output_dir)
+    type_declarations = _load_type_declarations(args.types_source)
+    written_paths = _write_split_files(data, type_declarations, args.output_dir)
+    manifest_path = _write_manifest(
+        data=data,
+        type_declarations=type_declarations,
+        output_dir=args.output_dir,
+        source=args.source,
+        types_source=args.types_source,
+    )
+    written_paths.add(manifest_path.resolve())
     _remove_stale_files(args.output_dir, written_paths)
 
     sys.stdout.write(
@@ -60,22 +78,75 @@ def _load_source(path: Path) -> Mapping[str, Any]:
     return data
 
 
-def _write_split_files(data: Mapping[str, Any], output_dir: Path) -> set[Path]:
+def _load_type_declarations(path: Path) -> Mapping[str, str]:
+    """Load websiteData TypeScript declarations keyed by export name."""
+    if not path.exists():
+        return {}
+    return _parse_type_declarations(path.read_text())
+
+
+def _write_split_files(
+    data: Mapping[str, Any],
+    type_declarations: Mapping[str, str],
+    output_dir: Path,
+) -> set[Path]:
     """Write one JSON file per top-level key."""
     output_dir.mkdir(parents=True, exist_ok=True)
     written_paths: set[Path] = set()
 
     for key in sorted(data):
-        path = output_dir / f"{_safe_filename(key)}{GENERATED_SUFFIX}"
-        path.write_text(json.dumps(data[key], indent=2, sort_keys=True) + "\n")
-        written_paths.add(path.resolve())
+        filename = _safe_filename(key)
+        json_path = output_dir / f"{filename}{JSON_SUFFIX}"
+        json_path.write_text(json.dumps(data[key], indent=2, sort_keys=True) + "\n")
+        written_paths.add(json_path.resolve())
+
+        declaration = type_declarations.get(key)
+        if declaration is not None:
+            type_path = output_dir / f"{filename}{TYPE_SUFFIX}"
+            type_path.write_text(_render_type_file(key, declaration))
+            written_paths.add(type_path.resolve())
 
     return written_paths
 
 
+def _write_manifest(
+    *,
+    data: Mapping[str, Any],
+    type_declarations: Mapping[str, str],
+    output_dir: Path,
+    source: Path,
+    types_source: Path,
+) -> Path:
+    """Write a manifest connecting split JSON files and type declarations."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    files = {}
+    for key in sorted(data):
+        filename = _safe_filename(key)
+        type_filename = (
+            f"{filename}{TYPE_SUFFIX}" if key in type_declarations else None
+        )
+        files[key] = {
+            "json": f"{filename}{JSON_SUFFIX}",
+            "type": type_filename,
+        }
+
+    manifest = {
+        "source": str(source),
+        "types_source": str(types_source) if types_source.exists() else None,
+        "files": files,
+    }
+    path = output_dir / MANIFEST_FILENAME
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return path
+
+
 def _remove_stale_files(output_dir: Path, written_paths: set[Path]) -> None:
-    """Remove stale generated JSON files from the output directory."""
-    for path in output_dir.glob(f"*{GENERATED_SUFFIX}"):
+    """Remove stale generated JSON/type files from the output directory."""
+    stale_candidates = [
+        *output_dir.glob(f"*{JSON_SUFFIX}"),
+        *output_dir.glob(f"*{TYPE_SUFFIX}"),
+    ]
+    for path in stale_candidates:
         if path.resolve() not in written_paths:
             path.unlink()
 
@@ -84,6 +155,111 @@ def _safe_filename(key: str) -> str:
     """Return a conservative filename for a websiteData key."""
     filename = re.sub(r"[^A-Za-z0-9_.-]+", "-", key).strip("-")
     return filename or "unknown"
+
+
+def _parse_type_declarations(source: str) -> dict[str, str]:
+    """Parse exported const type declarations from websiteData.d.json.ts."""
+    declarations: dict[str, str] = {}
+    cursor = 0
+    marker = "export const "
+
+    while True:
+        start = source.find(marker, cursor)
+        if start == -1:
+            break
+
+        name_start = start + len(marker)
+        name_end = name_start
+        while name_end < len(source) and (
+            source[name_end].isalnum() or source[name_end] in {"_", "$"}
+        ):
+            name_end += 1
+
+        name = source[name_start:name_end]
+        colon = source.find(":", name_end)
+        if not name or colon == -1:
+            cursor = name_end
+            continue
+
+        type_start = colon + 1
+        type_end = _find_declaration_end(source, type_start)
+        if type_end == -1:
+            cursor = type_start
+            continue
+
+        declarations[name] = source[type_start:type_end].strip()
+        cursor = type_end + 1
+
+    return declarations
+
+
+def _find_declaration_end(source: str, start: int) -> int:
+    """Find the semicolon ending a TypeScript const declaration."""
+    brace_depth = 0
+    bracket_depth = 0
+    paren_depth = 0
+    quote: str | None = None
+    escaped = False
+
+    for index in range(start, len(source)):
+        character = source[index]
+
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+
+        if character in {'"', "'", "`"}:
+            quote = character
+            continue
+        if character == "{":
+            brace_depth += 1
+        elif character == "}":
+            brace_depth -= 1
+        elif character == "[":
+            bracket_depth += 1
+        elif character == "]":
+            bracket_depth -= 1
+        elif character == "(":
+            paren_depth += 1
+        elif character == ")":
+            paren_depth -= 1
+        elif (
+            character == ";"
+            and brace_depth == 0
+            and bracket_depth == 0
+            and paren_depth == 0
+        ):
+            return index
+
+    return -1
+
+
+def _render_type_file(key: str, declaration: str) -> str:
+    """Render a split TypeScript declaration file."""
+    type_name = f"WebsiteData{_pascal_case(key)}"
+    return (
+        "// Auto-generated from examples/websiteData.d.json.ts\n"
+        "// Do not edit manually.\n\n"
+        f"export type {type_name} = {declaration};\n\n"
+        f"declare const data: {type_name};\n"
+        "export default data;\n"
+    )
+
+
+def _pascal_case(value: str) -> str:
+    """Return a PascalCase identifier suffix from a websiteData key."""
+    parts = re.split(r"[^A-Za-z0-9]+", value)
+    identifier = "".join(part[:1].upper() + part[1:] for part in parts if part)
+    if not identifier:
+        return "Unknown"
+    if identifier[0].isdigit():
+        return f"_{identifier}"
+    return identifier
 
 
 if __name__ == "__main__":

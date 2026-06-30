@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.9-blue" alt="Version 0.1.9">
+  <img src="https://img.shields.io/badge/version-0.1.10-blue" alt="Version 0.1.10">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -204,8 +204,13 @@ work.
 
 If you have a local `examples/websiteData.json` capture, `just
 website-data-split` writes one file per top-level key into
-`examples/websiteData/`. The source file and generated directory are ignored
-because the data is large and only used as a local mapping reference.
+`examples/websiteData/`. When `examples/websiteData.d.json.ts` is present, the
+splitter also writes adjacent `.d.ts` files and a `_manifest.json` connecting
+each JSON part to its type reference. Python code can read a split part with
+`load_website_data_part()` from `custom_components.idleon.idleon_data`.
+
+The source file and generated directory are ignored because the data is large
+and only used as a local mapping reference.
 
 Individual checks are available as:
 
