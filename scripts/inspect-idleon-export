@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""Inspect a raw Idleon export without dumping sensitive JSON."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+VENV_PYTHON = ROOT / ".venv/bin/python"
+if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
+    os.execv(VENV_PYTHON, [str(VENV_PYTHON), *sys.argv])
+
+sys.path.insert(0, str(ROOT))
+
+from custom_components.idleon.idleon_data import parse_idleon_account
+
+
+def main() -> int:
+    """Run the export inspector."""
+    parser = argparse.ArgumentParser(
+        description="Summarize a raw Idleon JSON export for HA Idleon mapping work.",
+    )
+    parser.add_argument("path", type=Path, help="Path to a raw Idleon JSON export")
+    args = parser.parse_args()
+
+    raw_data = json.loads(args.path.read_text())
+    if not isinstance(raw_data, Mapping):
+        sys.stderr.write("Top-level export data must be a JSON object.\n")
+        return 2
+
+    account = parse_idleon_account(raw_data)
+    lines: list[str] = [
+        "Normalized account",
+        f"  account_id: {account.account_id}",
+        f"  name: {account.name}",
+        f"  gems: {account.gems}",
+        f"  total_level: {account.total_level}",
+        f"  character_count: {account.character_count}",
+        f"  source_updated_at: {account.source_updated_at}",
+        "",
+        "Normalized characters",
+    ]
+
+    for character in account.characters:
+        lines.append(
+            "  "
+            f"{character.character_id}: "
+            f"name={character.name!r}, "
+            f"level={character.level}, "
+            f"class={character.character_class!r}, "
+            f"map={character.current_map!r}, "
+            f"activity={character.current_activity!r}, "
+            f"afk_hours={character.afk_hours}"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Indexed raw fields",
+            *_indexed_field_lines(raw_data),
+            "",
+            "Candidate player names",
+            *_candidate_player_name_lines(raw_data),
+        ]
+    )
+
+    sys.stdout.write("\n".join(lines))
+    sys.stdout.write("\n")
+    return 0
+
+
+def _indexed_field_lines(raw_data: Mapping[str, Any]) -> list[str]:
+    """Return a compact summary of known indexed raw export fields."""
+    indexes: set[int] = set()
+    for key in raw_data:
+        for prefix in ("Lv0_", "CharacterClass_", "CurrentMap_", "AFKtarget_"):
+            if key.startswith(prefix):
+                try:
+                    indexes.add(int(key.removeprefix(prefix)))
+                except ValueError:
+                    continue
+
+    if not indexes:
+        return ["  none found"]
+
+    lines: list[str] = []
+    for index in sorted(indexes):
+        level = _first_list_value(raw_data.get(f"Lv0_{index}"))
+        lines.append(
+            "  "
+            f"{index}: "
+            f"Lv0={level!r}, "
+            f"CharacterClass={raw_data.get(f'CharacterClass_{index}')!r}, "
+            f"CurrentMap={raw_data.get(f'CurrentMap_{index}')!r}, "
+            f"AFKtarget={raw_data.get(f'AFKtarget_{index}')!r}, "
+            f"PTimeAway={raw_data.get(f'PTimeAway_{index}')!r}"
+        )
+    return lines
+
+
+def _candidate_player_name_lines(raw_data: Mapping[str, Any]) -> list[str]:
+    """Return candidate player names found in string/list fields."""
+    candidates: list[tuple[str, str]] = []
+    for key, value in raw_data.items():
+        text = json.dumps(value) if not isinstance(value, str) else value
+        for match in sorted(set(re.findall(r"Player_[A-Za-z0-9_]+", text))):
+            candidates.append((key, match.removeprefix("Player_")))
+
+    if not candidates:
+        return ["  none found"]
+
+    return [f"  {key}: {candidate}" for key, candidate in candidates]
+
+
+def _first_list_value(value: Any) -> Any:
+    """Return the first value from a list or JSON-encoded list."""
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+    if isinstance(value, list) and value:
+        return value[0]
+    return None
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

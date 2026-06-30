@@ -66,6 +66,15 @@ For the current indexed export shape, character names are not present in the raw
 data. HA Idleon will create `Character 1`, `Character 2`, and so on until a
 reliable name field is identified.
 
+To inspect a raw export without dumping the full sensitive JSON payload, run:
+
+```sh
+scripts/inspect-idleon-export examples/real_data.json
+```
+
+This prints the normalized account and character values HA Idleon can currently
+parse, plus candidate player-name fields that still need manual validation.
+
 ## 🌐 Test With A Remote URL
 
 Serve the sample file from a machine that Home Assistant can reach:
