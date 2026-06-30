@@ -1,8 +1,16 @@
 repos:
+  - repo: local
+    hooks:
+      - id: ha-idleon-version-bump
+        name: HA Idleon smart version bump
+        entry: scripts/version-bump-hook
+        language: system
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.2
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
-

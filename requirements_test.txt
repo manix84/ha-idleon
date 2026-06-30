@@ -1,5 +1,5 @@
 homeassistant==2026.6.4
+pre-commit
 pytest
 pytest-homeassistant-custom-component
 ruff
-

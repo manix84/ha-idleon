@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+"""Smart pre-commit version bumping for HA Idleon."""
+
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+VERSION_FILES = (
+    Path("pyproject.toml"),
+    Path("custom_components/idleon/manifest.json"),
+    Path("custom_components/idleon/const.py"),
+    Path("README.md"),
+    Path("WHATSNEW.md"),
+)
+DOC_ONLY_PREFIXES = (
+    ".github/ISSUE_TEMPLATE/",
+    "assets/",
+    "docs/",
+)
+DOC_ONLY_FILES = {
+    ".gitignore",
+    "AI_DECLARATION.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "PRIVACY.md",
+    "README.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "THIRD_PARTY_NOTICES.md",
+    "WHATSNEW.md",
+    "hacs.json",
+}
+MINOR_PREFIXES = (
+    "custom_components/idleon/translations/",
+)
+MINOR_FILES = {
+    "custom_components/idleon/binary_sensor.py",
+    "custom_components/idleon/config_flow.py",
+    "custom_components/idleon/const.py",
+    "custom_components/idleon/manifest.json",
+    "custom_components/idleon/models.py",
+    "custom_components/idleon/sensor.py",
+    "custom_components/idleon/strings.json",
+}
+
+
+def main() -> int:
+    """Bump version files based on staged changes."""
+    override = os.environ.get("HA_IDLEON_VERSION_BUMP", "auto").lower()
+    if override not in {"auto", "minor", "patch", "skip"}:
+        sys.stderr.write(
+            "HA_IDLEON_VERSION_BUMP must be one of: auto, minor, patch, skip\n"
+        )
+        return 2
+
+    changed_files = _staged_files()
+    bump = _select_bump(changed_files, override)
+    if bump == "skip":
+        return 0
+
+    current_version = _project_version()
+    new_version = _bump_version(current_version, bump)
+    _write_version_files(current_version, new_version, bump)
+    _git_add(VERSION_FILES)
+    sys.stderr.write(
+        f"HA Idleon version bumped {current_version} -> {new_version} ({bump}).\n"
+    )
+    return 0
+
+
+def _staged_files() -> tuple[Path, ...]:
+    """Return paths staged for commit."""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return tuple(Path(line) for line in result.stdout.splitlines() if line)
+
+
+def _select_bump(changed_files: tuple[Path, ...], override: str) -> str:
+    """Select a semver bump from staged files."""
+    if override != "auto":
+        return override
+
+    relevant_files = [path for path in changed_files if path not in VERSION_FILES]
+    if not relevant_files:
+        return "skip"
+
+    if _version_already_staged():
+        return "skip"
+
+    if all(_is_doc_only_file(path) for path in relevant_files):
+        return "skip"
+
+    if any(_is_minor_file(path) for path in relevant_files):
+        return "minor"
+
+    return "patch"
+
+
+def _is_doc_only_file(path: Path) -> bool:
+    """Return whether a path should not trigger a release bump."""
+    path_text = path.as_posix()
+    if path_text in DOC_ONLY_FILES:
+        return True
+    if any(path_text.startswith(prefix) for prefix in DOC_ONLY_PREFIXES):
+        return True
+    return path.suffix.lower() in {".md", ".png", ".jpg", ".jpeg", ".gif", ".svg"}
+
+
+def _is_minor_file(path: Path) -> bool:
+    """Return whether a path changes the public integration surface."""
+    path_text = path.as_posix()
+    if path_text in MINOR_FILES:
+        return True
+    return any(path_text.startswith(prefix) for prefix in MINOR_PREFIXES)
+
+
+def _project_version() -> str:
+    """Return the current project version."""
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    return str(pyproject["project"]["version"])
+
+
+def _version_already_staged() -> bool:
+    """Return whether a version bump is already staged."""
+    result = subprocess.run(
+        ["git", "show", "HEAD:pyproject.toml"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return False
+
+    head_pyproject = tomllib.loads(result.stdout)
+    head_version = str(head_pyproject["project"]["version"])
+    return _project_version() != head_version
+
+
+def _bump_version(version: str, bump: str) -> str:
+    """Return a bumped semantic version."""
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
+    if not match:
+        msg = f"Unsupported version format: {version}"
+        raise ValueError(msg)
+
+    major, minor, patch = (int(part) for part in match.groups())
+    if bump == "minor":
+        return f"{major}.{minor + 1}.0"
+    if bump == "patch":
+        return f"{major}.{minor}.{patch + 1}"
+
+    msg = f"Unsupported bump type: {bump}"
+    raise ValueError(msg)
+
+
+def _write_version_files(current_version: str, new_version: str, bump: str) -> None:
+    """Update version files in place."""
+    _replace_text(Path("pyproject.toml"), f'version = "{current_version}"', f'version = "{new_version}"')
+    _replace_text(
+        Path("custom_components/idleon/const.py"),
+        f'VERSION = "{current_version}"',
+        f'VERSION = "{new_version}"',
+    )
+    _replace_text(
+        Path("README.md"),
+        f"version-{current_version}-blue",
+        f"version-{new_version}-blue",
+    )
+    _replace_text(
+        Path("README.md"),
+        f"Version {current_version}",
+        f"Version {new_version}",
+    )
+    _update_manifest(current_version, new_version)
+    _update_whatsnew(new_version, bump)
+
+
+def _replace_text(path: Path, before: str, after: str) -> None:
+    """Replace required text in a file."""
+    file_path = ROOT / path
+    text = file_path.read_text()
+    if before not in text:
+        msg = f"{path}: expected text not found: {before}"
+        raise RuntimeError(msg)
+    file_path.write_text(text.replace(before, after, 1))
+
+
+def _update_manifest(current_version: str, new_version: str) -> None:
+    """Update manifest version while preserving existing JSON formatting."""
+    _replace_text(
+        Path("custom_components/idleon/manifest.json"),
+        f'"version": "{current_version}"',
+        f'"version": "{new_version}"',
+    )
+
+
+def _update_whatsnew(new_version: str, bump: str) -> None:
+    """Add a placeholder What's New section for the bumped version."""
+    path = ROOT / "WHATSNEW.md"
+    text = path.read_text()
+    heading = f"## 🚀 {new_version}"
+    if heading in text:
+        return
+
+    insert = (
+        f"{heading}\n\n"
+        f"- {bump.title()} release placeholder. Update before release.\n\n"
+    )
+    marker = "## 🚀 "
+    marker_index = text.find(marker)
+    if marker_index == -1:
+        path.write_text(f"{text.rstrip()}\n\n{insert}")
+        return
+
+    path.write_text(f"{text[:marker_index]}{insert}{text[marker_index:]}")
+
+
+def _git_add(paths: tuple[Path, ...]) -> None:
+    """Stage changed version files."""
+    subprocess.run(
+        ["git", "add", *(path.as_posix() for path in paths)],
+        cwd=ROOT,
+        check=True,
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

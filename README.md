@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version 0.1.0">
+  <img src="https://img.shields.io/badge/version-0.1.1-blue" alt="Version 0.1.1">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -147,6 +147,7 @@ Install test dependencies in a Python 3.14 environment, then run:
 
 ```sh
 python -m pip install -r requirements_test.txt
+pre-commit install
 scripts/check
 ```
 
@@ -158,6 +159,22 @@ scripts/format-check
 scripts/type-check
 scripts/test
 scripts/release-check
+```
+
+The local pre-commit hook bumps versions automatically for release-affecting
+changes:
+
+- docs-only changes do not bump the version.
+- internal code changes bump the patch version.
+- entity, config flow, model, manifest, strings, and translation changes bump
+  the minor version.
+
+Override the hook when needed:
+
+```sh
+HA_IDLEON_VERSION_BUMP=minor git commit
+HA_IDLEON_VERSION_BUMP=patch git commit
+HA_IDLEON_VERSION_BUMP=skip git commit
 ```
 
 For testing in a real Home Assistant instance, see
