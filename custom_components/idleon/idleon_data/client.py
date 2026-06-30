@@ -48,6 +48,8 @@ class IdleonClient:
             return await self._hass.async_add_executor_job(load_file)
         except JSONDecodeError as err:
             raise IdleonInvalidJson("Local file does not contain valid JSON") from err
+        except UnicodeDecodeError as err:
+            raise IdleonInvalidJson("Local file could not be decoded as UTF-8") from err
         except OSError as err:
             raise IdleonCannotConnect("Local file could not be read") from err
 
@@ -62,7 +64,7 @@ class IdleonClient:
             async with session.get(url, timeout=ClientTimeout(total=30)) as response:
                 response.raise_for_status()
                 text = await response.text()
-        except ClientError as err:
+        except (ClientError, TimeoutError) as err:
             raise IdleonCannotConnect("Remote URL could not be fetched") from err
 
         try:

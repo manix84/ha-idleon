@@ -103,6 +103,32 @@ async def test_config_flow_invalid_file(hass: HomeAssistant, tmp_path: Path) -> 
     assert result["errors"] == {"base": "cannot_connect"}
 
 
+async def test_config_flow_invalid_local_json(
+    hass: HomeAssistant,
+    tmp_path: Path,
+) -> None:
+    """Test malformed local JSON returns a clean error."""
+    invalid_json_path = tmp_path / "idleon.json"
+    invalid_json_path.write_text("{not json")
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(invalid_json_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_json"}
+
+
 async def test_config_flow_success_remote_url(
     hass: HomeAssistant,
     sample_data_path: Path,
@@ -164,6 +190,62 @@ async def test_config_flow_invalid_url(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_config_flow_remote_timeout(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test a remote timeout returns a clean connection error."""
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.client.async_get_clientsession",
+        lambda _hass: _FakeSession(_FakeResponse("", error=TimeoutError("timed out"))),
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_REMOTE_URL: "https://example.com/idleon.json",
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_config_flow_remote_invalid_json(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test malformed remote JSON returns a clean error."""
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.client.async_get_clientsession",
+        lambda _hass: _FakeSession(_FakeResponse("{not json")),
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_REMOTE_URL},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_REMOTE_URL: "https://example.com/idleon.json",
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_json"}
 
 
 async def test_config_flow_duplicate_source_aborts(
