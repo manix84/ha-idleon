@@ -156,7 +156,10 @@ def _character_change_lines(
         before = before_characters.get(character_id)
         after = after_characters.get(character_id)
         if before is None or after is None:
-            lines.append(f"  {character_id}: present={before is not None} -> {after is not None}")
+            lines.append(
+                f"  {character_id}: present={before is not None} -> "
+                f"{after is not None}"
+            )
             continue
 
         fields = (
@@ -180,15 +183,19 @@ def _indexed_field_change_lines(
     after_data: Mapping[str, Any],
 ) -> list[str]:
     """Return changed indexed raw fields."""
-    indexes = _indexed_character_ids(before_data) | _indexed_character_ids(after_data)
+    before_fields = _indexed_export_fields(before_data)
+    after_fields = _indexed_export_fields(after_data)
+    indexes = _indexed_character_ids(before_fields) | _indexed_character_ids(
+        after_fields
+    )
     fields = ("Lv0", "CharacterClass", "CurrentMap", "AFKtarget", "PTimeAway")
 
     lines: list[str] = []
     for index in sorted(indexes):
         changes: list[str] = []
         for field in fields:
-            before = _indexed_raw_value(before_data, field, index)
-            after = _indexed_raw_value(after_data, field, index)
+            before = _indexed_raw_value(before_fields, field, index)
+            after = _indexed_raw_value(after_fields, field, index)
             if before != after:
                 changes.append(f"{field}: {before!r} -> {after!r}")
         if changes:
@@ -219,23 +226,32 @@ def _changed_key_lines(
 
 def _indexed_field_lines(raw_data: Mapping[str, Any]) -> list[str]:
     """Return a compact summary of known indexed raw export fields."""
-    indexes = _indexed_character_ids(raw_data)
+    fields = _indexed_export_fields(raw_data)
+    indexes = _indexed_character_ids(fields)
     if not indexes:
         return ["  none found"]
 
     lines: list[str] = []
     for index in sorted(indexes):
-        level = _first_list_value(raw_data.get(f"Lv0_{index}"))
+        level = _first_list_value(fields.get(f"Lv0_{index}"))
         lines.append(
             "  "
             f"{index}: "
             f"Lv0={level!r}, "
-            f"CharacterClass={raw_data.get(f'CharacterClass_{index}')!r}, "
-            f"CurrentMap={raw_data.get(f'CurrentMap_{index}')!r}, "
-            f"AFKtarget={raw_data.get(f'AFKtarget_{index}')!r}, "
-            f"PTimeAway={raw_data.get(f'PTimeAway_{index}')!r}"
+            f"CharacterClass={fields.get(f'CharacterClass_{index}')!r}, "
+            f"CurrentMap={fields.get(f'CurrentMap_{index}')!r}, "
+            f"AFKtarget={fields.get(f'AFKtarget_{index}')!r}, "
+            f"PTimeAway={fields.get(f'PTimeAway_{index}')!r}"
         )
     return lines
+
+
+def _indexed_export_fields(raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Return raw fields from flat or wrapped exports."""
+    save_data = raw_data.get("saveData")
+    if isinstance(save_data, Mapping):
+        return save_data
+    return raw_data
 
 
 def _indexed_character_ids(raw_data: Mapping[str, Any]) -> set[int]:

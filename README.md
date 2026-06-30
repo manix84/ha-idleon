@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.5-blue" alt="Version 0.1.5">
+  <img src="https://img.shields.io/badge/version-0.1.6-blue" alt="Version 0.1.6">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -151,10 +151,27 @@ pre-commit install
 scripts/check
 ```
 
+Convenience targets are also available through `make`:
+
+```sh
+make check
+make test
+make debug
+```
+
+Targets can pass common arguments through variables:
+
+```sh
+make test PYTEST_ARGS=tests/test_parser.py
+make inspect INSPECT_FILE=examples/rawData.json
+make debug DEBUG_ARGS="--output-dir /tmp/idleon-debug"
+```
+
 Individual checks are available as:
 
 ```sh
 scripts/lint
+scripts/format
 scripts/format-check
 scripts/type-check
 scripts/test
