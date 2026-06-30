@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+"$(python_bin)" - <<'PY'
+from __future__ import annotations
+
+import os
+import sys
+import urllib.error
+import urllib.request
+
+ha_url = os.environ.get("HA_URL", "http://127.0.0.1:8123").rstrip("/")
+ha_token = os.environ.get("HA_TOKEN")
+
+if not ha_token:
+    raise SystemExit(
+        "HA_TOKEN is required to restart Home Assistant via the API. "
+        "Set HA_URL if your instance is not http://127.0.0.1:8123."
+    )
+
+request = urllib.request.Request(
+    f"{ha_url}/api/services/homeassistant/restart",
+    data=b"{}",
+    headers={
+        "Authorization": f"Bearer {ha_token}",
+        "Content-Type": "application/json",
+    },
+    method="POST",
+)
+
+try:
+    with urllib.request.urlopen(request, timeout=15) as response:
+        sys.stdout.write(f"Restart requested: HTTP {response.status}\n")
+except urllib.error.HTTPError as err:
+    raise SystemExit(f"Restart failed: HTTP {err.code} {err.reason}") from err
+except urllib.error.URLError as err:
+    raise SystemExit(f"Restart failed: {err.reason}") from err
+PY

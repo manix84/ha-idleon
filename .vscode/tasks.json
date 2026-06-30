@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Home Assistant",
+      "type": "shell",
+      "command": "just run",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Restart Home Assistant",
+      "type": "shell",
+      "command": "just restart",
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Integration",
+      "type": "shell",
+      "command": "just validate",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "just test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "just lint",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "just format",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Type Check",
+      "type": "shell",
+      "command": "just typecheck",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Release",
+      "type": "shell",
+      "command": "just build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Create Release",
+      "type": "shell",
+      "command": "just release",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

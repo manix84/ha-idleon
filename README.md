@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.1.6-blue" alt="Version 0.1.6">
+  <img src="https://img.shields.io/badge/version-0.1.7-blue" alt="Version 0.1.7">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -159,12 +159,37 @@ make test
 make debug
 ```
 
+The primary task runner is [`just`](https://github.com/casey/just), which is
+also used by the VS Code tasks in `.vscode/tasks.json`:
+
+```sh
+just --list
+just validate
+just test
+just lint
+just format
+just typecheck
+just debug
+just build
+```
+
+VS Code users can run the same commands from **Tasks: Run Task**. The tasks are
+also compatible with the Task Explorer extension.
+
 Targets can pass common arguments through variables:
 
 ```sh
 make test PYTEST_ARGS=tests/test_parser.py
 make inspect INSPECT_FILE=examples/rawData.json
 make debug DEBUG_ARGS="--output-dir /tmp/idleon-debug"
+```
+
+Equivalent `just` examples:
+
+```sh
+just test tests/test_parser.py
+just inspect examples/rawData.json
+just debug --output-dir /tmp/idleon-debug
 ```
 
 Individual checks are available as:

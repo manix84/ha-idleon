@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+"${SCRIPT_DIR}/release-check"
+archive_path="$("${SCRIPT_DIR}/build-release")"
+
+version="$("$(python_bin)" - <<'PY'
+import tomllib
+from pathlib import Path
+
+print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+PY
+)"
+
+tag="v${version}"
+
+if ! command -v gh >/dev/null 2>&1; then
+  printf 'Built %s\n' "${archive_path}"
+  printf 'GitHub CLI is not installed. Create the release with:\n'
+  printf '  gh release create %s %s --title %s --notes-file WHATSNEW.md\n' \
+    "${tag}" "${archive_path}" "${tag}"
+  exit 0
+fi
+
+gh release create "${tag}" "${archive_path}" --title "${tag}" --notes-file WHATSNEW.md

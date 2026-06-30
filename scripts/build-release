@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+"$(python_bin)" - <<'PY'
+from __future__ import annotations
+
+import json
+import tomllib
+import zipfile
+from pathlib import Path
+
+root = Path.cwd()
+dist = root / "dist"
+dist.mkdir(exist_ok=True)
+
+pyproject = tomllib.loads((root / "pyproject.toml").read_text())
+version = pyproject["project"]["version"]
+archive_path = dist / f"ha-idleon-{version}.zip"
+
+include_files = [
+    root / "README.md",
+    root / "LICENSE",
+    root / "WHATSNEW.md",
+    root / "PRIVACY.md",
+    root / "hacs.json",
+]
+
+manifest = json.loads((root / "custom_components/idleon/manifest.json").read_text())
+if manifest["version"] != version:
+    raise SystemExit(
+        f"Version mismatch: pyproject={version}, manifest={manifest['version']}"
+    )
+
+with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    for path in sorted((root / "custom_components/idleon").rglob("*")):
+        if path.is_file() and "__pycache__" not in path.parts:
+            archive.write(path, path.relative_to(root))
+
+    for path in include_files:
+        if path.exists():
+            archive.write(path, path.relative_to(root))
+
+print(archive_path)
+PY

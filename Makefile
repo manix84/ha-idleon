@@ -1,32 +1,47 @@
-.PHONY: check debug format format-check inspect lint release-check test type-check
+.PHONY: build check debug format format-check inspect lint release release-check restart run test type-check validate
 
 DEBUG_ARGS ?=
 INSPECT_FILE ?= examples/rawData.json
 PYTEST_ARGS ?=
 
+build:
+	just build
+
 check:
-	scripts/check
+	just validate
 
 debug:
-	scripts/render-debug-parsed-data $(DEBUG_ARGS)
+	just debug $(DEBUG_ARGS)
 
 format:
-	scripts/format
+	just format
 
 format-check:
-	scripts/format-check
+	just format-check
 
 inspect:
-	scripts/inspect-idleon-export $(INSPECT_FILE)
+	just inspect $(INSPECT_FILE)
 
 lint:
-	scripts/lint
+	just lint
+
+release:
+	just release
 
 release-check:
-	scripts/release-check
+	just release-check
+
+restart:
+	just restart
 
 test:
-	scripts/test $(PYTEST_ARGS)
+	just test $(PYTEST_ARGS)
 
 type-check:
-	scripts/type-check
+	just typecheck
+
+run:
+	just run
+
+validate:
+	just validate

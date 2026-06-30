@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+
+HA_CONFIG="${HA_CONFIG:-${ROOT_DIR}/.ha}"
+mkdir -p "${HA_CONFIG}/custom_components"
+ln -sfn "${ROOT_DIR}/custom_components/idleon" "${HA_CONFIG}/custom_components/idleon"
+
+if [[ ! -f "${HA_CONFIG}/configuration.yaml" ]]; then
+  cat > "${HA_CONFIG}/configuration.yaml" <<'YAML'
+default_config:
+YAML
+fi
+
+"$(python_bin)" -m homeassistant --config "${HA_CONFIG}"

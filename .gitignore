@@ -10,6 +10,8 @@ __pycache__/
 coverage.xml
 htmlcov/
 debug/
+dist/
+.ha/
 
 # Local raw Idleon exports may contain sensitive account details.
 examples/cleanData.json
