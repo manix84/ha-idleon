@@ -15,6 +15,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Deploy To HA Share",
+      "type": "shell",
+      "command": "just deploy-ha-share",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Validate Integration",
       "type": "shell",
       "command": "just validate",

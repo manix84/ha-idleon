@@ -171,6 +171,7 @@ also used by the VS Code tasks in `.vscode/tasks.json`:
 ```sh
 just --list
 just validate
+just deploy-ha-share
 just test
 just lint
 just format

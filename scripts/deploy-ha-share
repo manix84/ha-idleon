@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+
+HA_SHARE="${HA_SHARE:-/Volumes/config}"
+TARGET="${HA_SHARE}/custom_components/idleon"
+
+if [[ ! -d "${HA_SHARE}/custom_components" ]]; then
+  echo "Home Assistant share not found: ${HA_SHARE}/custom_components" >&2
+  echo "Set HA_SHARE to the mounted Home Assistant config path." >&2
+  exit 1
+fi
+
+rsync -r --inplace --delete --exclude __pycache__ \
+  custom_components/idleon/ \
+  "${TARGET}/"
+
+echo "Deployed custom_components/idleon to ${TARGET}"

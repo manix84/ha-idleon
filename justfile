@@ -11,6 +11,10 @@ run:
 restart:
     scripts/restart-home-assistant
 
+# Deploy the integration to a mounted Home Assistant config share.
+deploy-ha-share:
+    scripts/deploy-ha-share
+
 # Validate the integration with lint, format, type, test, and release checks.
 validate:
     scripts/check
