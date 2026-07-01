@@ -35,6 +35,7 @@ from custom_components.idleon.models import IdleonAccount  # noqa: E402
 DEFAULT_INPUT_GLOBS = ("examples/rawData.json", "examples/real_data*.json")
 DEFAULT_CLEAN_REFERENCE = ROOT / "examples/cleanData.json"
 DEFAULT_OUTPUT_DIR = ROOT / "debug"
+RENDERER_VERSION = "clean-reference-class-labels-v2"
 
 
 def main() -> int:
@@ -211,6 +212,7 @@ def _render_source(
     rendered = {
         "source": str(path),
         "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "renderer_version": RENDERER_VERSION,
         "raw_summary": _raw_summary(raw_data),
         "parsed": _account_to_dict(account),
         "toolbox_summary": _toolbox_summary(toolbox_sections),
@@ -497,6 +499,7 @@ def _render_source_section(source: dict[str, Any]) -> str:
     raw_summary = source["raw_summary"]
     debug_metadata = {
         "generated_at": source["generated_at"],
+        "renderer_version": source["renderer_version"],
         **source["toolbox_summary"],
     }
     toolbox_sections = source["toolbox_sections"]
