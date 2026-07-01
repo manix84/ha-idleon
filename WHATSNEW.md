@@ -2,7 +2,10 @@
 
 ## 🚀 0.1.18
 
-- Patch release placeholder. Update before release.
+- Added newly discovered character entities after successful data refreshes.
+- Cleaned inventory carry capacity attributes by hiding placeholder categories
+  and showing material capacity with a readable label.
+- Improved HA share deployment tooling for local Home Assistant testing.
 
 ## 🚀 0.1.17
 

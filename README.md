@@ -138,7 +138,8 @@ Third-party data notices are listed in
 - Real Idleon export schemas may require parser updates.
 - No write actions, services, automations, cloud storage, or auth flows are
   included.
-- New characters require reloading the integration before entities are created.
+- Newly discovered characters are added after a successful refresh, but removed
+  characters may leave disabled or unavailable registry entries behind.
 
 ## 🗺️ Roadmap
 
