@@ -63,6 +63,7 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.characters[0].afk_hours == 1.5
     assert account.characters[0].inventory_full is True
     assert account.characters[0].needs_attention is True
+    assert account.characters[0].details == {}
     assert account.characters[1].needs_attention is False
 
 
@@ -115,6 +116,10 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert first_character.afk_hours == 2.0
     assert first_character.inventory_full is False
     assert first_character.needs_attention is False
+    assert first_character.details["raw_class_id"] == 14
+    assert first_character.details["raw_map_id"] == 216
+    assert first_character.details["afk_target"] == "caveB"
+    assert first_character.details["afk_seconds"] == 7200
 
     second_character = account.characters[1]
     assert second_character.character_id == "character_1"
@@ -150,6 +155,18 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     assert first_character.afk_hours == 1.0
     assert first_character.inventory_full is True
     assert first_character.needs_attention is True
+    assert first_character.details["raw_class_id"] == 20
+    assert first_character.details["inventory_slots_total"] == 2
+    assert first_character.details["inventory_slots_used"] == 2
+    assert first_character.details["inventory_bag_count"] == 2
+    assert first_character.details["inventory_bags"] == [
+        "Inventory Bag A",
+        "Snakeskinventory Bag",
+    ]
+    assert first_character.details["max_carry_capacity"] == {
+        "Copper": 250,
+        "OakTree": "500",
+    }
 
     second_character = account.characters[1]
     assert second_character.name == "Beta Mage"

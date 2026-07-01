@@ -87,6 +87,15 @@ async def test_character_sensors(
     assert hass.states.get(activity_entity_id).state == "AFK Fighting"
     assert hass.states.get(afk_entity_id).state == "12.5"
 
+    level_attributes = hass.states.get(level_entity_id).attributes
+    assert level_attributes["active_preset"] == 2
+    assert level_attributes["inventory_slots_total"] == 3
+    assert level_attributes["inventory_slots_used"] == 2
+    assert level_attributes["inventory_slots_free"] == 1
+    assert level_attributes["inventory_sample"] == ["Nomwich", "Farmer Brim"]
+
+    assert "inventory_slots_used" not in hass.states.get(class_entity_id).attributes
+
 
 async def test_binary_sensors(
     hass: HomeAssistant,

@@ -14,7 +14,11 @@
         "current_activity": "AFK Fighting",
         "afk_hours": 12.5,
         "inventory_full": true,
-        "needs_attention": true
+        "needs_attention": true,
+        "inventory": ["FoodHealth1", "EquipmentHats1", ""],
+        "details": {
+          "active_preset": 2
+        }
       },
       {
         "id": "miner-alt",
@@ -30,4 +34,3 @@
     ]
   }
 }
-

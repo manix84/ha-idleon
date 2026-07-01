@@ -11,6 +11,9 @@ from typing import Any
 from ..models import IdleonAccount, IdleonCharacter
 from .exceptions import IdleonInvalidSchema
 from .game_maps import afk_activity_label, class_name_label, map_name_label
+from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
+
+DETAIL_SAMPLE_LIMIT = 12
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -153,6 +156,14 @@ def _parse_indexed_character(
     afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
     inventory_full = _indexed_inventory_full(raw_data, character_index)
     character_name = _indexed_character_name(character_index, character_names)
+    details = _indexed_character_details(
+        raw_data,
+        character_index,
+        class_value=class_value,
+        current_map=current_map,
+        afk_target=afk_target,
+        afk_seconds=afk_seconds,
+    )
 
     return IdleonCharacter(
         character_id=f"character_{character_index}",
@@ -164,6 +175,7 @@ def _parse_indexed_character(
         afk_hours=round(afk_seconds / 3600, 2),
         inventory_full=inventory_full,
         needs_attention=inventory_full,
+        details=details,
     )
 
 
@@ -206,6 +218,82 @@ def _indexed_inventory_full(
     if not isinstance(inventory, list) or not inventory:
         return False
     return all(_inventory_slot_has_item(slot) for slot in inventory)
+
+
+def _indexed_character_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+    *,
+    class_value: Any,
+    current_map: Any,
+    afk_target: Any,
+    afk_seconds: float,
+) -> dict[str, Any]:
+    """Return compact detailed attributes for an indexed character."""
+    details: dict[str, Any] = {
+        "raw_class_id": class_value,
+        "raw_map_id": current_map,
+        "afk_target": afk_target,
+        "afk_seconds": round(afk_seconds, 2),
+    }
+    details.update(_indexed_inventory_details(raw_data, character_index))
+    details.update(_indexed_inventory_bag_details(raw_data, character_index))
+    details.update(_indexed_max_carry_capacity_details(raw_data, character_index))
+    return _remove_empty_detail_values(details)
+
+
+def _indexed_inventory_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact inventory slot attributes for an indexed character."""
+    inventory = _maybe_json(raw_data.get(f"InventoryOrder_{character_index}"))
+    if not isinstance(inventory, list):
+        return {}
+
+    used_items = [item for item in inventory if _inventory_slot_has_item(item)]
+    total_slots = len(inventory)
+    used_slots = len(used_items)
+    return {
+        "inventory_slots_total": total_slots,
+        "inventory_slots_used": used_slots,
+        "inventory_slots_free": max(total_slots - used_slots, 0),
+        "inventory_sample": _limited_labels(used_items),
+    }
+
+
+def _indexed_inventory_bag_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact inventory bag attributes for an indexed character."""
+    inventory_bags = _maybe_json(raw_data.get(f"InvBagsUsed_{character_index}"))
+    if not isinstance(inventory_bags, list):
+        return {}
+
+    used_bags = [bag for bag in inventory_bags if _inventory_slot_has_item(bag)]
+    return {
+        "inventory_bag_count": len(used_bags),
+        "inventory_bags": _limited_labels(used_bags, website_data_key="invBags"),
+    }
+
+
+def _indexed_max_carry_capacity_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact max carry capacity attributes for an indexed character."""
+    max_carry_capacity = _maybe_json(raw_data.get(f"MaxCarryCap_{character_index}"))
+    if not isinstance(max_carry_capacity, Mapping):
+        return {}
+
+    return {
+        "max_carry_capacity": {
+            str(key): value
+            for key, value in max_carry_capacity.items()
+            if isinstance(key, str) and _coerce_int(value) is not None
+        }
+    }
 
 
 def _inventory_slot_has_item(value: Any) -> bool:
@@ -256,6 +344,8 @@ def _parse_character(
     if needs_attention is None:
         needs_attention = bool(inventory_full)
 
+    details = _character_details(character_data)
+
     return IdleonCharacter(
         character_id=character_id,
         name=name,
@@ -278,7 +368,26 @@ def _parse_character(
         afk_hours=_first_float(character_data, ("afk_hours", "afkHours")) or 0.0,
         inventory_full=bool(inventory_full),
         needs_attention=needs_attention,
+        details=details,
     )
+
+
+def _character_details(character_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return compact detailed attributes for flexible character mappings."""
+    details = _first_mapping(character_data, ("details", "attributes")) or {}
+    parsed_details = dict(details)
+    inventory = _first_value(character_data, ("inventory", "inventory_order"))
+    if isinstance(inventory, list):
+        used_items = [item for item in inventory if _inventory_slot_has_item(item)]
+        parsed_details.update(
+            {
+                "inventory_slots_total": len(inventory),
+                "inventory_slots_used": len(used_items),
+                "inventory_slots_free": max(len(inventory) - len(used_items), 0),
+                "inventory_sample": _limited_labels(used_items),
+            }
+        )
+    return _remove_empty_detail_values(parsed_details)
 
 
 def _normalize_characters(value: Any) -> list[tuple[str | None, Mapping[str, Any]]]:
@@ -361,6 +470,48 @@ def _first_bool(data: Mapping[str, Any], keys: tuple[str, ...]) -> bool | None:
     if isinstance(value, str):
         return value.lower() in {"1", "true", "yes", "on"}
     return None
+
+
+def _limited_labels(
+    values: Iterable[Any],
+    *,
+    website_data_key: str = "items",
+) -> list[str]:
+    """Return a small display-label sample for raw item identifiers."""
+    labels: list[str] = []
+    for value in values:
+        if len(labels) >= DETAIL_SAMPLE_LIMIT:
+            break
+        labels.append(_display_label(value, website_data_key=website_data_key))
+    return labels
+
+
+def _display_label(value: Any, *, website_data_key: str) -> str:
+    """Return a normalized display label for a raw websiteData key."""
+    raw_value = str(value)
+    with suppress(WebsiteDataNotFoundError):
+        data = load_default_website_data_part(website_data_key)
+        if isinstance(data, Mapping):
+            item = data.get(raw_value)
+            if isinstance(item, Mapping):
+                display_name = item.get("displayName")
+                if isinstance(display_name, str) and display_name:
+                    return _clean_display_text(display_name)
+    return _clean_display_text(raw_value)
+
+
+def _clean_display_text(value: str) -> str:
+    """Return websiteData display text in a Home Assistant friendly form."""
+    return value.replace("_", " ").strip()
+
+
+def _remove_empty_detail_values(details: Mapping[str, Any]) -> dict[str, Any]:
+    """Drop empty detail values so entity attributes stay compact."""
+    return {
+        str(key): value
+        for key, value in details.items()
+        if value not in (None, "", [], {})
+    }
 
 
 def _parse_json_string(value: str) -> Any:

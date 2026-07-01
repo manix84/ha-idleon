@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -37,6 +37,7 @@ class IdleonCharacterSensorEntityDescription(SensorEntityDescription):
     """Description for a character sensor."""
 
     value_fn: Callable[[IdleonCharacter], Any]
+    include_details: bool = False
 
 
 ACCOUNT_SENSOR_DESCRIPTIONS = (
@@ -68,6 +69,7 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         key="character_level",
         translation_key="character_level",
         value_fn=lambda character: character.level,
+        include_details=True,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_class",
@@ -177,6 +179,16 @@ class IdleonCharacterSensor(
         if isinstance(value, datetime):
             return value
         return value
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return compact detailed character attributes on the primary sensor."""
+        if not self.entity_description.include_details:
+            return None
+        character = self._character
+        if character is None or not character.details:
+            return None
+        return dict(character.details)
 
     @property
     def _character(self) -> IdleonCharacter | None:

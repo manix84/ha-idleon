@@ -10,6 +10,12 @@
     "GemsOwned": "123",
     "InventoryOrder_0": ["EquipmentHats1", "FoodHealth1"],
     "InventoryOrder_1": ["EquipmentHats1", ""],
+    "InvBagsUsed_0": ["InvBag1", "InvBag100"],
+    "InvBagsUsed_1": ["InvBag1"],
+    "MaxCarryCap_0": {
+      "Copper": 250,
+      "OakTree": "500"
+    },
     "Lv0_0": [99, 1, 2],
     "Lv0_1": [88, 1, 2],
     "PVStatList_0": [10, 11, 12, 13, 101],
