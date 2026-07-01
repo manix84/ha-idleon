@@ -371,7 +371,10 @@ def _indexed_inventory_full(
     inventory = _maybe_json(raw_data.get(f"InventoryOrder_{character_index}"))
     if not isinstance(inventory, list) or not inventory:
         return False
-    return all(_inventory_slot_has_item(slot) for slot in inventory)
+    usable_slots = [slot for slot in inventory if not _inventory_slot_is_locked(slot)]
+    return bool(usable_slots) and all(
+        _inventory_slot_has_item(slot) for slot in usable_slots
+    )
 
 
 def _indexed_character_details(

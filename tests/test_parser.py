@@ -190,6 +190,8 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
 
     character = account.characters[0]
 
+    assert character.inventory_full is False
+    assert character.needs_attention is False
     assert character.afk_hours == 0.5
     assert character.details["afk_seconds"] == 1782.76
     assert character.details["raw_afk_value"] == 1782760.29
@@ -198,6 +200,32 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert character.details["inventory_slots_used"] == 2
     assert character.details["inventory_slots_free"] == 1
     assert character.details["inventory_sample"] == ["Nomwich", "Farmer Brim"]
+
+
+def test_parser_treats_inventory_as_full_when_all_usable_slots_are_occupied() -> None:
+    """Test locked inventory slots do not prevent full usable inventory detection."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "InventoryOrder_0": [
+                "LockedInvSpace",
+                "FoodHealth1",
+                "EquipmentHats1",
+                "LockedInvSpace",
+            ],
+        }
+    )
+
+    character = account.characters[0]
+
+    assert character.inventory_full is True
+    assert character.needs_attention is True
+    assert character.details["inventory_slots_total"] == 4
+    assert character.details["inventory_slots_usable"] == 2
+    assert character.details["inventory_slots_used"] == 2
+    assert character.details["inventory_slots_free"] == 0
 
 
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
