@@ -25,6 +25,10 @@ EMPTY_INVENTORY_SLOT_VALUES = {
     "none",
     "null",
 }
+MAX_CARRY_CAPACITY_IGNORED_KEYS = {"fillerz"}
+MAX_CARRY_CAPACITY_LABELS = {
+    "bCraft": "Materials",
+}
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -449,13 +453,26 @@ def _indexed_max_carry_capacity_details(
     if not isinstance(max_carry_capacity, Mapping):
         return {}
 
-    return {
-        "max_carry_capacity": {
-            str(key): value
-            for key, value in max_carry_capacity.items()
-            if isinstance(key, str) and _coerce_int(value) is not None
-        }
+    normalized_capacity = {
+        _max_carry_capacity_label(key): value
+        for key, value in max_carry_capacity.items()
+        if (
+            isinstance(key, str)
+            and key not in MAX_CARRY_CAPACITY_IGNORED_KEYS
+            and _coerce_int(value) is not None
+        )
     }
+    if not normalized_capacity:
+        return {}
+
+    return {
+        "max_carry_capacity": normalized_capacity,
+    }
+
+
+def _max_carry_capacity_label(key: str) -> str:
+    """Return a Home Assistant friendly carry capacity category label."""
+    return MAX_CARRY_CAPACITY_LABELS.get(key, key)
 
 
 def _inventory_slot_has_item(value: Any) -> bool:

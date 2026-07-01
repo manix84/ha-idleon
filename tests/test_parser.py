@@ -228,6 +228,30 @@ def test_parser_treats_inventory_as_full_when_all_usable_slots_are_occupied() ->
     assert character.details["inventory_slots_free"] == 0
 
 
+def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
+    """Test raw carry capacity categories are compact and readable."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "MaxCarryCap_0": {
+                "Mining": 10,
+                "fillerz": 10,
+                "bCraft": 100,
+                "Foods": "25",
+                "Invalid": "not-a-number",
+            },
+        }
+    )
+
+    assert account.characters[0].details["max_carry_capacity"] == {
+        "Mining": 10,
+        "Materials": 100,
+        "Foods": "25",
+    }
+
+
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     """Test parser accepts wrapped exports from Idleon API Downloader."""
     raw_data = json.loads(
