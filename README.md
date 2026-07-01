@@ -110,8 +110,14 @@ Character binary sensors:
 - Inventory full
 - Needs attention
 
-The integration avoids raw JSON attributes and does not create hundreds of
-default entities.
+The character level sensor also exposes compact attributes for detailed data
+that is useful to inspect but too noisy to promote to separate entities. Current
+examples include raw source IDs, AFK target/seconds, inventory slot counts,
+small readable inventory samples, equipped inventory bag summaries, and max
+carry capacity data when present in the source JSON.
+
+The integration avoids raw JSON dumps and does not create hundreds of default
+entities.
 
 ## 🔐 Privacy And Security
 
