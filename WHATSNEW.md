@@ -2,6 +2,10 @@
 
 ## 🚀 0.1.18
 
+- Changed the account last-updated sensor to prefer the parsed source/export
+  timestamp when available.
+- Added duplicate-source protection when changing data sources through options.
+- Added the parsed source/export timestamp to diagnostics.
 - Added newly discovered character entities after successful data refreshes.
 - Cleaned inventory carry capacity attributes by hiding placeholder categories
   and showing material capacity with a readable label.
