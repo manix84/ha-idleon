@@ -41,10 +41,16 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_gems",
     )
+    last_updated_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_last_updated",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
     assert hass.states.get(gems_entity_id).state == "1234"
+    assert hass.states.get(last_updated_entity_id).state == "2026-06-29T12:00:00+00:00"
 
 
 async def test_character_sensors(
