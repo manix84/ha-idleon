@@ -178,6 +178,7 @@ just typecheck
 just debug
 just debug-watch
 just website-data-split
+just icons
 just build
 ```
 

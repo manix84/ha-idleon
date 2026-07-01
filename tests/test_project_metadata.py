@@ -31,6 +31,18 @@ def test_hacs_metadata() -> None:
     assert hacs["homeassistant"] == "2026.6.4"
 
 
+def test_brand_assets_exist() -> None:
+    """Test HACS and local integration brand assets are present."""
+    for path in (
+        ROOT / "brands/icon.png",
+        ROOT / "brands/logo.png",
+        ROOT / "custom_components/idleon/icon.png",
+        ROOT / "custom_components/idleon/logo.png",
+    ):
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
 def test_project_version_matches_integration_version() -> None:
     """Test Python package metadata and integration constants use one version."""
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())

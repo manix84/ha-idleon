@@ -62,3 +62,7 @@ inspect file="examples/rawData.json":
 # Split examples/websiteData.json into examples/websiteData/*.json.
 website-data-split *args:
     scripts/split-website-data {{args}}
+
+# Generate project, HACS, and local integration icon PNGs.
+icons:
+    scripts/generate-project-icons

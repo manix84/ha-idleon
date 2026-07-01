@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Generate HA Idleon project and integration icon PNG assets."""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+VENV_PYTHON = ROOT / ".venv/bin/python"
+if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
+    os.execv(VENV_PYTHON, [str(VENV_PYTHON), *sys.argv])
+
+from PIL import Image, ImageDraw, ImageFilter
+
+BADGE_SOURCE = ROOT / "assets/idleon-badge-source.png"
+ASSET_ICON = ROOT / "assets/project-icon.png"
+ASSET_ICON_TRANSPARENT = ROOT / "assets/project-icon-transparent.png"
+BRANDS_DIR = ROOT / "brands"
+INTEGRATION_DIR = ROOT / "custom_components/idleon"
+
+SIZE = 512
+
+
+def main() -> int:
+    """Generate all icon variants."""
+    badge = Image.open(BADGE_SOURCE).convert("RGBA")
+    transparent = _compose_icon(badge, background=None)
+    solid = _compose_icon(badge, background=(246, 250, 253, 255))
+
+    ASSET_ICON.parent.mkdir(parents=True, exist_ok=True)
+    BRANDS_DIR.mkdir(parents=True, exist_ok=True)
+    INTEGRATION_DIR.mkdir(parents=True, exist_ok=True)
+
+    solid.save(ASSET_ICON)
+    transparent.save(ASSET_ICON_TRANSPARENT)
+    transparent.save(BRANDS_DIR / "icon.png")
+    transparent.save(BRANDS_DIR / "logo.png")
+    transparent.save(INTEGRATION_DIR / "icon.png")
+    transparent.save(INTEGRATION_DIR / "logo.png")
+    return 0
+
+
+def _compose_icon(
+    badge: Image.Image,
+    *,
+    background: tuple[int, int, int, int] | None,
+) -> Image.Image:
+    """Return a clean Home Assistant themed icon with an Idleon badge."""
+    image = Image.new("RGBA", (SIZE, SIZE), background or (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    _draw_soft_shadow(image, (58, 58, 454, 454), radius=92, offset=(0, 16))
+    draw.rounded_rectangle(
+        (58, 58, 454, 454),
+        radius=92,
+        fill=(2, 136, 209, 255),
+        outline=(109, 213, 250, 255),
+        width=8,
+    )
+    draw.rounded_rectangle(
+        (86, 86, 426, 426),
+        radius=72,
+        fill=(7, 43, 71, 255),
+        outline=(29, 185, 239, 255),
+        width=4,
+    )
+
+    _draw_home_assistant_mark(draw)
+    _draw_idleon_badge(image, badge)
+    return image
+
+
+def _draw_home_assistant_mark(draw: ImageDraw.ImageDraw) -> None:
+    """Draw a simplified Home Assistant house and telemetry mark."""
+    roof = [(128, 243), (256, 128), (384, 243), (358, 271), (256, 180), (154, 271)]
+    draw.polygon(roof, fill=(103, 232, 249, 255))
+    draw.line((154, 271, 154, 358, 358, 358, 358, 271), fill=(103, 232, 249, 255), width=22)
+
+    draw.rounded_rectangle((205, 266, 307, 358), radius=14, fill=(11, 74, 107, 255))
+    draw.rounded_rectangle((222, 281, 249, 308), radius=7, fill=(166, 244, 255, 255))
+    draw.rounded_rectangle((263, 281, 290, 308), radius=7, fill=(166, 244, 255, 255))
+    draw.rounded_rectangle((222, 322, 249, 349), radius=7, fill=(166, 244, 255, 255))
+    draw.rounded_rectangle((263, 322, 290, 349), radius=7, fill=(166, 244, 255, 255))
+
+    for start, end in (
+        ((132, 342), (185, 342)),
+        ((132, 386), (234, 386)),
+        ((132, 298), (132, 258)),
+    ):
+        draw.line((*start, *end), fill=(99, 234, 255, 255), width=12)
+    for center in ((132, 342), (132, 386), (132, 258), (185, 342), (234, 386)):
+        draw.ellipse(
+            (center[0] - 13, center[1] - 13, center[0] + 13, center[1] + 13),
+            fill=(177, 246, 255, 255),
+            outline=(29, 185, 239, 255),
+            width=4,
+        )
+
+
+def _draw_idleon_badge(image: Image.Image, badge: Image.Image) -> None:
+    """Place the Idleon artwork as a restrained bottom-right badge."""
+    badge_size = 138
+    badge = _fit_square(badge, badge_size)
+    mask = Image.new("L", (badge_size, badge_size), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.rounded_rectangle((0, 0, badge_size, badge_size), radius=34, fill=255)
+
+    badge_canvas = Image.new("RGBA", (badge_size + 18, badge_size + 18), (0, 0, 0, 0))
+    badge_draw = ImageDraw.Draw(badge_canvas)
+    badge_draw.rounded_rectangle(
+        (3, 3, badge_size + 15, badge_size + 15),
+        radius=39,
+        fill=(0, 0, 0, 85),
+    )
+    badge_draw.rounded_rectangle(
+        (0, 0, badge_size + 10, badge_size + 10),
+        radius=38,
+        fill=(246, 190, 74, 255),
+        outline=(255, 235, 156, 255),
+        width=4,
+    )
+    badge_canvas.paste(badge, (5, 5), mask)
+    image.alpha_composite(badge_canvas, (318, 318))
+
+
+def _fit_square(image: Image.Image, size: int) -> Image.Image:
+    """Center-crop and resize an image to a square."""
+    width, height = image.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    return image.crop((left, top, left + side, top + side)).resize(
+        (size, size),
+        Image.Resampling.LANCZOS,
+    )
+
+
+def _draw_soft_shadow(
+    image: Image.Image,
+    box: tuple[int, int, int, int],
+    *,
+    radius: int,
+    offset: tuple[int, int],
+) -> None:
+    """Draw a blurred rounded-rectangle shadow."""
+    shadow = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    shifted = (
+        box[0] + offset[0],
+        box[1] + offset[1],
+        box[2] + offset[0],
+        box[3] + offset[1],
+    )
+    shadow_draw.rounded_rectangle(shifted, radius=radius, fill=(0, 0, 0, 90))
+    image.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(18)))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
