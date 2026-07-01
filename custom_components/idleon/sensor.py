@@ -105,17 +105,31 @@ async def async_setup_entry(
 ) -> None:
     """Set up Idleon sensors for a config entry."""
     coordinator = entry.runtime_data.coordinator
+    added_character_ids: set[str] = set()
+
+    def _new_character_entities() -> list[SensorEntity]:
+        entities: list[SensorEntity] = []
+        for character in coordinator.data.characters:
+            if character.character_id in added_character_ids:
+                continue
+            added_character_ids.add(character.character_id)
+            entities.extend(
+                IdleonCharacterSensor(entry, coordinator, character, description)
+                for description in CHARACTER_SENSOR_DESCRIPTIONS
+            )
+        return entities
+
+    def _add_new_character_entities() -> None:
+        if entities := _new_character_entities():
+            async_add_entities(entities)
+
     entities: list[SensorEntity] = [
         IdleonAccountSensor(entry, coordinator, description)
         for description in ACCOUNT_SENSOR_DESCRIPTIONS
     ]
-
-    entities.extend(
-        IdleonCharacterSensor(entry, coordinator, character, description)
-        for character in coordinator.data.characters
-        for description in CHARACTER_SENSOR_DESCRIPTIONS
-    )
+    entities.extend(_new_character_entities())
     async_add_entities(entities)
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_character_entities))
 
 
 class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], SensorEntity):

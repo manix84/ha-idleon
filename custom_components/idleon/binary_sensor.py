@@ -62,11 +62,26 @@ async def async_setup_entry(
 ) -> None:
     """Set up Idleon binary sensors for a config entry."""
     coordinator = entry.runtime_data.coordinator
-    async_add_entities(
-        IdleonCharacterBinarySensor(entry, coordinator, character, description)
-        for character in coordinator.data.characters
-        for description in CHARACTER_BINARY_SENSOR_DESCRIPTIONS
-    )
+    added_character_ids: set[str] = set()
+
+    def _new_character_entities() -> list[BinarySensorEntity]:
+        entities: list[BinarySensorEntity] = []
+        for character in coordinator.data.characters:
+            if character.character_id in added_character_ids:
+                continue
+            added_character_ids.add(character.character_id)
+            entities.extend(
+                IdleonCharacterBinarySensor(entry, coordinator, character, description)
+                for description in CHARACTER_BINARY_SENSOR_DESCRIPTIONS
+            )
+        return entities
+
+    def _add_new_character_entities() -> None:
+        if entities := _new_character_entities():
+            async_add_entities(entities)
+
+    async_add_entities(_new_character_entities())
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_character_entities))
 
 
 class IdleonCharacterBinarySensor(

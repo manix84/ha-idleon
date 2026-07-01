@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Self
 
@@ -214,3 +215,68 @@ async def test_failed_refresh_marks_entities_unavailable_then_recovers(
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert entry.runtime_data.coordinator.last_error_type is None
+
+
+async def test_refresh_adds_entities_for_new_characters(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+    tmp_path: Path,
+) -> None:
+    """Test newly discovered characters are added after a refresh."""
+    full_data = json.loads(sample_data_path.read_text())
+    first_character_data = json.loads(sample_data_path.read_text())
+    first_character_data["account"]["characters"] = [
+        first_character_data["account"]["characters"][0]
+    ]
+
+    source_path = tmp_path / "idleon.json"
+    source_path.write_text(json.dumps(first_character_data))
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(source_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    miner_level_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_miner_alt_character_level",
+    )
+    miner_inventory_entity_id = entity_registry.async_get_entity_id(
+        "binary_sensor",
+        DOMAIN,
+        f"{entry.entry_id}_miner_alt_character_inventory_full",
+    )
+
+    assert miner_level_entity_id is None
+    assert miner_inventory_entity_id is None
+
+    source_path.write_text(json.dumps(full_data))
+    await entry.runtime_data.coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    miner_level_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_miner_alt_character_level",
+    )
+    miner_inventory_entity_id = entity_registry.async_get_entity_id(
+        "binary_sensor",
+        DOMAIN,
+        f"{entry.entry_id}_miner_alt_character_inventory_full",
+    )
+
+    assert miner_level_entity_id is not None
+    assert miner_inventory_entity_id is not None
+    assert hass.states.get(miner_level_entity_id).state == "155"
+    assert hass.states.get(miner_inventory_entity_id).state == "off"
