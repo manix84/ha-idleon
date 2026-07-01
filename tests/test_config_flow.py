@@ -130,6 +130,32 @@ async def test_config_flow_invalid_local_json(
     assert result["errors"] == {"base": "invalid_json"}
 
 
+async def test_config_flow_invalid_schema(
+    hass: HomeAssistant,
+    tmp_path: Path,
+) -> None:
+    """Test structurally invalid local JSON returns a schema error."""
+    invalid_schema_path = tmp_path / "idleon.json"
+    invalid_schema_path.write_text('{"not_characters": []}')
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(invalid_schema_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_schema"}
+
+
 async def test_config_flow_success_remote_url(
     hass: HomeAssistant,
     sample_data_path: Path,
