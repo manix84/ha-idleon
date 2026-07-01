@@ -10,7 +10,7 @@
       },
       "source": {
         "title": "Idleon data source",
-        "description": "Configure and validate the selected read-only data source.",
+        "description": "Configure and validate the selected read-only data source. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
         "data": {
           "local_file_path": "Local JSON file path",
           "remote_url": "Remote JSON URL",
@@ -39,7 +39,7 @@
       },
       "source": {
         "title": "Idleon data source",
-        "description": "Update and validate the selected read-only data source.",
+        "description": "Update and validate the selected read-only data source. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
         "data": {
           "local_file_path": "Local JSON file path",
           "remote_url": "Remote JSON URL",

@@ -70,7 +70,10 @@ The integration validates the source before creating the config entry.
 ### 📄 Local File
 
 Use `local_file` when Home Assistant can read a JSON file from disk. The path
-must be readable by the Home Assistant process.
+must be readable by the Home Assistant process and must be the path as seen
+from the Home Assistant server, not your workstation. For a typical Home
+Assistant config directory, place the file somewhere like
+`/config/idleon/real_data.json` and enter that exact path in the config flow.
 
 ### 🌐 Remote URL
 
