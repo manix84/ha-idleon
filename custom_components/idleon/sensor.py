@@ -37,7 +37,7 @@ class IdleonCharacterSensorEntityDescription(SensorEntityDescription):
     """Description for a character sensor."""
 
     value_fn: Callable[[IdleonCharacter], Any]
-    include_details: bool = False
+    detail_keys: tuple[str, ...] = ()
 
 
 ACCOUNT_SENSOR_DESCRIPTIONS = (
@@ -69,28 +69,31 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         key="character_level",
         translation_key="character_level",
         value_fn=lambda character: character.level,
-        include_details=True,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_class",
         translation_key="character_class",
         value_fn=lambda character: character.character_class,
+        detail_keys=("raw_class_id",),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_current_map",
         translation_key="character_current_map",
         value_fn=lambda character: character.current_map,
+        detail_keys=("raw_map_id",),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_current_activity",
         translation_key="character_current_activity",
         value_fn=lambda character: character.current_activity,
+        detail_keys=("afk_target",),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_afk_hours",
         translation_key="character_afk_hours",
         native_unit_of_measurement=UnitOfTime.HOURS,
         value_fn=lambda character: character.afk_hours,
+        detail_keys=("afk_seconds", "raw_afk_value"),
     ),
 )
 
@@ -182,13 +185,17 @@ class IdleonCharacterSensor(
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
-        """Return compact detailed character attributes on the primary sensor."""
-        if not self.entity_description.include_details:
+        """Return details relevant to this character sensor."""
+        if not self.entity_description.detail_keys:
             return None
         character = self._character
         if character is None or not character.details:
             return None
-        return dict(character.details)
+        attributes = _select_detail_attributes(
+            character.details,
+            self.entity_description.detail_keys,
+        )
+        return attributes or None
 
     @property
     def _character(self) -> IdleonCharacter | None:
@@ -246,3 +253,11 @@ def _slugify(value: str) -> str:
         character.lower() if character.isalnum() else "_" for character in value
     )
     return "_".join(part for part in slug.split("_") if part)
+
+
+def _select_detail_attributes(
+    details: Mapping[str, Any],
+    keys: tuple[str, ...],
+) -> dict[str, Any]:
+    """Return selected character detail attributes."""
+    return {key: details[key] for key in keys if key in details}

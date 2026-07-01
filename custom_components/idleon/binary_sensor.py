@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -18,7 +19,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import IdleonRuntimeData
 from .coordinator import IdleonDataUpdateCoordinator
 from .models import IdleonCharacter
-from .sensor import _character_device_info, _slugify
+from .sensor import _character_device_info, _select_detail_attributes, _slugify
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -26,6 +27,7 @@ class IdleonCharacterBinarySensorEntityDescription(BinarySensorEntityDescription
     """Description for a character binary sensor."""
 
     value_fn: Callable[[IdleonCharacter], bool]
+    detail_keys: tuple[str, ...] = ()
 
 
 CHARACTER_BINARY_SENSOR_DESCRIPTIONS = (
@@ -33,6 +35,16 @@ CHARACTER_BINARY_SENSOR_DESCRIPTIONS = (
         key="character_inventory_full",
         translation_key="character_inventory_full",
         value_fn=lambda character: character.inventory_full,
+        detail_keys=(
+            "inventory_slots_total",
+            "inventory_slots_usable",
+            "inventory_slots_used",
+            "inventory_slots_free",
+            "inventory_sample",
+            "inventory_bag_count",
+            "inventory_bags",
+            "max_carry_capacity",
+        ),
     ),
     IdleonCharacterBinarySensorEntityDescription(
         key="character_needs_attention",
@@ -94,6 +106,20 @@ class IdleonCharacterBinarySensor(
         if character is None:
             return None
         return self.entity_description.value_fn(character)
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return details relevant to this character binary sensor."""
+        if not self.entity_description.detail_keys:
+            return None
+        character = self._character
+        if character is None or not character.details:
+            return None
+        attributes = _select_detail_attributes(
+            character.details,
+            self.entity_description.detail_keys,
+        )
+        return attributes or None
 
     @property
     def _character(self) -> IdleonCharacter | None:
