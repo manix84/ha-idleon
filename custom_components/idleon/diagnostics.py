@@ -33,6 +33,11 @@ async def async_get_config_entry_diagnostics(
         },
         "account": {
             "character_count": account.character_count if account else 0,
+            "source_updated_at": (
+                account.source_updated_at.isoformat()
+                if account and account.source_updated_at
+                else None
+            ),
         },
         "coordinator": {
             "last_successful_update": (

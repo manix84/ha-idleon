@@ -47,5 +47,6 @@ async def test_diagnostics_redaction(
         "https://example.com/data.json?REDACTED"
     )
     assert diagnostics["account"]["character_count"] == 2
+    assert diagnostics["account"]["source_updated_at"] == "2026-06-29T12:00:00+00:00"
     assert "raw" not in diagnostics
     assert "characters" not in diagnostics["account"]
