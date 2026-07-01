@@ -170,6 +170,36 @@ def test_parser_labels_indexed_characters_from_cog_order() -> None:
     ]
 
 
+def test_parser_normalizes_real_indexed_detail_values() -> None:
+    """Test real indexed exports normalize AFK time and locked inventory slots."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "PTimeAway_0": 1782760.29,
+            "InventoryOrder_0": [
+                "LockedInvSpace",
+                "FoodHealth1",
+                "Blank",
+                "EquipmentHats1",
+                "LockedInvSpace",
+            ],
+        }
+    )
+
+    character = account.characters[0]
+
+    assert character.afk_hours == 0.5
+    assert character.details["afk_seconds"] == 1782.76
+    assert character.details["raw_afk_value"] == 1782760.29
+    assert character.details["inventory_slots_total"] == 5
+    assert character.details["inventory_slots_usable"] == 3
+    assert character.details["inventory_slots_used"] == 2
+    assert character.details["inventory_slots_free"] == 1
+    assert character.details["inventory_sample"] == ["Nomwich", "Farmer Brim"]
+
+
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     """Test parser accepts wrapped exports from Idleon API Downloader."""
     raw_data = json.loads(

@@ -15,6 +15,16 @@ from .game_maps import afk_activity_label, class_name_label, map_name_label
 from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
 
 DETAIL_SAMPLE_LIMIT = 12
+EMPTY_INVENTORY_SLOT_VALUES = {
+    "",
+    "0",
+    "blank",
+    "empty",
+    "filler",
+    "lockedinvspace",
+    "none",
+    "null",
+}
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -292,7 +302,8 @@ def _parse_indexed_character(
     class_value = raw_data.get(f"CharacterClass_{character_index}")
     current_map = raw_data.get(f"CurrentMap_{character_index}")
     afk_target = raw_data.get(f"AFKtarget_{character_index}")
-    afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
+    raw_afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
+    afk_seconds = _normalized_afk_seconds(raw_afk_seconds)
     inventory_full = _indexed_inventory_full(raw_data, character_index)
     character_name = _indexed_character_name(character_index, character_names)
     details = _indexed_character_details(
@@ -302,6 +313,7 @@ def _parse_indexed_character(
         current_map=current_map,
         afk_target=afk_target,
         afk_seconds=afk_seconds,
+        raw_afk_value=raw_afk_seconds,
     )
 
     return IdleonCharacter(
@@ -370,6 +382,7 @@ def _indexed_character_details(
     current_map: Any,
     afk_target: Any,
     afk_seconds: float,
+    raw_afk_value: float,
 ) -> dict[str, Any]:
     """Return compact detailed attributes for an indexed character."""
     details: dict[str, Any] = {
@@ -378,6 +391,8 @@ def _indexed_character_details(
         "afk_target": afk_target,
         "afk_seconds": round(afk_seconds, 2),
     }
+    if raw_afk_value != afk_seconds:
+        details["raw_afk_value"] = round(raw_afk_value, 2)
     details.update(_indexed_inventory_details(raw_data, character_index))
     details.update(_indexed_inventory_bag_details(raw_data, character_index))
     details.update(_indexed_max_carry_capacity_details(raw_data, character_index))
@@ -393,13 +408,15 @@ def _indexed_inventory_details(
     if not isinstance(inventory, list):
         return {}
 
-    used_items = [item for item in inventory if _inventory_slot_has_item(item)]
     total_slots = len(inventory)
+    usable_slots = sum(1 for item in inventory if not _inventory_slot_is_locked(item))
+    used_items = [item for item in inventory if _inventory_slot_has_item(item)]
     used_slots = len(used_items)
     return {
         "inventory_slots_total": total_slots,
+        "inventory_slots_usable": usable_slots,
         "inventory_slots_used": used_slots,
-        "inventory_slots_free": max(total_slots - used_slots, 0),
+        "inventory_slots_free": max(usable_slots - used_slots, 0),
         "inventory_sample": _limited_labels(used_items),
     }
 
@@ -444,8 +461,20 @@ def _inventory_slot_has_item(value: Any) -> bool:
         return False
     if isinstance(value, str):
         normalized = value.strip().lower()
-        return normalized not in {"", "0", "none", "null", "blank", "empty"}
+        return normalized not in EMPTY_INVENTORY_SLOT_VALUES
     return bool(value)
+
+
+def _inventory_slot_is_locked(value: Any) -> bool:
+    """Return whether an inventory slot is not currently usable."""
+    return isinstance(value, str) and value.strip().lower() == "lockedinvspace"
+
+
+def _normalized_afk_seconds(value: float) -> float:
+    """Return AFK time normalized to seconds from known export units."""
+    if value > 604800:
+        return value / 1000
+    return value
 
 
 def _parse_indexed_source_updated_at(raw_data: Mapping[str, Any]) -> datetime | None:
@@ -520,12 +549,16 @@ def _character_details(character_data: Mapping[str, Any]) -> dict[str, Any]:
     parsed_details = dict(details)
     inventory = _first_value(character_data, ("inventory", "inventory_order"))
     if isinstance(inventory, list):
+        usable_slots = sum(
+            1 for item in inventory if not _inventory_slot_is_locked(item)
+        )
         used_items = [item for item in inventory if _inventory_slot_has_item(item)]
         parsed_details.update(
             {
                 "inventory_slots_total": len(inventory),
+                "inventory_slots_usable": usable_slots,
                 "inventory_slots_used": len(used_items),
-                "inventory_slots_free": max(len(inventory) - len(used_items), 0),
+                "inventory_slots_free": max(usable_slots - len(used_items), 0),
                 "inventory_sample": _limited_labels(used_items),
             }
         )
