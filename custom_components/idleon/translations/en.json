@@ -19,6 +19,7 @@
       }
     },
     "error": {
+      "already_configured": "This data source is already configured.",
       "cannot_connect": "Cannot connect to or read the data source.",
       "invalid_json": "The data source did not return valid JSON.",
       "invalid_schema": "The data source JSON does not look like Idleon account data.",

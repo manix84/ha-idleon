@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -153,6 +154,25 @@ class IdleonOptionsFlow(OptionsFlow):
             except Exception:
                 errors["base"] = "unknown"
             else:
+                if _source_unique_id_configured(
+                    self.hass,
+                    data_source,
+                    current_entry_id=self._config_entry.entry_id,
+                ):
+                    errors["base"] = "already_configured"
+                    return self.async_show_form(
+                        step_id="source",
+                        data_schema=_source_details_schema(
+                            self._data_source_type,
+                            {**self._config_entry.data, **self._config_entry.options},
+                        ),
+                        errors=errors,
+                    )
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry,
+                    title=_entry_title(data_source),
+                    unique_id=_source_unique_id(data_source),
+                )
                 return self.async_create_entry(
                     title="",
                     data=normalized_input,
@@ -285,6 +305,29 @@ def _source_unique_id(data_source: IdleonDataSource) -> str:
         return f"{DATA_SOURCE_REMOTE_URL}:{redacted_url}"
 
     return f"{DATA_SOURCE_LOCAL_FILE}:{data_source.local_file_path}"
+
+
+def _source_unique_id_configured(
+    hass: HomeAssistant,
+    data_source: IdleonDataSource,
+    *,
+    current_entry_id: str | None = None,
+) -> bool:
+    """Return whether another config entry already uses this data source."""
+    source_unique_id = _source_unique_id(data_source)
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.entry_id == current_entry_id:
+            continue
+        if entry.unique_id == source_unique_id:
+            return True
+        with suppress(KeyError):
+            entry_data = {**entry.data, **entry.options}
+            if (
+                _source_unique_id(_data_source_from_input(entry_data))
+                == source_unique_id
+            ):
+                return True
+    return False
 
 
 def _entry_title(data_source: IdleonDataSource) -> str:

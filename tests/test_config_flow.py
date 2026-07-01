@@ -323,6 +323,61 @@ async def test_options_flow_updates_source(
         CONF_LOCAL_FILE_PATH: str(updated_path),
         CONF_SCAN_INTERVAL: 7200,
     }
+    assert config_entry.title == "Idleon Local File"
+    assert config_entry.unique_id == f"{DATA_SOURCE_LOCAL_FILE}:{updated_path}"
+
+
+async def test_options_flow_rejects_duplicate_source(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+    tmp_path: Path,
+) -> None:
+    """Test options flow does not allow duplicate configured sources."""
+    first_path = tmp_path / "first_idleon_data.json"
+    second_path = tmp_path / "second_idleon_data.json"
+    first_path.write_text(sample_data_path.read_text())
+    second_path.write_text(sample_data_path.read_text())
+
+    first_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        unique_id=f"{DATA_SOURCE_LOCAL_FILE}:{first_path}",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(first_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    first_entry.add_to_hass(hass)
+
+    second_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        unique_id=f"{DATA_SOURCE_LOCAL_FILE}:{second_path}",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(second_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    second_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(first_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_LOCAL_FILE_PATH: str(second_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "already_configured"}
+    assert first_entry.unique_id == f"{DATA_SOURCE_LOCAL_FILE}:{first_path}"
 
 
 async def _create_local_file_entry(
