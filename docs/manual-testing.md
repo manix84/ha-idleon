@@ -62,9 +62,9 @@ data_source_type: local_file
 local_file_path: /config/idleon_real_data.json
 ```
 
-For the current indexed export shape, character names are not present in the raw
-data. HA Idleon will create `Character 1`, `Character 2`, and so on until a
-reliable name field is identified.
+For indexed exports, HA Idleon labels characters as `Character N - Name` when a
+name can be found in `charNameData` or inferred from flat export fields such as
+`CogO`. If no reliable name is available, it falls back to `Character N`.
 
 To inspect a raw export without dumping the full sensitive JSON payload, run:
 

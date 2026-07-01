@@ -58,7 +58,9 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
         "sections_with_matched_raw_fields": 3,
     }
     assert rendered[0]["parsed"]["character_count"] == 2
-    assert rendered[0]["parsed"]["characters"][0]["name"] == "Alpha Archer"
+    assert rendered[0]["parsed"]["characters"][0]["name"] == (
+        "Character 1 - Alpha Archer"
+    )
     assert rendered[0]["parsed"]["characters"][0]["current_activity"] == (
         "Fighting: Green Mushroom"
     )

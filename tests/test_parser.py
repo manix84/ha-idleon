@@ -130,6 +130,46 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
     assert second_character.afk_hours == 0.5
 
 
+def test_parser_labels_indexed_characters_from_cog_order() -> None:
+    """Test flat indexed exports can infer useful character labels from CogO."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CharacterClass_1": 34,
+            "CharacterClass_2": 22,
+            "CharacterClass_3": 29,
+            "CharacterClass_4": 12,
+            "CurrentMap_0": 216,
+            "CurrentMap_1": 325,
+            "CurrentMap_2": 325,
+            "CurrentMap_3": 325,
+            "CurrentMap_4": 325,
+            "Lv0_0": [1134],
+            "Lv0_1": [1097],
+            "Lv0_2": [1110],
+            "Lv0_3": [1120],
+            "Lv0_4": [1098],
+            "CogO": json.dumps(
+                [
+                    "Player_ManLuck84",
+                    "Player_ManWizard84",
+                    "Player_WoManArch84",
+                    "Player_Manix84_5",
+                    "Player_Manix84",
+                ]
+            ),
+        }
+    )
+
+    assert [character.name for character in account.characters] == [
+        "Character 1 - Manix84",
+        "Character 2 - ManWizard84",
+        "Character 3 - WoManArch84",
+        "Character 4 - ManLuck84",
+        "Character 5 - Manix84_5",
+    ]
+
+
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     """Test parser accepts wrapped exports from Idleon API Downloader."""
     raw_data = json.loads(
@@ -147,7 +187,7 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     )
 
     first_character = account.characters[0]
-    assert first_character.name == "Alpha Archer"
+    assert first_character.name == "Character 1 - Alpha Archer"
     assert first_character.level == 101
     assert first_character.character_class == "Bowman"
     assert first_character.current_map == "Freefall Caverns"
@@ -169,7 +209,7 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     }
 
     second_character = account.characters[1]
-    assert second_character.name == "Beta Mage"
+    assert second_character.name == "Character 2 - Beta Mage"
     assert second_character.level == 202
     assert second_character.character_class == "Elemental Sorcerer"
     assert second_character.inventory_full is False

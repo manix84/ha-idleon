@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from datetime import UTC, datetime
@@ -85,10 +86,10 @@ def _looks_like_indexed_export(raw_data: Mapping[str, Any]) -> bool:
 def _parse_indexed_export(raw_data: Mapping[str, Any]) -> IdleonAccount:
     """Parse indexed raw Idleon export data."""
     fields = _indexed_export_fields(raw_data)
-    character_names = _indexed_character_names(raw_data)
     character_indexes = _indexed_character_ids(fields)
     if not character_indexes:
         raise IdleonInvalidSchema("Indexed Idleon data must contain characters")
+    character_names = _indexed_character_names(raw_data, fields, character_indexes)
 
     characters = tuple(
         _parse_indexed_character(fields, character_index, character_names)
@@ -115,15 +116,153 @@ def _indexed_export_fields(raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
     return raw_data
 
 
-def _indexed_character_names(raw_data: Mapping[str, Any]) -> tuple[str, ...]:
-    """Return character names from wrapped Idleon exports when present."""
+def _indexed_character_names(
+    raw_data: Mapping[str, Any],
+    fields: Mapping[str, Any],
+    character_indexes: tuple[int, ...],
+) -> Mapping[int, str]:
+    """Return character names from wrapped or flat Idleon exports."""
     char_name_data = raw_data.get("charNameData")
-    if not isinstance(char_name_data, Iterable) or isinstance(
+    if isinstance(char_name_data, Iterable) and not isinstance(
         char_name_data,
         str | bytes,
     ):
+        return {
+            index: str(name).strip()
+            for index, name in enumerate(char_name_data)
+            if str(name).strip()
+        }
+
+    return _indexed_character_names_from_cog_order(fields, character_indexes)
+
+
+def _indexed_character_names_from_cog_order(
+    raw_data: Mapping[str, Any],
+    character_indexes: tuple[int, ...],
+) -> Mapping[int, str]:
+    """Return likely character names from CogO placement data."""
+    names = _player_names_from_cog_order(raw_data)
+    if not names:
+        return {}
+
+    mapped: dict[int, str] = {}
+    remaining: list[str] = []
+    for name in names:
+        suffix_index = _name_suffix_character_index(name)
+        if suffix_index is not None and suffix_index in character_indexes:
+            mapped.setdefault(suffix_index, name)
+        else:
+            remaining.append(name)
+
+    _map_primary_character_name(mapped, remaining)
+    _map_class_hinted_character_names(raw_data, character_indexes, mapped, remaining)
+    return mapped
+
+
+def _player_names_from_cog_order(raw_data: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return unique player names found in CogO data in first-seen order."""
+    cog_order = _maybe_json(raw_data.get("CogO"))
+    if not isinstance(cog_order, Iterable) or isinstance(cog_order, str | bytes):
         return ()
-    return tuple(str(name) for name in char_name_data)
+
+    names: list[str] = []
+    for value in cog_order:
+        if not isinstance(value, str) or not value.startswith("Player_"):
+            continue
+        name = value.removeprefix("Player_").strip()
+        if name and name not in names:
+            names.append(name)
+    return tuple(names)
+
+
+def _name_suffix_character_index(name: str) -> int | None:
+    """Return a zero-based character index from a trailing name suffix."""
+    match = re.search(r"_(\d+)$", name)
+    if not match:
+        return None
+    suffix = _coerce_int(match.group(1))
+    if suffix is None or suffix <= 0:
+        return None
+    return suffix - 1
+
+
+def _map_primary_character_name(
+    mapped: dict[int, str],
+    remaining: list[str],
+) -> None:
+    """Map an unsuffixed main name to character 0 when suffixes reveal a base."""
+    if 0 in mapped:
+        return
+
+    suffixed_bases = {
+        re.sub(r"_\d+$", "", name)
+        for name in mapped.values()
+        if re.search(r"_\d+$", name)
+    }
+    for name in tuple(remaining):
+        if name in suffixed_bases:
+            mapped[0] = name
+            remaining.remove(name)
+            return
+
+
+def _map_class_hinted_character_names(
+    raw_data: Mapping[str, Any],
+    character_indexes: tuple[int, ...],
+    mapped: dict[int, str],
+    remaining: list[str],
+) -> None:
+    """Map remaining names when their text clearly hints at a class family."""
+    for name in tuple(remaining):
+        hinted_index = _class_hint_index_for_name(
+            name,
+            raw_data,
+            character_indexes,
+            mapped,
+        )
+        if hinted_index is not None:
+            mapped[hinted_index] = name
+            remaining.remove(name)
+
+
+def _class_hint_index_for_name(
+    name: str,
+    raw_data: Mapping[str, Any],
+    character_indexes: tuple[int, ...],
+    mapped: Mapping[int, str],
+) -> int | None:
+    """Return a likely index when a name clearly identifies a class family."""
+    name_tokens = name.lower()
+    for index in character_indexes:
+        if index in mapped:
+            continue
+        class_name = _class_name(raw_data.get(f"CharacterClass_{index}")).lower()
+        if _name_matches_class_hint(name_tokens, class_name):
+            return index
+    return None
+
+
+def _name_matches_class_hint(name: str, class_name: str) -> bool:
+    """Return whether a character name hints at a parsed class name."""
+    hint_groups = (
+        (
+            ("wizard", "mage", "sorc"),
+            ("wizard", "mage", "sorcerer", "shaman", "conjuror", "cultist"),
+        ),
+        (
+            ("arch", "bow", "hunter"),
+            ("archer", "bowman", "hunter", "siege", "breaker", "beast", "sniper"),
+        ),
+        (
+            ("luck", "luk", "journey"),
+            ("journeyman", "maestro", "voidwalker", "wind walker", "walker"),
+        ),
+    )
+    return any(
+        any(token in name for token in name_hints)
+        and any(token in class_name for token in class_hints)
+        for name_hints, class_hints in hint_groups
+    )
 
 
 def _indexed_character_ids(raw_data: Mapping[str, Any]) -> tuple[int, ...]:
@@ -146,7 +285,7 @@ def _indexed_character_ids(raw_data: Mapping[str, Any]) -> tuple[int, ...]:
 def _parse_indexed_character(
     raw_data: Mapping[str, Any],
     character_index: int,
-    character_names: tuple[str, ...] = (),
+    character_names: Mapping[int, str] | None = None,
 ) -> IdleonCharacter:
     """Parse one indexed raw export character."""
     level = _indexed_character_level(raw_data, character_index)
@@ -199,14 +338,17 @@ def _indexed_character_level(
 
 def _indexed_character_name(
     character_index: int,
-    character_names: tuple[str, ...],
+    character_names: Mapping[int, str] | None,
 ) -> str:
     """Return character name from export metadata or a stable fallback."""
-    with suppress(IndexError):
-        name = character_names[character_index].strip()
-        if name:
-            return name
-    return f"Character {character_index + 1}"
+    fallback = f"Character {character_index + 1}"
+    if not character_names:
+        return fallback
+
+    name = character_names.get(character_index, "").strip()
+    if not name:
+        return fallback
+    return f"{fallback} - {name}"
 
 
 def _indexed_inventory_full(
