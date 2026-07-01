@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from logging import getLogger
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -42,6 +43,8 @@ from .idleon_data import (
     parse_idleon_account,
 )
 from .models import IdleonDataSource
+
+_LOGGER = getLogger(__name__)
 
 
 class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -86,6 +89,7 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             except IdleonInvalidSchema:
                 errors["base"] = "invalid_schema"
             except Exception:
+                _LOGGER.exception("Unexpected error validating Idleon data source")
                 errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(_source_unique_id(data_source))
@@ -152,6 +156,7 @@ class IdleonOptionsFlow(OptionsFlow):
             except IdleonInvalidSchema:
                 errors["base"] = "invalid_schema"
             except Exception:
+                _LOGGER.exception("Unexpected error validating Idleon data source")
                 errors["base"] = "unknown"
             else:
                 if _source_unique_id_configured(
