@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.1.17
+
+- Patch release placeholder. Update before release.
+
 ## 🚀 0.1.16
 
 - Patch release placeholder. Update before release.

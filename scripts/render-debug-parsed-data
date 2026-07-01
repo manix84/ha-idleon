@@ -26,6 +26,10 @@ from custom_components.idleon.idleon_data import (  # noqa: E402
     parse_all_toolbox_sections,
     parse_idleon_account,
 )
+from custom_components.idleon.idleon_data.game_maps import (  # noqa: E402
+    class_name_label,
+    display_name,
+)
 from custom_components.idleon.models import IdleonAccount  # noqa: E402
 
 DEFAULT_INPUT_GLOBS = ("examples/rawData.json", "examples/real_data*.json")
@@ -261,12 +265,23 @@ def _clean_character_summary(character: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "name": character.get("name"),
         "level": character.get("level"),
-        "class": character.get("class"),
+        "class": _clean_class_label(character.get("class")),
+        "raw_class": character.get("class"),
         "currentMap": character.get("currentMap"),
         "AFKtarget": character.get("AFKtarget"),
         "timeAway": character.get("timeAway"),
         "inventory_slots": len(inventory) if isinstance(inventory, list) else None,
     }
+
+
+def _clean_class_label(value: Any) -> str | None:
+    """Return a clean reference class display label."""
+    if value is None:
+        return None
+    class_id = _coerce_int(value)
+    if class_id is not None:
+        return class_name_label(class_id)
+    return display_name(str(value))
 
 
 def _coerce_int(value: Any) -> int | None:
@@ -620,6 +635,7 @@ def _render_clean_reference(clean_reference: Mapping[str, Any]) -> str:
         <th>Name</th>
         <th>Level</th>
         <th>Class</th>
+        <th>Raw Class</th>
         <th>Current Map ID</th>
         <th>AFK Target</th>
         <th>Time Away</th>
@@ -638,6 +654,7 @@ def _render_clean_character_row(character: Mapping[str, Any]) -> str:
         character.get("name"),
         character.get("level"),
         character.get("class"),
+        character.get("raw_class"),
         character.get("currentMap"),
         character.get("AFKtarget"),
         character.get("timeAway"),
