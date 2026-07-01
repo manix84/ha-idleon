@@ -135,6 +135,9 @@ def _watch(
     try:
         while True:
             snapshot = _mtime_snapshot(watched_paths)
+            if last_snapshot and _code_changed(last_snapshot, snapshot):
+                sys.stdout.write("Parser code changed; restarting debug watch.\n")
+                os.execv(sys.executable, [sys.executable, *sys.argv])
             if snapshot != last_snapshot:
                 _render_debug_files(
                     input_paths=input_paths,
@@ -172,6 +175,19 @@ def _mtime_snapshot(paths: tuple[Path, ...]) -> dict[Path, float | None]:
     return snapshot
 
 
+def _code_changed(
+    previous: Mapping[Path, float | None],
+    current: Mapping[Path, float | None],
+) -> bool:
+    """Return whether watched Python code changed and requires reload."""
+    for path, current_mtime in current.items():
+        if path.suffix != ".py" and path.name != Path(__file__).name:
+            continue
+        if previous.get(path) != current_mtime:
+            return True
+    return False
+
+
 def _default_input_paths() -> tuple[Path, ...]:
     """Return default local raw export paths."""
     paths: list[Path] = []
@@ -187,11 +203,14 @@ def _render_source(
     """Return parsed debug output for one source file."""
     raw_data = _load_json(path)
     account = parse_idleon_account(raw_data)
+    toolbox_sections = _toolbox_sections_summary(raw_data)
     rendered = {
         "source": str(path),
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
         "raw_summary": _raw_summary(raw_data),
         "parsed": _account_to_dict(account),
-        "toolbox_sections": _toolbox_sections_summary(raw_data),
+        "toolbox_summary": _toolbox_summary(toolbox_sections),
+        "toolbox_sections": toolbox_sections,
     }
     if clean_reference is not None:
         rendered["clean_reference"] = _clean_reference_summary(clean_reference)
@@ -287,6 +306,17 @@ def _toolbox_sections_summary(raw_data: Mapping[str, Any]) -> dict[str, Any]:
             "missing_raw_fields": section.missing_raw_fields,
         }
         for parser_id, section in sections.items()
+    }
+
+
+def _toolbox_summary(toolbox_sections: Mapping[str, Any]) -> dict[str, Any]:
+    """Return compact Toolbox parser coverage counts."""
+    matched_count = sum(
+        1 for section in toolbox_sections.values() if section.get("matched_raw_fields")
+    )
+    return {
+        "parser_section_count": len(toolbox_sections),
+        "sections_with_matched_raw_fields": matched_count,
     }
 
 
@@ -450,6 +480,10 @@ def _render_source_section(source: dict[str, Any]) -> str:
     """Return one HTML source section."""
     parsed = source["parsed"]
     raw_summary = source["raw_summary"]
+    debug_metadata = {
+        "generated_at": source["generated_at"],
+        **source["toolbox_summary"],
+    }
     toolbox_sections = source["toolbox_sections"]
     characters = parsed["characters"]
     character_rows = "\n".join(
@@ -457,6 +491,9 @@ def _render_source_section(source: dict[str, Any]) -> str:
     )
     summary_rows = "\n".join(
         _render_key_value_row(key, value) for key, value in raw_summary.items()
+    )
+    debug_metadata_rows = "\n".join(
+        _render_key_value_row(key, value) for key, value in debug_metadata.items()
     )
     account_rows = "\n".join(
         _render_key_value_row(key, value)
@@ -470,6 +507,12 @@ def _render_source_section(source: dict[str, Any]) -> str:
     toolbox_html = _render_toolbox_sections(toolbox_sections)
     return f"""<section>
   <h2>{html.escape(source["source"])}</h2>
+  <h3>Debug Metadata</h3>
+  <table>
+    <tbody>
+      {debug_metadata_rows}
+    </tbody>
+  </table>
   <h3>Account</h3>
   <table>
     <tbody>

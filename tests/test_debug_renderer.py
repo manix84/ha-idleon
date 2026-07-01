@@ -31,6 +31,11 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
     assert html_path.exists()
 
     rendered = json.loads(json_path.read_text())
+    assert rendered[0]["generated_at"]
+    assert rendered[0]["toolbox_summary"] == {
+        "parser_section_count": 97,
+        "sections_with_matched_raw_fields": 3,
+    }
     assert rendered[0]["parsed"]["character_count"] == 2
     assert rendered[0]["parsed"]["characters"][0]["name"] == "Alpha Archer"
     assert rendered[0]["parsed"]["characters"][0]["current_activity"] == (
@@ -46,5 +51,6 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
 
     html = html_path.read_text()
     assert "HA Idleon Parsed Data Debug" in html
+    assert "Debug Metadata" in html
     assert "Alpha Archer" in html
     assert "IdleonToolbox Parser Sections" in html
