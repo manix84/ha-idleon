@@ -52,7 +52,7 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
 
     rendered = json.loads(json_path.read_text())
     assert rendered[0]["generated_at"]
-    assert rendered[0]["renderer_version"] == "clean-reference-class-labels-v2"
+    assert rendered[0]["renderer_version"] == "character-details-v3"
     assert rendered[0]["toolbox_summary"] == {
         "parser_section_count": 97,
         "sections_with_matched_raw_fields": 3,
@@ -62,6 +62,7 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
     assert rendered[0]["parsed"]["characters"][0]["current_activity"] == (
         "Fighting: Green Mushroom"
     )
+    assert rendered[0]["parsed"]["characters"][0]["details"]["inventory_bag_count"] == 2
     assert rendered[0]["toolbox_sections"]["character"]["source_path"] == (
         "character.ts"
     )
@@ -76,7 +77,9 @@ def test_debug_renderer_writes_json_and_html(tmp_path: Path) -> None:
     html = html_path.read_text()
     assert "HA Idleon Parsed Data Debug" in html
     assert "Debug Metadata" in html
-    assert "clean-reference-class-labels-v2" in html
+    assert "character-details-v3" in html
     assert "Alpha Archer" in html
+    assert "Details" in html
+    assert "inventory_bag_count: 2" in html
     assert "Raw Class" in html
     assert "IdleonToolbox Parser Sections" in html

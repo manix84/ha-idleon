@@ -35,7 +35,7 @@ from custom_components.idleon.models import IdleonAccount  # noqa: E402
 DEFAULT_INPUT_GLOBS = ("examples/rawData.json", "examples/real_data*.json")
 DEFAULT_CLEAN_REFERENCE = ROOT / "examples/cleanData.json"
 DEFAULT_OUTPUT_DIR = ROOT / "debug"
-RENDERER_VERSION = "clean-reference-class-labels-v2"
+RENDERER_VERSION = "character-details-v3"
 
 
 def main() -> int:
@@ -550,6 +550,7 @@ def _render_source_section(source: dict[str, Any]) -> str:
         <th>AFK Hours</th>
         <th>Inventory Full</th>
         <th>Needs Attention</th>
+        <th>Details</th>
       </tr>
     </thead>
     <tbody>
@@ -682,12 +683,42 @@ def _render_character_row(character: Mapping[str, Any]) -> str:
         character["afk_hours"],
         character["inventory_full"],
         character["needs_attention"],
+        _compact_details(character.get("details")),
     )
     return (
         "<tr>"
         + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in cells)
         + "</tr>"
     )
+
+
+def _compact_details(value: Any) -> str:
+    """Return compact character detail text for the debug table."""
+    if not isinstance(value, Mapping) or not value:
+        return ""
+
+    parts: list[str] = []
+    for key in (
+        "raw_class_id",
+        "raw_map_id",
+        "afk_target",
+        "afk_seconds",
+        "inventory_slots_used",
+        "inventory_slots_total",
+        "inventory_bag_count",
+    ):
+        if key in value:
+            parts.append(f"{key}: {value[key]}")
+
+    inventory_sample = value.get("inventory_sample")
+    if isinstance(inventory_sample, list) and inventory_sample:
+        parts.append(f"inventory_sample: {_join_values(inventory_sample)}")
+
+    inventory_bags = value.get("inventory_bags")
+    if isinstance(inventory_bags, list) and inventory_bags:
+        parts.append(f"inventory_bags: {_join_values(inventory_bags)}")
+
+    return "; ".join(parts)
 
 
 def _render_key_value_row(key: str, value: Any) -> str:
