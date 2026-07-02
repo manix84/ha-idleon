@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version 0.2.0">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -118,7 +118,8 @@ One account device is created:
 
 One device is created per character:
 
-- `Idleon Character - <character name>`
+- `Idleon Character <number> - <character name>` for indexed Idleon exports
+- `Idleon Character - <character name>` for sources without character indexes
 
 Account sensors:
 

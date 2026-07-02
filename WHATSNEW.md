@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.3.0
+
+- Fixed indexed character device names so `Character 1 - Manix84` is displayed
+  as `Idleon Character 1 - Manix84` instead of repeating the character prefix.
+
 ## 🚀 0.2.0
 
 - Promoted the integration version for the first authenticated cloud-source

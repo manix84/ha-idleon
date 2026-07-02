@@ -16,6 +16,8 @@ from custom_components.idleon.const import (
     DATA_SOURCE_LOCAL_FILE,
     DOMAIN,
 )
+from custom_components.idleon.models import IdleonCharacter
+from custom_components.idleon.sensor import _character_device_name
 
 
 async def test_account_sensors(
@@ -155,6 +157,40 @@ async def test_device_model(
     assert character_device is not None
     assert character_device.name == "Idleon Character - Bubo Main"
     assert character_device.via_device_id == account_device.id
+
+
+def test_character_device_name_removes_duplicate_character_prefix() -> None:
+    """Test indexed parser names become concise device names."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Character 1 - Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Somewhere",
+        current_activity="Fighting",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+    )
+
+    assert _character_device_name(character) == "Idleon Character 1 - Manix84"
+
+
+def test_character_device_name_uses_indexed_character_id_fallback() -> None:
+    """Test indexed character IDs still get numbered device names."""
+    character = IdleonCharacter(
+        character_id="character_9",
+        name="Manix84_10",
+        level=1,
+        character_class="Elemental Sorcerer",
+        current_map="Somewhere",
+        current_activity="Fighting",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+    )
+
+    assert _character_device_name(character) == "Idleon Character 10 - Manix84_10"
 
 
 async def _setup_entry(

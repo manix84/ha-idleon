@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -262,11 +263,29 @@ def _character_device_info(
     """Return character device information."""
     return DeviceInfo(
         identifiers={(DOMAIN, _character_device_identifier(entry, character))},
-        name=f"Idleon Character - {character.name}",
+        name=_character_device_name(character),
         manufacturer="Legends of Idleon",
         model=character.character_class,
         via_device=(DOMAIN, _account_device_identifier(entry)),
     )
+
+
+def _character_device_name(character: IdleonCharacter) -> str:
+    """Return a readable character device name."""
+    match = re.fullmatch(r"Character\s+(\d+)(?:\s+-\s+(.+))?", character.name)
+    if match:
+        character_number = match.group(1)
+        character_name = match.group(2)
+        if character_name:
+            return f"Idleon Character {character_number} - {character_name}"
+        return f"Idleon Character {character_number}"
+
+    match = re.fullmatch(r"character_(\d+)", character.character_id)
+    if match:
+        character_number = int(match.group(1)) + 1
+        return f"Idleon Character {character_number} - {character.name}"
+
+    return f"Idleon Character - {character.name}"
 
 
 def _account_device_identifier(entry: ConfigEntry[IdleonRuntimeData]) -> str:
