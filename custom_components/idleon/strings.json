@@ -92,6 +92,18 @@
       },
       "character_afk_hours": {
         "name": "AFK hours"
+      },
+      "character_inventory_slots_used": {
+        "name": "Inventory slots used"
+      },
+      "character_inventory_slots_free": {
+        "name": "Inventory slots free"
+      },
+      "character_highest_skill": {
+        "name": "Highest skill"
+      },
+      "character_equipped_items": {
+        "name": "Equipped items"
       }
     },
     "binary_sensor": {

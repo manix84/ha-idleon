@@ -29,6 +29,26 @@ MAX_CARRY_CAPACITY_IGNORED_KEYS = {"fillerz"}
 MAX_CARRY_CAPACITY_LABELS = {
     "bCraft": "Materials",
 }
+SKILL_LEVEL_LABELS = (
+    "Character",
+    "Mining",
+    "Smithing",
+    "Chopping",
+    "Fishing",
+    "Alchemy",
+    "Catching",
+    "Trapping",
+    "Construction",
+    "Worship",
+    "Cooking",
+    "Laboratory",
+    "Breeding",
+    "Sailing",
+    "Gaming",
+    "Divinity",
+    "Sneaking",
+    "Summoning",
+)
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -400,10 +420,80 @@ def _indexed_character_details(
     }
     if raw_afk_value != afk_seconds:
         details["raw_afk_value"] = round(raw_afk_value, 2)
+    details.update(_indexed_stat_details(raw_data, character_index))
+    details.update(_indexed_skill_level_details(raw_data, character_index))
     details.update(_indexed_inventory_details(raw_data, character_index))
     details.update(_indexed_inventory_bag_details(raw_data, character_index))
     details.update(_indexed_max_carry_capacity_details(raw_data, character_index))
+    details.update(_indexed_loadout_details(raw_data, character_index))
     return _remove_empty_detail_values(details)
+
+
+def _indexed_stat_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact primary stat attributes for an indexed character."""
+    stat_data = _maybe_json(raw_data.get(f"PVStatList_{character_index}"))
+    if not isinstance(stat_data, list):
+        return {}
+
+    labels = ("strength", "agility", "wisdom", "luck")
+    stats = {
+        label: stat_value
+        for label, value in zip(labels, stat_data, strict=False)
+        if (stat_value := _coerce_int(value)) is not None
+    }
+    if not stats:
+        return {}
+    return {"stats": stats}
+
+
+def _indexed_skill_level_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact skill level attributes for an indexed character."""
+    skill_data = _maybe_json(raw_data.get(f"Lv0_{character_index}"))
+    if not isinstance(skill_data, list):
+        return {}
+
+    skill_levels = {
+        _skill_level_label(index): level
+        for index, value in enumerate(skill_data)
+        if (level := _coerce_int(value)) is not None and level >= 0
+    }
+    if not skill_levels:
+        return {}
+
+    non_character_levels = {
+        skill: level for skill, level in skill_levels.items() if skill != "Character"
+    }
+    highest_skill = None
+    if non_character_levels:
+        skill_name, skill_level = max(
+            non_character_levels.items(),
+            key=lambda item: item[1],
+        )
+        highest_skill = {
+            "name": skill_name,
+            "level": skill_level,
+        }
+
+    details: dict[str, Any] = {
+        "skill_levels": skill_levels,
+        "total_skill_level": sum(non_character_levels.values()),
+    }
+    if highest_skill:
+        details["highest_skill"] = highest_skill
+    return details
+
+
+def _skill_level_label(index: int) -> str:
+    """Return a readable skill label for an Lv0 index."""
+    if index < len(SKILL_LEVEL_LABELS):
+        return SKILL_LEVEL_LABELS[index]
+    return f"Skill {index}"
 
 
 def _indexed_inventory_details(
@@ -473,6 +563,104 @@ def _indexed_max_carry_capacity_details(
 def _max_carry_capacity_label(key: str) -> str:
     """Return a Home Assistant friendly carry capacity category label."""
     return MAX_CARRY_CAPACITY_LABELS.get(key, key)
+
+
+def _indexed_loadout_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return compact equipment and loadout attributes for an indexed character."""
+    details: dict[str, Any] = {}
+    equipment = _maybe_json(raw_data.get(f"EquipOrder_{character_index}"))
+    if isinstance(equipment, list):
+        equipment_labels = _equipment_group_labels(equipment, 0)
+        tool_labels = _equipment_group_labels(equipment, 1)
+        food_labels = _equipment_group_labels(equipment, 2)
+        details.update(
+            {
+                "equipped_item_count": len(equipment_labels),
+                "equipped_items": equipment_labels[:DETAIL_SAMPLE_LIMIT],
+                "equipped_tool_count": len(tool_labels),
+                "equipped_tools": tool_labels[:DETAIL_SAMPLE_LIMIT],
+                "equipped_food_count": len(food_labels),
+                "equipped_food": food_labels[:DETAIL_SAMPLE_LIMIT],
+            }
+        )
+
+    attack_loadout = _attack_loadout_labels(raw_data, character_index)
+    if attack_loadout:
+        details["attack_loadout"] = attack_loadout[:DETAIL_SAMPLE_LIMIT]
+
+    return details
+
+
+def _equipment_group_labels(
+    equipment: list[Any],
+    group_index: int,
+) -> list[str]:
+    """Return display labels for one EquipOrder group."""
+    if group_index >= len(equipment):
+        return []
+    group = equipment[group_index]
+    if not isinstance(group, Mapping):
+        return []
+
+    labels: list[str] = []
+    for key, value in sorted(group.items(), key=lambda item: _slot_sort_key(item[0])):
+        if key == "length" or not _inventory_slot_has_item(value):
+            continue
+        labels.append(_display_label(value, website_data_key="items"))
+    return labels
+
+
+def _slot_sort_key(value: Any) -> int:
+    """Return a numeric sort key for indexed object slots."""
+    return _coerce_int(value) or 0
+
+
+def _attack_loadout_labels(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> list[str]:
+    """Return labels for assigned attack loadout talents."""
+    attack_loadout = _maybe_json(raw_data.get(f"AttackLoadout_{character_index}"))
+    if not isinstance(attack_loadout, Iterable) or isinstance(
+        attack_loadout,
+        str | bytes,
+    ):
+        return []
+
+    labels: list[str] = []
+    for page in attack_loadout:
+        if not isinstance(page, Iterable) or isinstance(page, str | bytes):
+            continue
+        for talent_id in page:
+            if not _inventory_slot_has_item(talent_id):
+                continue
+            label = _talent_label(talent_id)
+            if label not in labels:
+                labels.append(label)
+    return labels
+
+
+def _talent_label(value: Any) -> str:
+    """Return a readable talent label for an attack loadout value."""
+    raw_value = str(value)
+    with suppress(WebsiteDataNotFoundError):
+        talents = load_default_website_data_part("talents")
+        if isinstance(talents, Mapping):
+            for talent_group in talents.values():
+                if not isinstance(talent_group, Mapping):
+                    continue
+                for talent in talent_group.values():
+                    if not isinstance(talent, Mapping):
+                        continue
+                    if str(talent.get("talentId")) != raw_value:
+                        continue
+                    talent_name = talent.get("name")
+                    if isinstance(talent_name, str) and talent_name:
+                        return _clean_display_text(talent_name)
+    return _clean_display_text(raw_value)
 
 
 def _inventory_slot_has_item(value: Any) -> bool:

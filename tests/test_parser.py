@@ -185,6 +185,18 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
                 "EquipmentHats1",
                 "LockedInvSpace",
             ],
+            "PVStatList_0": [10, 20, 30, 40, 1103],
+            "EquipOrder_0": [
+                {
+                    "0": "EquipmentHats1",
+                    "1": "EquipmentShirts1",
+                    "2": "Blank",
+                    "length": 3,
+                },
+                {"0": "EquipmentTools1", "1": "Blank", "length": 2},
+                {"0": "FoodHealth1", "1": "Blank", "length": 2},
+            ],
+            "AttackLoadout_0": [[90, "Null"], [91]],
         }
     )
 
@@ -200,6 +212,19 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert character.details["inventory_slots_used"] == 2
     assert character.details["inventory_slots_free"] == 1
     assert character.details["inventory_sample"] == ["Nomwich", "Farmer Brim"]
+    assert character.details["stats"] == {
+        "strength": 10,
+        "agility": 20,
+        "wisdom": 30,
+        "luck": 40,
+    }
+    assert character.details["skill_levels"] == {"Character": 1103}
+    assert character.details["total_skill_level"] == 0
+    assert character.details["equipped_item_count"] == 2
+    assert character.details["equipped_items"] == ["Farmer Brim", "Orange Tee"]
+    assert character.details["equipped_tool_count"] == 1
+    assert character.details["equipped_food_count"] == 1
+    assert character.details["attack_loadout"] == ["90", "91"]
 
 
 def test_parser_treats_inventory_as_full_when_all_usable_slots_are_occupied() -> None:

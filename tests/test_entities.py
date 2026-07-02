@@ -94,12 +94,57 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_afk_hours",
     )
+    inventory_used_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_inventory_slots_used",
+    )
+    inventory_free_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_inventory_slots_free",
+    )
+    highest_skill_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_highest_skill",
+    )
+    equipped_items_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_items",
+    )
 
     assert hass.states.get(level_entity_id).state == "210"
     assert hass.states.get(class_entity_id).state == "Bubonic Conjuror"
     assert hass.states.get(map_entity_id).state == "Tremor Wurm Nest"
     assert hass.states.get(activity_entity_id).state == "AFK Fighting"
     assert hass.states.get(afk_entity_id).state == "12.5"
+    assert hass.states.get(inventory_used_entity_id).state == "2"
+    assert hass.states.get(inventory_free_entity_id).state == "1"
+    assert hass.states.get(highest_skill_entity_id).state == "Alchemy (95)"
+    assert hass.states.get(equipped_items_entity_id).state == "4"
+
+    highest_skill_attributes = hass.states.get(highest_skill_entity_id).attributes
+    assert highest_skill_attributes["highest_skill"] == {
+        "name": "Alchemy",
+        "level": 95,
+    }
+    assert highest_skill_attributes["total_skill_level"] == 205
+    assert highest_skill_attributes["skill_levels"]["Mining"] == 62
+    assert highest_skill_attributes["stats"]["wisdom"] == 320
+
+    equipped_items_attributes = hass.states.get(equipped_items_entity_id).attributes
+    assert equipped_items_attributes["equipped_items"] == [
+        "Farmer Brim",
+        "Orange Tee",
+    ]
+    assert equipped_items_attributes["equipped_tool_count"] == 2
+    assert equipped_items_attributes["equipped_food"] == ["Nomwich"]
+    assert equipped_items_attributes["attack_loadout"] == [
+        "Power Strike",
+        "Book of the Wise",
+    ]
 
     assert "inventory_slots_used" not in hass.states.get(level_entity_id).attributes
     assert "inventory_slots_used" not in hass.states.get(class_entity_id).attributes

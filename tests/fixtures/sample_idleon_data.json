@@ -15,9 +15,48 @@
         "afk_hours": 12.5,
         "inventory_full": true,
         "needs_attention": true,
-        "inventory": ["FoodHealth1", "EquipmentHats1", ""],
+        "inventory": [
+          "FoodHealth1",
+          "EquipmentHats1",
+          ""
+        ],
         "details": {
-          "active_preset": 2
+          "active_preset": 2,
+          "skill_levels": {
+            "Character": 210,
+            "Mining": 62,
+            "Smithing": 48,
+            "Alchemy": 95
+          },
+          "highest_skill": {
+            "name": "Alchemy",
+            "level": 95
+          },
+          "total_skill_level": 205,
+          "stats": {
+            "strength": 120,
+            "agility": 75,
+            "wisdom": 320,
+            "luck": 90
+          },
+          "equipped_item_count": 4,
+          "equipped_items": [
+            "Farmer Brim",
+            "Orange Tee"
+          ],
+          "equipped_tool_count": 2,
+          "equipped_tools": [
+            "Copper Pickaxe",
+            "Copper Hatchet"
+          ],
+          "equipped_food_count": 1,
+          "equipped_food": [
+            "Nomwich"
+          ],
+          "attack_loadout": [
+            "Power Strike",
+            "Book of the Wise"
+          ]
         }
       },
       {

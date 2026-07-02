@@ -98,6 +98,59 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         value_fn=lambda character: character.afk_hours,
         detail_keys=("afk_seconds", "raw_afk_value"),
     ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_inventory_slots_used",
+        translation_key="character_inventory_slots_used",
+        value_fn=lambda character: _detail_value(
+            character,
+            "inventory_slots_used",
+            0,
+        ),
+        detail_keys=(
+            "inventory_slots_total",
+            "inventory_slots_usable",
+            "inventory_slots_free",
+            "inventory_sample",
+        ),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_inventory_slots_free",
+        translation_key="character_inventory_slots_free",
+        value_fn=lambda character: _detail_value(
+            character,
+            "inventory_slots_free",
+            0,
+        ),
+        detail_keys=(
+            "inventory_slots_total",
+            "inventory_slots_usable",
+            "inventory_slots_used",
+            "inventory_sample",
+        ),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_highest_skill",
+        translation_key="character_highest_skill",
+        value_fn=lambda character: _highest_skill_name(character),
+        detail_keys=("highest_skill", "total_skill_level", "skill_levels", "stats"),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_equipped_items",
+        translation_key="character_equipped_items",
+        value_fn=lambda character: _detail_value(
+            character,
+            "equipped_item_count",
+            0,
+        ),
+        detail_keys=(
+            "equipped_items",
+            "equipped_tool_count",
+            "equipped_tools",
+            "equipped_food_count",
+            "equipped_food",
+            "attack_loadout",
+        ),
+    ),
 )
 
 
@@ -323,3 +376,23 @@ def _remove_none_attributes(attributes: Mapping[str, Any]) -> dict[str, Any] | N
         key: value for key, value in attributes.items() if value is not None
     }
     return compact_attributes or None
+
+
+def _detail_value(
+    character: IdleonCharacter,
+    key: str,
+    default: Any = None,
+) -> Any:
+    """Return a single parsed character detail value."""
+    return character.details.get(key, default)
+
+
+def _highest_skill_name(character: IdleonCharacter) -> str:
+    """Return the character's highest parsed skill name."""
+    highest_skill = character.details.get("highest_skill")
+    if isinstance(highest_skill, Mapping):
+        name = highest_skill.get("name")
+        level = highest_skill.get("level")
+        if name and level is not None:
+            return f"{name} ({level})"
+    return "Unknown"
