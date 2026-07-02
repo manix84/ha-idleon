@@ -24,7 +24,11 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
+    CONF_IDLEON_EMAIL,
+    CONF_IDLEON_REFRESH_TOKEN,
+    CONF_IDLEON_USER_ID,
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
@@ -298,6 +302,10 @@ def _data_source_from_input(user_input: dict[str, Any]) -> IdleonDataSource:
         source_type=user_input[CONF_DATA_SOURCE_TYPE],
         local_file_path=user_input.get(CONF_LOCAL_FILE_PATH),
         remote_url=user_input.get(CONF_REMOTE_URL),
+        auth_provider=user_input.get(CONF_AUTH_PROVIDER),
+        idleon_email=user_input.get(CONF_IDLEON_EMAIL),
+        idleon_user_id=user_input.get(CONF_IDLEON_USER_ID),
+        idleon_refresh_token=user_input.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=user_input[CONF_SCAN_INTERVAL],
     )
 

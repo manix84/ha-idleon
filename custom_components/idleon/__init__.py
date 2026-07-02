@@ -9,7 +9,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
+    CONF_IDLEON_EMAIL,
+    CONF_IDLEON_REFRESH_TOKEN,
+    CONF_IDLEON_USER_ID,
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
@@ -71,6 +75,10 @@ def _data_source_from_entry(entry: ConfigEntry) -> IdleonDataSource:
         source_type=data[CONF_DATA_SOURCE_TYPE],
         local_file_path=data.get(CONF_LOCAL_FILE_PATH),
         remote_url=data.get(CONF_REMOTE_URL),
+        auth_provider=data.get(CONF_AUTH_PROVIDER),
+        idleon_email=data.get(CONF_IDLEON_EMAIL),
+        idleon_user_id=data.get(CONF_IDLEON_USER_ID),
+        idleon_refresh_token=data.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
     )
 

@@ -30,6 +30,13 @@ async def async_get_config_entry_diagnostics(
             "type": data_source.source_type,
             "remote_url": _redact_remote_url(data_source.remote_url),
             "local_file_path": _redact_local_path(data_source.local_file_path),
+            "auth_provider": data_source.auth_provider,
+            "idleon_email": _redact_email(data_source.idleon_email),
+            "idleon_user_id": _redact_optional_value(
+                data_source.idleon_user_id,
+                "idleon user id",
+            ),
+            "has_idleon_refresh_token": bool(data_source.idleon_refresh_token),
         },
         "account": {
             "character_count": account.character_count if account else 0,
@@ -67,3 +74,17 @@ def _redact_local_path(local_file_path: str | None) -> str | None:
     if not local_file_path:
         return None
     return "<redacted local file path>"
+
+
+def _redact_email(email: str | None) -> str | None:
+    """Redact a configured account email address."""
+    if not email:
+        return None
+    return "<redacted email>"
+
+
+def _redact_optional_value(value: str | None, label: str) -> str | None:
+    """Redact optional auth metadata while showing whether it exists."""
+    if not value:
+        return None
+    return f"<redacted {label}>"
