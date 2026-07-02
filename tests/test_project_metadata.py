@@ -31,9 +31,9 @@ def test_hacs_metadata() -> None:
     assert hacs["homeassistant"] == "2026.6.4"
 
 
-def test_default_refresh_interval_matches_idleon_toolbox() -> None:
-    """Test default refresh follows Idleon Toolbox's four-hour cadence."""
-    assert DEFAULT_SCAN_INTERVAL == 4 * 60 * 60
+def test_default_refresh_interval_is_five_minutes() -> None:
+    """Test default refresh uses Home Assistant's minimum five-minute cadence."""
+    assert DEFAULT_SCAN_INTERVAL == 5 * 60
 
 
 def test_brand_assets_exist() -> None:

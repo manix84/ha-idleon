@@ -49,7 +49,7 @@
     "step": {
       "init": {
         "title": "Idleon refresh settings",
-        "description": "Choose how often Home Assistant should refresh Idleon account data. Idleon Toolbox allows account feed updates once every 4 hours, so 14400 seconds is the recommended default.",
+        "description": "Choose how often Home Assistant should refresh Idleon account data. The default is 300 seconds.",
         "data": {
           "scan_interval": "Refresh interval in seconds"
         }

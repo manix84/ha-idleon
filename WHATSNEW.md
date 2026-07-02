@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.8.0
+
+- Minor release placeholder. Update before release.
+
 ## 🚀 0.7.0
 
 - Minor release placeholder. Update before release.
