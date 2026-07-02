@@ -25,6 +25,5 @@ if project_version != manifest_version:
     )
 
 print(f"Release metadata is consistent for version {project_version}.")
-print("Release publishing is not automated yet.")
+print("Release publishing is automated by .github/workflows/release.yml.")
 PY
-

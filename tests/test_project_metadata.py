@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tomllib
+import zipfile
 from pathlib import Path
 
 from custom_components.idleon.const import DEFAULT_SCAN_INTERVAL, DOMAIN, VERSION
@@ -90,6 +92,37 @@ def test_project_version_matches_integration_version() -> None:
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
 
     assert pyproject["project"]["version"] == VERSION
+
+
+def test_release_archive_is_hacs_compatible() -> None:
+    """Test the release archive contains the HACS integration layout."""
+    result = subprocess.run(
+        ["scripts/build-release"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    archive_path = Path(result.stdout.strip())
+
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+
+    assert "custom_components/idleon/__init__.py" in names
+    assert "custom_components/idleon/manifest.json" in names
+    assert "custom_components/idleon/brand/icon.png" in names
+    assert "hacs.json" in names
+    assert "README.md" in names
+    assert "LICENSE" in names
+
+    integrations = {
+        parts[1]
+        for name in names
+        if (parts := Path(name).parts)
+        and len(parts) > 2
+        and parts[0] == "custom_components"
+    }
+    assert integrations == {"idleon"}
 
 
 def _png_color_type(path: Path) -> int:

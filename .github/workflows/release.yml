@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements_test.txt
+
+      - name: Check release metadata
+        run: scripts/release-check
+
+      - name: Build HACS release archive
+        id: build
+        run: |
+          archive_path="$(scripts/build-release)"
+          version="$(python - <<'PY'
+          import tomllib
+          from pathlib import Path
+
+          print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+          PY
+          )"
+          echo "archive_path=${archive_path}" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload release archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ha-idleon-${{ steps.build.outputs.version }}
+          path: ${{ steps.build.outputs.archive_path }}
+          if-no-files-found: error
+
+      - name: Check whether release exists
+        id: existing_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.build.outputs.tag }}
+        run: |
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+            echo "Release ${RELEASE_TAG} already exists; skipping publish."
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Publish GitHub release
+        if: steps.existing_release.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.build.outputs.tag }}
+          RELEASE_ARCHIVE: ${{ steps.build.outputs.archive_path }}
+        run: |
+          gh release create "${RELEASE_TAG}" "${RELEASE_ARCHIVE}" \
+            --title "${RELEASE_TAG}" \
+            --notes-file WHATSNEW.md

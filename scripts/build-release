@@ -45,5 +45,37 @@ with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as arc
         if path.exists():
             archive.write(path, path.relative_to(root))
 
+with zipfile.ZipFile(archive_path) as archive:
+    names = set(archive.namelist())
+    required_paths = {
+        "custom_components/idleon/__init__.py",
+        "custom_components/idleon/manifest.json",
+        "custom_components/idleon/brand/icon.png",
+        "hacs.json",
+        "README.md",
+        "LICENSE",
+    }
+    missing = sorted(required_paths - names)
+    if missing:
+        raise SystemExit(
+            "Release archive is missing HACS-required files: "
+            + ", ".join(missing)
+        )
+    extra_integrations = sorted(
+        {
+            parts[1]
+            for name in names
+            if (parts := Path(name).parts)
+            and len(parts) > 2
+            and parts[0] == "custom_components"
+            and parts[1] != "idleon"
+        }
+    )
+    if extra_integrations:
+        raise SystemExit(
+            "Release archive contains extra custom integrations: "
+            + ", ".join(extra_integrations)
+        )
+
 print(archive_path)
 PY
