@@ -1,5 +1,12 @@
 # 📰 What's New
 
+## 🚀 0.2.0
+
+- Promoted the integration version for the first authenticated cloud-source
+  setup flow.
+- Added a helper script for installing local Git hooks so automatic version
+  bumps are not silently skipped.
+
 ## 🚀 0.1.18
 
 - Added the first authenticated `idleon_cloud` data source using Idleon

@@ -697,8 +697,7 @@ def _compact_details(value: Any) -> str:
     if not isinstance(value, Mapping) or not value:
         return ""
 
-    parts: list[str] = []
-    for key in (
+    detail_keys = (
         "raw_class_id",
         "raw_map_id",
         "afk_target",
@@ -706,9 +705,8 @@ def _compact_details(value: Any) -> str:
         "inventory_slots_used",
         "inventory_slots_total",
         "inventory_bag_count",
-    ):
-        if key in value:
-            parts.append(f"{key}: {value[key]}")
+    )
+    parts = [f"{key}: {value[key]}" for key in detail_keys if key in value]
 
     inventory_sample = value.get("inventory_sample")
     if isinstance(inventory_sample, list) and inventory_sample:

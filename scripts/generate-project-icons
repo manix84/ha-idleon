@@ -12,7 +12,7 @@ VENV_PYTHON = ROOT / ".venv/bin/python"
 if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
     os.execv(VENV_PYTHON, [str(VENV_PYTHON), *sys.argv])
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
 BADGE_SOURCE = ROOT / "assets/idleon-badge-source.png"
 ASSET_ICON = ROOT / "assets/project-icon.png"
@@ -76,7 +76,9 @@ def _draw_home_assistant_mark(draw: ImageDraw.ImageDraw) -> None:
     """Draw a simplified Home Assistant house and telemetry mark."""
     roof = [(128, 243), (256, 128), (384, 243), (358, 271), (256, 180), (154, 271)]
     draw.polygon(roof, fill=(103, 232, 249, 255))
-    draw.line((154, 271, 154, 358, 358, 358, 358, 271), fill=(103, 232, 249, 255), width=22)
+    draw.line(
+        (154, 271, 154, 358, 358, 358, 358, 271), fill=(103, 232, 249, 255), width=22
+    )
 
     draw.rounded_rectangle((205, 266, 307, 358), radius=14, fill=(11, 74, 107, 255))
     draw.rounded_rectangle((222, 281, 249, 308), radius=7, fill=(166, 244, 255, 255))

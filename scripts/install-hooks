@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
+cd "${ROOT_DIR}"
+"$(python_bin)" -m pip install -r requirements_test.txt
+"$(tool_bin pre-commit)" install
+"$(tool_bin pre-commit)" install --hook-type pre-push
+
+for hook in .git/hooks/pre-commit .git/hooks/pre-push; do
+  if [[ -f "${hook}" ]] && ! grep -q "PRE_COMMIT_HOME" "${hook}"; then
+    "$(python_bin)" - "$hook" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+needle = "# end templated\n"
+insert = (
+    "# Keep pre-commit caches inside an ignored workspace directory when no explicit\n"
+    "# cache location is configured. This avoids home-directory permission\n"
+    "# issues in restricted development environments.\n"
+    'export PRE_COMMIT_HOME="${PRE_COMMIT_HOME:-${PWD}/.pre-commit-cache}"\n'
+)
+path.write_text(text.replace(needle, f"{needle}\n{insert}", 1))
+PY
+  fi
+done

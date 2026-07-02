@@ -19,8 +19,8 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
 
 sys.path.insert(0, str(ROOT))
 
-from custom_components.idleon.idleon_data import parse_idleon_account
-from custom_components.idleon.models import IdleonAccount
+from custom_components.idleon.idleon_data import parse_idleon_account  # noqa: E402
+from custom_components.idleon.models import IdleonAccount  # noqa: E402
 
 
 def main() -> int:
@@ -56,17 +56,17 @@ def main() -> int:
         "Normalized characters",
     ]
 
-    for character in account.characters:
-        lines.append(
-            "  "
-            f"{character.character_id}: "
-            f"name={character.name!r}, "
-            f"level={character.level}, "
-            f"class={character.character_class!r}, "
-            f"map={character.current_map!r}, "
-            f"activity={character.current_activity!r}, "
-            f"afk_hours={character.afk_hours}"
-        )
+    lines.extend(
+        "  "
+        f"{character.character_id}: "
+        f"name={character.name!r}, "
+        f"level={character.level}, "
+        f"class={character.character_class!r}, "
+        f"map={character.current_map!r}, "
+        f"activity={character.current_activity!r}, "
+        f"afk_hours={character.afk_hours}"
+        for character in account.characters
+    )
 
     lines.extend(
         [
@@ -157,8 +157,7 @@ def _character_change_lines(
         after = after_characters.get(character_id)
         if before is None or after is None:
             lines.append(
-                f"  {character_id}: present={before is not None} -> "
-                f"{after is not None}"
+                f"  {character_id}: present={before is not None} -> {after is not None}"
             )
             continue
 
@@ -293,8 +292,10 @@ def _candidate_player_name_lines(raw_data: Mapping[str, Any]) -> list[str]:
     candidates: list[tuple[str, str]] = []
     for key, value in raw_data.items():
         text = json.dumps(value) if not isinstance(value, str) else value
-        for match in sorted(set(re.findall(r"Player_[A-Za-z0-9_]+", text))):
-            candidates.append((key, match.removeprefix("Player_")))
+        candidates.extend(
+            (key, match.removeprefix("Player_"))
+            for match in sorted(set(re.findall(r"Player_[A-Za-z0-9_]+", text)))
+        )
 
     if not candidates:
         return ["  none found"]

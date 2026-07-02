@@ -37,9 +37,7 @@ DOC_ONLY_FILES = {
     "WHATSNEW.md",
     "hacs.json",
 }
-MINOR_PREFIXES = (
-    "custom_components/idleon/translations/",
-)
+MINOR_PREFIXES = ("custom_components/idleon/translations/",)
 MINOR_FILES = {
     "custom_components/idleon/binary_sensor.py",
     "custom_components/idleon/config_flow.py",
@@ -168,7 +166,11 @@ def _bump_version(version: str, bump: str) -> str:
 
 def _write_version_files(current_version: str, new_version: str, bump: str) -> None:
     """Update version files in place."""
-    _replace_text(Path("pyproject.toml"), f'version = "{current_version}"', f'version = "{new_version}"')
+    _replace_text(
+        Path("pyproject.toml"),
+        f'version = "{current_version}"',
+        f'version = "{new_version}"',
+    )
     _replace_text(
         Path("custom_components/idleon/const.py"),
         f'VERSION = "{current_version}"',
@@ -216,8 +218,7 @@ def _update_whatsnew(new_version: str, bump: str) -> None:
         return
 
     insert = (
-        f"{heading}\n\n"
-        f"- {bump.title()} release placeholder. Update before release.\n\n"
+        f"{heading}\n\n- {bump.title()} release placeholder. Update before release.\n\n"
     )
     marker = "## 🚀 "
     marker_index = text.find(marker)
