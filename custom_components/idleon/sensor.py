@@ -157,6 +157,25 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         """Return the sensor state."""
         return self.entity_description.value_fn(self.coordinator)
 
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return account timestamp details where useful."""
+        if self.entity_description.key != "account_last_updated":
+            return None
+        attributes = {
+            "source_updated_at": (
+                self.coordinator.data.source_updated_at.isoformat()
+                if self.coordinator.data.source_updated_at
+                else None
+            ),
+            "last_successful_update": (
+                self.coordinator.last_successful_update.isoformat()
+                if self.coordinator.last_successful_update
+                else None
+            ),
+        }
+        return _remove_none_attributes(attributes)
+
 
 class IdleonCharacterSensor(
     CoordinatorEntity[IdleonDataUpdateCoordinator],
@@ -277,3 +296,11 @@ def _select_detail_attributes(
 ) -> dict[str, Any]:
     """Return selected character detail attributes."""
     return {key: details[key] for key in keys if key in details}
+
+
+def _remove_none_attributes(attributes: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Return compact attributes without empty timestamp values."""
+    compact_attributes = {
+        key: value for key, value in attributes.items() if value is not None
+    }
+    return compact_attributes or None

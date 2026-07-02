@@ -50,7 +50,13 @@ async def test_account_sensors(
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
     assert hass.states.get(gems_entity_id).state == "1234"
-    assert hass.states.get(last_updated_entity_id).state == "2026-06-29T12:00:00+00:00"
+    last_updated_state = hass.states.get(last_updated_entity_id)
+    assert last_updated_state.state == "2026-06-29T12:00:00+00:00"
+    assert (
+        last_updated_state.attributes["source_updated_at"]
+        == "2026-06-29T12:00:00+00:00"
+    )
+    assert "last_successful_update" in last_updated_state.attributes
 
 
 async def test_character_sensors(
