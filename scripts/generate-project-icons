@@ -19,6 +19,7 @@ ASSET_ICON = ROOT / "assets/project-icon.png"
 ASSET_ICON_TRANSPARENT = ROOT / "assets/project-icon-transparent.png"
 BRANDS_DIR = ROOT / "brands"
 INTEGRATION_DIR = ROOT / "custom_components/idleon"
+INTEGRATION_BRAND_DIR = INTEGRATION_DIR / "brand"
 
 SIZE = 512
 
@@ -32,6 +33,7 @@ def main() -> int:
     ASSET_ICON.parent.mkdir(parents=True, exist_ok=True)
     BRANDS_DIR.mkdir(parents=True, exist_ok=True)
     INTEGRATION_DIR.mkdir(parents=True, exist_ok=True)
+    INTEGRATION_BRAND_DIR.mkdir(parents=True, exist_ok=True)
 
     solid.save(ASSET_ICON)
     transparent.save(ASSET_ICON_TRANSPARENT)
@@ -43,6 +45,10 @@ def main() -> int:
     transparent.save(INTEGRATION_DIR / "logo.png")
     _save_2x(transparent, INTEGRATION_DIR / "icon@2x.png")
     _save_2x(transparent, INTEGRATION_DIR / "logo@2x.png")
+    transparent.save(INTEGRATION_BRAND_DIR / "icon.png")
+    transparent.save(INTEGRATION_BRAND_DIR / "logo.png")
+    _save_2x(transparent, INTEGRATION_BRAND_DIR / "icon@2x.png")
+    _save_2x(transparent, INTEGRATION_BRAND_DIR / "logo@2x.png")
     return 0
 
 

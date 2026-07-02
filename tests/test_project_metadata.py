@@ -42,6 +42,10 @@ def test_brand_assets_exist() -> None:
         ROOT / "custom_components/idleon/icon@2x.png",
         ROOT / "custom_components/idleon/logo.png",
         ROOT / "custom_components/idleon/logo@2x.png",
+        ROOT / "custom_components/idleon/brand/icon.png",
+        ROOT / "custom_components/idleon/brand/icon@2x.png",
+        ROOT / "custom_components/idleon/brand/logo.png",
+        ROOT / "custom_components/idleon/brand/logo@2x.png",
     ):
         assert path.exists()
         assert path.stat().st_size > 0
