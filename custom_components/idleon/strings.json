@@ -3,9 +3,9 @@
     "step": {
       "user": {
         "title": "Legends of Idleon",
-        "description": "Choose where HA Idleon should read account data from.",
+        "description": "Choose how HA Idleon should read account data. Google and email login are implemented; Apple and Steam are placeholders for future support.",
         "data": {
-          "data_source_type": "Data source type"
+          "data_source_type": "Login or data source"
         }
       },
       "source": {
@@ -49,9 +49,9 @@
     "step": {
       "init": {
         "title": "Idleon data source",
-        "description": "Choose the data source type to use.",
+        "description": "Choose the login or local source to use. Google and email login are implemented; Apple and Steam are placeholders for future support.",
         "data": {
-          "data_source_type": "Data source type"
+          "data_source_type": "Login or data source"
         }
       },
       "source": {

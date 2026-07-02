@@ -305,17 +305,8 @@ async def test_config_flow_success_idleon_cloud_email(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "auth_provider"
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
-            CONF_SCAN_INTERVAL: 3600,
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_EMAIL,
         },
     )
 
@@ -327,6 +318,7 @@ async def test_config_flow_success_idleon_cloud_email(
         user_input={
             CONF_IDLEON_EMAIL: "player@example.com",
             CONF_IDLEON_PASSWORD: "super-secret",
+            CONF_SCAN_INTERVAL: 3600,
         },
     )
 
@@ -355,14 +347,8 @@ async def test_config_flow_idleon_cloud_auth_failure(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
-    )
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
-            CONF_SCAN_INTERVAL: 3600,
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_EMAIL,
         },
     )
 
@@ -371,6 +357,7 @@ async def test_config_flow_idleon_cloud_auth_failure(
         user_input={
             CONF_IDLEON_EMAIL: "player@example.com",
             CONF_IDLEON_PASSWORD: "wrong-password",
+            CONF_SCAN_INTERVAL: 3600,
         },
     )
 
@@ -425,14 +412,17 @@ async def test_config_flow_success_idleon_cloud_google(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_GOOGLE,
+        },
     )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_AUTH_PROVIDER: AUTH_PROVIDER_GOOGLE,
-            CONF_SCAN_INTERVAL: 3600,
-        },
+        user_input={CONF_SCAN_INTERVAL: 3600},
     )
 
     assert result["type"] is FlowResultType.FORM
@@ -490,14 +480,13 @@ async def test_config_flow_idleon_cloud_google_pending(
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_USER},
-        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_GOOGLE,
+        },
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_AUTH_PROVIDER: AUTH_PROVIDER_GOOGLE,
-            CONF_SCAN_INTERVAL: 3600,
-        },
+        user_input={CONF_SCAN_INTERVAL: 3600},
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],

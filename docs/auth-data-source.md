@@ -6,16 +6,22 @@ The long-term user setup should match how users already access Legends of
 Idleon: sign in with an Idleon-supported identity provider and let Home
 Assistant fetch the read-only cloud save data directly.
 
-`idleon_cloud` is now the primary setup path. `local_file` and `remote_url`
-remain useful for development, debugging, and fallback testing, but they should
-not be the primary user experience.
+Authenticated login is now the primary setup path. The UI asks users to choose
+`google`, `apple`, `email`, `steam`, or `local_file` directly. Authenticated
+entries are stored internally as `idleon_cloud` with an auth provider.
+`remote_url` remains available internally for development and tests, but it is
+not presented as a primary user setup option.
 
 ## 🎯 Goal
 
-Use the data source type:
+Use the first setup choice:
 
 ```txt
-idleon_cloud
+google
+apple
+email
+steam
+local_file
 ```
 
 The source should:
@@ -70,12 +76,15 @@ The config flow offers:
 
 ```txt
 data_source_type:
-  - idleon_cloud
+  - google
+  - apple
+  - email
+  - steam
   - local_file
-  - remote_url
 ```
 
-For `idleon_cloud`, the UI asks for a provider first, then provider details.
+Cloud login selections are normalized to stored `idleon_cloud` entries with an
+`auth_provider` value.
 
 Expected fields by provider:
 

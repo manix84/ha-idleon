@@ -24,8 +24,11 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    AUTH_PROVIDER_APPLE,
     AUTH_PROVIDER_EMAIL,
     AUTH_PROVIDER_GOOGLE,
+    AUTH_PROVIDER_STEAM,
+    AUTH_PROVIDERS,
     CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
     CONF_IDLEON_EMAIL,
@@ -38,7 +41,6 @@ from .const import (
     DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
     DATA_SOURCE_REMOTE_URL,
-    DATA_SOURCE_TYPES,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
@@ -78,9 +80,12 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Select the data source type."""
         if user_input is not None:
-            self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
-            if self._data_source_type == DATA_SOURCE_IDLEON_CLOUD:
-                return await self.async_step_auth_provider()
+            self._data_source_type = _stored_data_source_type(
+                user_input[CONF_DATA_SOURCE_TYPE]
+            )
+            self._auth_provider = _auth_provider_from_source_type(
+                user_input[CONF_DATA_SOURCE_TYPE]
+            )
             return await self.async_step_source()
 
         return self.async_show_form(
@@ -243,14 +248,21 @@ class IdleonOptionsFlow(OptionsFlow):
     ) -> FlowResult:
         """Select the data source type."""
         if user_input is not None:
-            self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
-            if self._data_source_type == DATA_SOURCE_IDLEON_CLOUD:
-                return await self.async_step_auth_provider()
+            self._data_source_type = _stored_data_source_type(
+                user_input[CONF_DATA_SOURCE_TYPE]
+            )
+            self._auth_provider = _auth_provider_from_source_type(
+                user_input[CONF_DATA_SOURCE_TYPE]
+            )
             return await self.async_step_source()
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_source_type_schema(self._data_source_type),
+            data_schema=_source_type_schema(
+                _source_type_from_entry_data(
+                    {**self._config_entry.data, **self._config_entry.options}
+                )
+            ),
         )
 
     async def async_step_auth_provider(
@@ -318,6 +330,7 @@ class IdleonOptionsFlow(OptionsFlow):
                         data_schema=_source_details_schema(
                             self._data_source_type,
                             {**self._config_entry.data, **self._config_entry.options},
+                            auth_provider=self._auth_provider,
                         ),
                         errors=errors,
                     )
@@ -478,7 +491,7 @@ def _entry_data_from_cloud_credentials(
     return prepared
 
 
-def _source_type_schema(default: str = DATA_SOURCE_IDLEON_CLOUD) -> vol.Schema:
+def _source_type_schema(default: str = AUTH_PROVIDER_GOOGLE) -> vol.Schema:
     """Return the source type selection schema."""
     return vol.Schema(
         {
@@ -487,7 +500,13 @@ def _source_type_schema(default: str = DATA_SOURCE_IDLEON_CLOUD) -> vol.Schema:
                 default=default,
             ): SelectSelector(
                 SelectSelectorConfig(
-                    options=DATA_SOURCE_TYPES,
+                    options=[
+                        {"value": DATA_SOURCE_LOCAL_FILE, "label": "Local JSON file"},
+                        {"value": AUTH_PROVIDER_GOOGLE, "label": "Google"},
+                        {"value": AUTH_PROVIDER_APPLE, "label": "Apple"},
+                        {"value": AUTH_PROVIDER_EMAIL, "label": "Email"},
+                        {"value": AUTH_PROVIDER_STEAM, "label": "Steam"},
+                    ],
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
@@ -566,7 +585,7 @@ def _source_details_schema(
             )
         ] = TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT))
 
-    if data_source_type != DATA_SOURCE_IDLEON_CLOUD:
+    if data_source_type != DATA_SOURCE_IDLEON_CLOUD or auth_provider in AUTH_PROVIDERS:
         fields[
             vol.Required(
                 CONF_SCAN_INTERVAL,
@@ -581,6 +600,29 @@ def _source_details_schema(
         )
 
     return vol.Schema(fields)
+
+
+def _stored_data_source_type(source_type: str) -> str:
+    """Return the stored data source type for a UI selection."""
+    if source_type in AUTH_PROVIDERS:
+        return DATA_SOURCE_IDLEON_CLOUD
+    return source_type
+
+
+def _auth_provider_from_source_type(source_type: str) -> str | None:
+    """Return the cloud auth provider represented by a UI selection."""
+    if source_type in AUTH_PROVIDERS:
+        return source_type
+    return None
+
+
+def _source_type_from_entry_data(data: dict[str, Any]) -> str:
+    """Return the UI source type represented by stored entry data."""
+    if data.get(CONF_DATA_SOURCE_TYPE) == DATA_SOURCE_IDLEON_CLOUD:
+        provider = data.get(CONF_AUTH_PROVIDER)
+        if provider in AUTH_PROVIDERS:
+            return provider
+    return str(data.get(CONF_DATA_SOURCE_TYPE, AUTH_PROVIDER_GOOGLE))
 
 
 def _normalize_user_input(
@@ -625,6 +667,8 @@ def _normalize_user_input(
             normalized[CONF_IDLEON_PASSWORD] = idleon_password
         elif provider == AUTH_PROVIDER_GOOGLE:
             normalized[CONF_AUTH_PROVIDER] = provider
+        elif provider in {AUTH_PROVIDER_APPLE, AUTH_PROVIDER_STEAM}:
+            raise IdleonAuthFailed(f"{provider.title()} login is not implemented yet")
         else:
             raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     else:

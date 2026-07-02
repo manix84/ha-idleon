@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.6.0
+
+- Minor release placeholder. Update before release.
+
 ## 🚀 0.5.0
 
 - Split `idleon_cloud` login provider selection onto its own setup page.

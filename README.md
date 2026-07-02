@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.5.0-blue" alt="Version 0.5.0">
+  <img src="https://img.shields.io/badge/version-0.6.0-blue" alt="Version 0.6.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -63,14 +63,13 @@ not supported.
 
 Fields:
 
-- `data_source_type`: `idleon_cloud`, `local_file`, or `remote_url`
-- `auth_provider`: required when using `idleon_cloud`; currently `email` and
-  `google` are implemented
+- `data_source_type`: choose `google`, `apple`, `email`, `steam`, or
+  `local_file` in the UI. Cloud login entries are stored internally as
+  `idleon_cloud` with an auth provider.
 - `idleon_email`: required when using the `email` provider
 - `idleon_password`: required during `email` setup and not stored after a
   successful token exchange
 - `local_file_path`: required when using `local_file`
-- `remote_url`: required when using `remote_url`
 - `scan_interval`: defaults to `3600` seconds, minimum `300` seconds
 
 The integration validates the source before creating the config entry.
@@ -79,8 +78,8 @@ The integration validates the source before creating the config entry.
 
 ### 🔑 Authenticated Idleon Cloud
 
-The primary data source is `idleon_cloud`, where Home Assistant logs in through
-an Idleon-supported provider and fetches read-only cloud save data.
+The primary data source is authenticated cloud login, where Home Assistant logs
+in through an Idleon-supported provider and fetches read-only cloud save data.
 
 Supported providers:
 
@@ -89,6 +88,8 @@ Supported providers:
 - `google`: shows a Google device-code login prompt, exchanges the completed
   Google authorization for Firebase tokens, and stores only the Firebase refresh
   token for future polling.
+- `apple` and `steam`: visible in the first setup choice but not implemented
+  yet.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
 and future provider plan.
@@ -156,10 +157,10 @@ entities.
 ## 🔐 Privacy And Security
 
 HA Idleon stores the configured data source in the Home Assistant config entry.
-For `idleon_cloud`, this includes the auth provider, redacted email metadata,
-Idleon/Firebase user id metadata, and refresh-token presence. The refresh token
-itself is stored by Home Assistant so the integration can keep polling; keep
-access to your Home Assistant config private.
+For authenticated cloud login, this includes the auth provider, redacted email
+metadata, Idleon/Firebase user id metadata, and refresh-token presence. The
+refresh token itself is stored by Home Assistant so the integration can keep
+polling; keep access to your Home Assistant config private.
 
 Diagnostics redact local file paths, remote URL query strings, auth user
 metadata, and token presence because these may expose usernames, tokens, or
@@ -174,7 +175,7 @@ Third-party data notices are listed in
 
 ## 🚧 Known Limitations
 
-- Email/password and Google are the implemented `idleon_cloud` login providers.
+- Email/password and Google are the implemented cloud login providers.
 - Steam and Apple login providers are not implemented yet.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
