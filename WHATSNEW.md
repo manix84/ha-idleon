@@ -2,6 +2,8 @@
 
 ## 🚀 0.1.18
 
+- Documented the planned authenticated Idleon cloud data source and clarified
+  that local/remote JSON sources are transitional development paths.
 - Changed the account last-updated sensor to prefer the parsed source/export
   timestamp when available.
 - Added duplicate-source protection when changing data sources through options.

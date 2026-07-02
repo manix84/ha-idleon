@@ -29,9 +29,13 @@ project remains unofficial and community-maintained.
 HA Idleon reads a JSON representation of your Idleon account data and creates
 Home Assistant devices and entities for basic account and character status.
 
-🔒 The integration is read-only. v1 does not ask for Idleon credentials. Users
-should not paste private session tokens. Raw Idleon account data may contain
-sensitive game/account details.
+🔒 The integration is read-only. The current MVP does not ask for Idleon
+credentials. Users should not paste private session tokens. Raw Idleon account
+data may contain sensitive game/account details.
+
+The intended future setup is an authenticated Idleon cloud data source, using
+the same style of login users already use for Idleon. The current `local_file`
+and `remote_url` sources are transitional development and fallback options.
 
 ## 📦 Installation
 
@@ -67,9 +71,19 @@ The integration validates the source before creating the config entry.
 
 ## 📡 Data Sources
 
+### 🔑 Authenticated Idleon Cloud
+
+The intended long-term data source is `idleon_cloud`, where Home Assistant logs
+in through an Idleon-supported provider and fetches read-only cloud save data.
+This is not implemented yet. See
+[docs/auth-data-source.md](docs/auth-data-source.md) for the implementation
+plan.
+
 ### 📄 Local File
 
-Use `local_file` when Home Assistant can read a JSON file from disk. The path
+Use `local_file` when Home Assistant can read a JSON file from disk. This is
+currently useful for development and early testing, but it is not intended to be
+the final user setup. The path
 must be readable by the Home Assistant process and must be the path as seen
 from the Home Assistant server, not your workstation. For a typical Home
 Assistant config directory, place the file somewhere like
@@ -78,10 +92,12 @@ Assistant config directory, place the file somewhere like
 ### 🌐 Remote URL
 
 Use `remote_url` when Home Assistant can fetch a JSON document over HTTP or
-HTTPS. Do not use URLs containing private session tokens or account secrets.
+HTTPS. This is currently useful for testing private JSON publishing workflows,
+but it is not intended to be the final user setup. Do not use URLs containing
+private session tokens or account secrets.
 
-v1 intentionally does not implement Idleon login, Steam login, browser scraping,
-session scraping, or token scraping.
+The integration must not implement browser scraping, session scraping, or token
+scraping.
 
 ## 🧭 Entities
 
@@ -139,14 +155,15 @@ Third-party data notices are listed in
 
 - The parser is flexible but based on early fixture-style JSON.
 - Real Idleon export schemas may require parser updates.
-- No write actions, services, automations, cloud storage, or auth flows are
-  included.
+- Authenticated Idleon cloud login is planned but not implemented yet.
+- No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
   characters may leave disabled or unavailable registry entries behind.
 
 ## 🗺️ Roadmap
 
 - Confirm the real Idleon data schema.
+- Add the authenticated `idleon_cloud` data source.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
 - Improve repair messages for invalid or stale data sources.
