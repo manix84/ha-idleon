@@ -26,16 +26,14 @@ SIZE = 512
 
 def main() -> int:
     """Generate all icon variants."""
-    badge = Image.open(BADGE_SOURCE).convert("RGBA")
-    transparent = _compose_icon(badge, background=None)
-    solid = _compose_icon(badge, background=(246, 250, 253, 255))
+    transparent = _load_transparent_icon()
 
     ASSET_ICON.parent.mkdir(parents=True, exist_ok=True)
     BRANDS_DIR.mkdir(parents=True, exist_ok=True)
     INTEGRATION_DIR.mkdir(parents=True, exist_ok=True)
     INTEGRATION_BRAND_DIR.mkdir(parents=True, exist_ok=True)
 
-    solid.save(ASSET_ICON)
+    transparent.save(ASSET_ICON)
     transparent.save(ASSET_ICON_TRANSPARENT)
     transparent.save(BRANDS_DIR / "icon.png")
     transparent.save(BRANDS_DIR / "logo.png")
@@ -50,6 +48,14 @@ def main() -> int:
     _save_2x(transparent, INTEGRATION_BRAND_DIR / "icon@2x.png")
     _save_2x(transparent, INTEGRATION_BRAND_DIR / "logo@2x.png")
     return 0
+
+
+def _load_transparent_icon() -> Image.Image:
+    """Load the maintained transparent project icon."""
+    if ASSET_ICON_TRANSPARENT.is_file():
+        return Image.open(ASSET_ICON_TRANSPARENT).convert("RGBA")
+    badge = Image.open(BADGE_SOURCE).convert("RGBA")
+    return _compose_icon(badge, background=None)
 
 
 def _save_2x(image: Image.Image, path: Path) -> None:
