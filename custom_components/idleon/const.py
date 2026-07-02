@@ -7,8 +7,8 @@ from datetime import timedelta
 from homeassistant.const import Platform
 
 DOMAIN = "idleon"
-NAME = "HA Idleon"
-VERSION = "0.9.0"
+NAME = "Legends of Idleon"
+VERSION = "0.9.1"
 
 PLATFORMS = (Platform.SENSOR, Platform.BINARY_SENSOR)
 

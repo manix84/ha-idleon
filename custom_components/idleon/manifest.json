@@ -1,6 +1,6 @@
 {
   "domain": "idleon",
-  "name": "HA Idleon",
+  "name": "Legends of Idleon",
   "codeowners": ["@manix84"],
   "config_flow": true,
   "documentation": "https://github.com/manix84/ha-idleon",
@@ -8,5 +8,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/manix84/ha-idleon/issues",
   "requirements": [],
-  "version": "0.9.0"
+  "version": "0.9.1"
 }

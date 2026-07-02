@@ -29,7 +29,7 @@ def test_hacs_metadata() -> None:
     """Test HACS metadata remains valid for a custom integration repository."""
     hacs = json.loads((ROOT / "hacs.json").read_text())
 
-    assert hacs["name"] == "HA Idleon"
+    assert hacs["name"] == "Legends of Idleon"
     assert hacs["homeassistant"] == "2026.6.4"
 
 

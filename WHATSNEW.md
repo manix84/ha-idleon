@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.9.1
+
+- Patch release placeholder. Update before release.
+
 ## 🚀 0.9.0
 
 - Minor release placeholder. Update before release.
