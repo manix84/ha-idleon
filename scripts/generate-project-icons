@@ -41,6 +41,8 @@ def main() -> int:
     _save_2x(transparent, BRANDS_DIR / "logo@2x.png")
     transparent.save(INTEGRATION_DIR / "icon.png")
     transparent.save(INTEGRATION_DIR / "logo.png")
+    _save_2x(transparent, INTEGRATION_DIR / "icon@2x.png")
+    _save_2x(transparent, INTEGRATION_DIR / "logo@2x.png")
     return 0
 
 
