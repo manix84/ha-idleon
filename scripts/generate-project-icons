@@ -15,7 +15,7 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
 from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
 BADGE_SOURCE = ROOT / "assets/idleon-badge-source.png"
-OFFICIAL_IDLEON_ICON = ROOT / "assets/official-idleon-icon.png"
+OFFICIAL_IDLEON_ICON = ROOT / "assets/official-idleon-icon-38x38.png"
 ASSET_ICON = ROOT / "assets/project-icon.png"
 ASSET_ICON_TRANSPARENT = ROOT / "assets/project-icon-transparent.png"
 BRANDS_DIR = ROOT / "brands"

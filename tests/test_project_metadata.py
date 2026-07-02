@@ -39,7 +39,7 @@ def test_default_refresh_interval_is_five_minutes() -> None:
 def test_brand_assets_exist() -> None:
     """Test HACS and local integration brand assets are present."""
     for path in (
-        ROOT / "assets/official-idleon-icon.png",
+        ROOT / "assets/official-idleon-icon-38x38.png",
         ROOT / "assets/project-icon.png",
         ROOT / "assets/project-icon-transparent.png",
         ROOT / "brands/icon.png",
