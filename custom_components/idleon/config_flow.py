@@ -235,195 +235,26 @@ class IdleonOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize the options flow."""
         self._config_entry = config_entry
-        current_data = {**config_entry.data, **config_entry.options}
-        self._data_source_type = current_data[CONF_DATA_SOURCE_TYPE]
-        self._auth_provider = current_data.get(CONF_AUTH_PROVIDER)
-        self._cloud_base_input: dict[str, Any] | None = None
-        self._pending_google_input: dict[str, Any] | None = None
-        self._google_device_code: IdleonGoogleDeviceCode | None = None
 
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
-        """Select the data source type."""
+        """Update refresh options."""
         if user_input is not None:
-            self._data_source_type = _stored_data_source_type(
-                user_input[CONF_DATA_SOURCE_TYPE]
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_SCAN_INTERVAL: _normalize_scan_interval(
+                        user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                    )
+                },
             )
-            self._auth_provider = _auth_provider_from_source_type(
-                user_input[CONF_DATA_SOURCE_TYPE]
-            )
-            return await self.async_step_source()
 
+        current_data = {**self._config_entry.data, **self._config_entry.options}
         return self.async_show_form(
             step_id="init",
-            data_schema=_source_type_schema(
-                _source_type_from_entry_data(
-                    {**self._config_entry.data, **self._config_entry.options}
-                )
-            ),
-        )
-
-    async def async_step_auth_provider(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
-        """Select the Idleon cloud authentication provider."""
-        current_data = {**self._config_entry.data, **self._config_entry.options}
-        if user_input is not None:
-            self._auth_provider = user_input[CONF_AUTH_PROVIDER]
-            self._cloud_base_input = _normalize_cloud_base_input(user_input)
-            if self._auth_provider == AUTH_PROVIDER_GOOGLE:
-                self._pending_google_input = self._cloud_base_input
-                return await self.async_step_google()
-            return await self.async_step_source()
-
-        return self.async_show_form(
-            step_id="auth_provider",
-            data_schema=_auth_provider_schema(current_data),
-        )
-
-    async def async_step_source(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
-        """Handle source option details and validation."""
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            try:
-                normalized_input = _normalize_user_input(
-                    self._data_source_type,
-                    user_input,
-                    auth_provider=self._auth_provider,
-                    base_input=self._cloud_base_input,
-                )
-                if _is_google_cloud_input(normalized_input):
-                    self._pending_google_input = normalized_input
-                    return await self.async_step_google()
-                normalized_input, data_source = await _async_prepare_source(
-                    self.hass,
-                    normalized_input,
-                )
-                await _async_validate_source(self.hass, data_source)
-            except IdleonAuthFailed:
-                errors["base"] = "auth_failed"
-            except IdleonCannotConnect:
-                errors["base"] = "cannot_connect"
-            except IdleonInvalidJson:
-                errors["base"] = "invalid_json"
-            except IdleonInvalidSchema:
-                errors["base"] = "invalid_schema"
-            except Exception:
-                _LOGGER.exception("Unexpected error validating Idleon data source")
-                errors["base"] = "unknown"
-            else:
-                if _source_unique_id_configured(
-                    self.hass,
-                    data_source,
-                    current_entry_id=self._config_entry.entry_id,
-                ):
-                    errors["base"] = "already_configured"
-                    return self.async_show_form(
-                        step_id="source",
-                        data_schema=_source_details_schema(
-                            self._data_source_type,
-                            {**self._config_entry.data, **self._config_entry.options},
-                            auth_provider=self._auth_provider,
-                        ),
-                        errors=errors,
-                    )
-                self.hass.config_entries.async_update_entry(
-                    self._config_entry,
-                    title=_entry_title(data_source),
-                    unique_id=_source_unique_id(data_source),
-                )
-                return self.async_create_entry(
-                    title="",
-                    data=normalized_input,
-                )
-
-        current_data = {**self._config_entry.data, **self._config_entry.options}
-        return self.async_show_form(
-            step_id="source",
-            data_schema=_source_details_schema(
-                self._data_source_type,
-                current_data,
-                auth_provider=self._auth_provider,
-            ),
-            errors=errors,
-        )
-
-    async def async_step_google(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
-        """Handle Google device-code authorization in options."""
-        errors: dict[str, str] = {}
-
-        if self._pending_google_input is None:
-            return await self.async_step_init()
-
-        if self._google_device_code is None:
-            try:
-                self._google_device_code = await IdleonCloudClient(
-                    self.hass
-                ).async_start_google_device_flow()
-            except IdleonCannotConnect:
-                errors["base"] = "cannot_connect"
-            except IdleonAuthFailed:
-                errors["base"] = "auth_failed"
-            except Exception:
-                _LOGGER.exception("Unexpected error starting Google authorization")
-                errors["base"] = "unknown"
-
-        if user_input is not None and self._google_device_code is not None:
-            try:
-                normalized_input, data_source = await _async_prepare_google_source(
-                    self.hass,
-                    self._pending_google_input,
-                    self._google_device_code,
-                )
-                await _async_validate_source(self.hass, data_source)
-            except IdleonAuthPending:
-                errors["base"] = "authorization_pending"
-            except IdleonAuthFailed:
-                errors["base"] = "auth_failed"
-            except IdleonCannotConnect:
-                errors["base"] = "cannot_connect"
-            except IdleonInvalidJson:
-                errors["base"] = "invalid_json"
-            except IdleonInvalidSchema:
-                errors["base"] = "invalid_schema"
-            except Exception:
-                _LOGGER.exception("Unexpected error validating Google authorization")
-                errors["base"] = "unknown"
-            else:
-                if _source_unique_id_configured(
-                    self.hass,
-                    data_source,
-                    current_entry_id=self._config_entry.entry_id,
-                ):
-                    errors["base"] = "already_configured"
-                else:
-                    self.hass.config_entries.async_update_entry(
-                        self._config_entry,
-                        title=_entry_title(data_source),
-                        unique_id=_source_unique_id(data_source),
-                    )
-                    return self.async_create_entry(
-                        title="",
-                        data=normalized_input,
-                    )
-
-        return self.async_show_form(
-            step_id="google",
-            data_schema=vol.Schema({}),
-            description_placeholders=_google_description_placeholders(
-                self._google_device_code
-            ),
-            errors=errors,
+            data_schema=_options_schema(current_data),
         )
 
 
@@ -532,6 +363,25 @@ def _auth_provider_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=scan_interval,
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_SCAN_INTERVAL,
+                    mode=NumberSelectorMode.BOX,
+                    unit_of_measurement="seconds",
+                )
+            ),
+        }
+    )
+
+
+def _options_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+    """Return the options schema for refresh settings."""
+    defaults = defaults or {}
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_SCAN_INTERVAL,
+                default=defaults.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             ): NumberSelector(
                 NumberSelectorConfig(
                     min=MIN_SCAN_INTERVAL,

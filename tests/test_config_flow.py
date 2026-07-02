@@ -620,15 +620,11 @@ async def test_config_flow_duplicate_source_aborts(
     assert second_result["reason"] == "already_configured"
 
 
-async def test_options_flow_updates_source(
+async def test_options_flow_updates_refresh_interval(
     hass: HomeAssistant,
     sample_data_path: Path,
-    tmp_path: Path,
 ) -> None:
-    """Test options flow validates and stores updated source settings."""
-    updated_path = tmp_path / "updated_idleon_data.json"
-    updated_path.write_text(sample_data_path.read_text())
-
+    """Test options flow only stores refresh settings."""
     config_entry = await _create_local_file_entry(hass, sample_data_path)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -638,81 +634,34 @@ async def test_options_flow_updates_source(
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
-    )
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "source"
-
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
         user_input={
-            CONF_LOCAL_FILE_PATH: str(updated_path),
             CONF_SCAN_INTERVAL: 7200,
         },
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {
-        CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
-        CONF_LOCAL_FILE_PATH: str(updated_path),
-        CONF_SCAN_INTERVAL: 7200,
-    }
+    assert result["data"] == {CONF_SCAN_INTERVAL: 7200}
     assert config_entry.title == "Idleon Local File"
-    assert config_entry.unique_id == f"{DATA_SOURCE_LOCAL_FILE}:{updated_path}"
+    assert config_entry.data[CONF_LOCAL_FILE_PATH] == str(sample_data_path)
 
 
-async def test_options_flow_rejects_duplicate_source(
+async def test_options_flow_accepts_minimum_refresh_interval(
     hass: HomeAssistant,
     sample_data_path: Path,
-    tmp_path: Path,
 ) -> None:
-    """Test options flow does not allow duplicate configured sources."""
-    first_path = tmp_path / "first_idleon_data.json"
-    second_path = tmp_path / "second_idleon_data.json"
-    first_path.write_text(sample_data_path.read_text())
-    second_path.write_text(sample_data_path.read_text())
+    """Test options flow accepts the minimum refresh interval."""
+    config_entry = await _create_local_file_entry(hass, sample_data_path)
 
-    first_entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Idleon Local File",
-        unique_id=f"{DATA_SOURCE_LOCAL_FILE}:{first_path}",
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
-            CONF_LOCAL_FILE_PATH: str(first_path),
-            CONF_SCAN_INTERVAL: 3600,
-        },
-    )
-    first_entry.add_to_hass(hass)
-
-    second_entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Idleon Local File",
-        unique_id=f"{DATA_SOURCE_LOCAL_FILE}:{second_path}",
-        data={
-            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
-            CONF_LOCAL_FILE_PATH: str(second_path),
-            CONF_SCAN_INTERVAL: 3600,
-        },
-    )
-    second_entry.add_to_hass(hass)
-
-    result = await hass.config_entries.options.async_init(first_entry.entry_id)
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        user_input={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE},
-    )
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         user_input={
-            CONF_LOCAL_FILE_PATH: str(second_path),
-            CONF_SCAN_INTERVAL: 3600,
+            CONF_SCAN_INTERVAL: 300,
         },
     )
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {"base": "already_configured"}
-    assert first_entry.unique_id == f"{DATA_SOURCE_LOCAL_FILE}:{first_path}"
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {CONF_SCAN_INTERVAL: 300}
 
 
 async def _create_local_file_entry(

@@ -20,7 +20,7 @@ class IdleonDataSource:
     idleon_password: str | None = None
     idleon_user_id: str | None = None
     idleon_refresh_token: str | None = None
-    scan_interval: int = 3600
+    scan_interval: int = 14400
 
 
 @dataclass(frozen=True, slots=True)

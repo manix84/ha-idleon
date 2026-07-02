@@ -8,7 +8,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "idleon"
 NAME = "HA Idleon"
-VERSION = "0.6.4"
+VERSION = "0.7.0"
 
 PLATFORMS = (Platform.SENSOR, Platform.BINARY_SENSOR)
 
@@ -44,6 +44,6 @@ DATA_SOURCE_TYPES = [
     AUTH_PROVIDER_STEAM,
 ]
 
-DEFAULT_SCAN_INTERVAL = 3600
+DEFAULT_SCAN_INTERVAL = 14400
 MIN_SCAN_INTERVAL = 300
 DEFAULT_UPDATE_INTERVAL = timedelta(seconds=DEFAULT_SCAN_INTERVAL)

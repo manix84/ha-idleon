@@ -137,9 +137,7 @@ The sample data should show:
 
 Use Configure from the integration entry to change:
 
-- Data source type.
-- Local file path or remote URL.
-- Scan interval.
+- Refresh interval.
 
 Changing options reloads the integration entry.
 

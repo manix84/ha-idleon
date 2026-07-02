@@ -6,7 +6,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from custom_components.idleon.const import DOMAIN, VERSION
+from custom_components.idleon.const import DEFAULT_SCAN_INTERVAL, DOMAIN, VERSION
 
 ROOT = Path(__file__).parents[1]
 
@@ -29,6 +29,11 @@ def test_hacs_metadata() -> None:
 
     assert hacs["name"] == "HA Idleon"
     assert hacs["homeassistant"] == "2026.6.4"
+
+
+def test_default_refresh_interval_matches_idleon_toolbox() -> None:
+    """Test default refresh follows Idleon Toolbox's four-hour cadence."""
+    assert DEFAULT_SCAN_INTERVAL == 4 * 60 * 60
 
 
 def test_brand_assets_exist() -> None:
