@@ -37,9 +37,19 @@ def main() -> int:
     transparent.save(ASSET_ICON_TRANSPARENT)
     transparent.save(BRANDS_DIR / "icon.png")
     transparent.save(BRANDS_DIR / "logo.png")
+    _save_2x(transparent, BRANDS_DIR / "icon@2x.png")
+    _save_2x(transparent, BRANDS_DIR / "logo@2x.png")
     transparent.save(INTEGRATION_DIR / "icon.png")
     transparent.save(INTEGRATION_DIR / "logo.png")
     return 0
+
+
+def _save_2x(image: Image.Image, path: Path) -> None:
+    """Save a 2x PNG variant."""
+    image.resize(
+        (image.width * 2, image.height * 2),
+        Image.Resampling.LANCZOS,
+    ).save(path)
 
 
 def _compose_icon(

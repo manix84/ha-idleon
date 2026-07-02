@@ -35,7 +35,9 @@ def test_brand_assets_exist() -> None:
     """Test HACS and local integration brand assets are present."""
     for path in (
         ROOT / "brands/icon.png",
+        ROOT / "brands/icon@2x.png",
         ROOT / "brands/logo.png",
+        ROOT / "brands/logo@2x.png",
         ROOT / "custom_components/idleon/icon.png",
         ROOT / "custom_components/idleon/logo.png",
     ):
