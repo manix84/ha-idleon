@@ -8,7 +8,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "idleon"
 NAME = "HA Idleon"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 PLATFORMS = (Platform.SENSOR, Platform.BINARY_SENSOR)
 

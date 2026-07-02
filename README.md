@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0">
+  <img src="https://img.shields.io/badge/version-0.4.0-blue" alt="Version 0.4.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -29,10 +29,10 @@ project remains unofficial and community-maintained.
 HA Idleon reads a JSON representation of your Idleon account data and creates
 Home Assistant devices and entities for basic account and character status.
 
-🔒 The integration is read-only. The cloud setup uses your Idleon email/password
-once to store a Firebase refresh token for future polling. Users should not
-paste private session tokens. Raw Idleon account data may contain sensitive
-game/account details.
+🔒 The integration is read-only. The cloud setup uses either Idleon
+email/password or Google device authorization once to store a Firebase refresh
+token for future polling. Users should not paste private session tokens. Raw
+Idleon account data may contain sensitive game/account details.
 
 The intended primary setup is an authenticated Idleon cloud data source, using
 the same style of login users already use for Idleon. The current `local_file`
@@ -64,11 +64,11 @@ not supported.
 Fields:
 
 - `data_source_type`: `idleon_cloud`, `local_file`, or `remote_url`
-- `auth_provider`: required when using `idleon_cloud`; currently only `email`
-  is implemented
-- `idleon_email`: required when using `idleon_cloud`
-- `idleon_password`: required during `idleon_cloud` setup and not stored after
-  a successful token exchange
+- `auth_provider`: required when using `idleon_cloud`; currently `email` and
+  `google` are implemented
+- `idleon_email`: required when using the `email` provider
+- `idleon_password`: required during `email` setup and not stored after a
+  successful token exchange
 - `local_file_path`: required when using `local_file`
 - `remote_url`: required when using `remote_url`
 - `scan_interval`: defaults to `3600` seconds, minimum `300` seconds
@@ -82,10 +82,13 @@ The integration validates the source before creating the config entry.
 The primary data source is `idleon_cloud`, where Home Assistant logs in through
 an Idleon-supported provider and fetches read-only cloud save data.
 
-The first supported provider is Idleon email/password. The setup flow exchanges
-the password for Firebase tokens, stores the refresh token in the Home Assistant
-config entry, then uses that token for future polling. The account password is
-not stored after setup.
+Supported providers:
+
+- `email`: exchanges your Idleon email/password for Firebase tokens. The
+  account password is not stored after setup.
+- `google`: shows a Google device-code login prompt, exchanges the completed
+  Google authorization for Firebase tokens, and stores only the Firebase refresh
+  token for future polling.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
 and future provider plan.
@@ -171,8 +174,8 @@ Third-party data notices are listed in
 
 ## 🚧 Known Limitations
 
-- Email/password is the only implemented `idleon_cloud` login provider.
-- Google, Steam, and Apple login providers are not implemented yet.
+- Email/password and Google are the implemented `idleon_cloud` login providers.
+- Steam and Apple login providers are not implemented yet.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
@@ -181,7 +184,7 @@ Third-party data notices are listed in
 ## 🗺️ Roadmap
 
 - Expand authenticated cloud-source coverage beyond the initial save data.
-- Add Google device-flow login if Home Assistant can support it cleanly.
+- Add Steam and Apple login if they can be supported cleanly in Home Assistant.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
 - Improve repair messages for invalid or stale data sources.

@@ -4,15 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from aiohttp import ClientError, ClientResponseError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from ..const import AUTH_PROVIDER_EMAIL
+from ..const import AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE
 from ..models import IdleonDataSource
-from .exceptions import IdleonAuthFailed, IdleonCannotConnect, IdleonInvalidSchema
+from .exceptions import (
+    IdleonAuthFailed,
+    IdleonAuthPending,
+    IdleonCannotConnect,
+    IdleonInvalidSchema,
+)
 
 FIREBASE_API_KEY = "AIzaSyAU62kOE6xhSrFqoXQPv6_WHxYilmoUxDk"
 FIREBASE_PROJECT_ID = "idlemmo"
@@ -23,6 +28,13 @@ FIRESTORE_BASE = (
     "https://firestore.googleapis.com/v1/projects/"
     f"{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 )
+GOOGLE_DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_CLIENT_ID = "267901585099-u6fjd75v6k9gefq7bcokcndv99riir5j"
+GOOGLE_CLIENT_SECRET = "HzoZF-UKUNfFwBuz4vafwsaR"
+GOOGLE_AUTH_PROVIDER_ID = "google.com"
+GOOGLE_OAUTH_SCOPE = "email profile"
+FIREBASE_AUTH_REQUEST_URI = "http://localhost"
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +45,18 @@ class IdleonCloudCredentials:
     refresh_token: str
     user_id: str
     email: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class IdleonGoogleDeviceCode:
+    """Google OAuth device-code flow details."""
+
+    device_code: str
+    user_code: str
+    verification_url: str
+    verification_url_complete: str | None
+    expires_in: int
+    interval: int
 
 
 class IdleonCloudClient:
@@ -60,6 +84,52 @@ class IdleonCloudClient:
             auth_error_message="Idleon email/password authentication failed",
         )
         return _credentials_from_auth_response(data, fallback_email=email)
+
+    async def async_start_google_device_flow(self) -> IdleonGoogleDeviceCode:
+        """Start a Google OAuth device authorization flow."""
+        data = await self._async_post_form(
+            GOOGLE_DEVICE_CODE_URL,
+            {
+                "client_id": GOOGLE_CLIENT_ID,
+                "scope": GOOGLE_OAUTH_SCOPE,
+            },
+            auth_error_message="Google device authorization could not be started",
+        )
+        return _google_device_code_from_response(data)
+
+    async def async_sign_in_google_device_code(
+        self,
+        device_code: str,
+    ) -> IdleonCloudCredentials:
+        """Poll Google OAuth and exchange the result for Firebase credentials."""
+        google_token = await self._async_poll_google_device_token(device_code)
+        id_token = google_token.get("id_token")
+        if not isinstance(id_token, str) or not id_token:
+            raise IdleonAuthFailed("Google authorization returned no ID token")
+        return await self.async_sign_in_google_id_token(id_token)
+
+    async def async_sign_in_google_id_token(
+        self,
+        id_token: str,
+    ) -> IdleonCloudCredentials:
+        """Sign in to Firebase using a Google OAuth ID token."""
+        payload = {
+            "postBody": urlencode(
+                {
+                    "id_token": id_token,
+                    "providerId": GOOGLE_AUTH_PROVIDER_ID,
+                }
+            ),
+            "requestUri": FIREBASE_AUTH_REQUEST_URI,
+            "returnIdpCredential": True,
+            "returnSecureToken": True,
+        }
+        data = await self._async_post_json(
+            f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithIdp?key={FIREBASE_API_KEY}",
+            payload,
+            auth_error_message="Google authentication failed",
+        )
+        return _credentials_from_auth_response(data)
 
     async def async_refresh_credentials(
         self,
@@ -103,6 +173,11 @@ class IdleonCloudClient:
                 data_source.idleon_email,
                 data_source.idleon_password,
             )
+        if (
+            data_source.auth_provider == AUTH_PROVIDER_GOOGLE
+            and data_source.idleon_password
+        ):
+            return await self.async_sign_in_google_id_token(data_source.idleon_password)
         if data_source.idleon_refresh_token:
             return await self.async_refresh_credentials(
                 data_source.idleon_refresh_token
@@ -212,6 +287,48 @@ class IdleonCloudClient:
         except (ClientError, TimeoutError) as err:
             raise IdleonCannotConnect("Idleon cloud token refresh failed") from err
 
+    async def _async_poll_google_device_token(self, device_code: str) -> dict[str, Any]:
+        """Poll Google OAuth for a completed device authorization."""
+        try:
+            async with self._session.post(
+                GOOGLE_TOKEN_URL,
+                data={
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "device_code": device_code,
+                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=ClientTimeout(total=30),
+            ) as response:
+                data = await response.json()
+                if response.status == 200:
+                    if not isinstance(data, dict):
+                        raise IdleonAuthFailed(
+                            "Google authorization returned invalid data"
+                        )
+                    return data
+                if isinstance(data, dict) and data.get("error") in {
+                    "authorization_pending",
+                    "slow_down",
+                }:
+                    raise IdleonAuthPending("Google authorization is not complete yet")
+                response.raise_for_status()
+        except IdleonAuthPending:
+            raise
+        except ClientResponseError as err:
+            if err.status in {400, 401, 403}:
+                raise IdleonAuthFailed("Google authorization failed") from err
+            raise IdleonCannotConnect(
+                "Google authorization could not be checked"
+            ) from err
+        except (ClientError, TimeoutError) as err:
+            raise IdleonCannotConnect(
+                "Google authorization could not be checked"
+            ) from err
+
+        raise IdleonAuthFailed("Google authorization failed")
+
 
 def _credentials_from_auth_response(
     data: Any,
@@ -235,6 +352,43 @@ def _credentials_from_auth_response(
         user_id=user_id,
         email=email if isinstance(email, str) else fallback_email,
     )
+
+
+def _google_device_code_from_response(data: Any) -> IdleonGoogleDeviceCode:
+    """Return normalized Google OAuth device-code details."""
+    if not isinstance(data, dict):
+        raise IdleonAuthFailed("Google device authorization returned invalid data")
+    device_code = data.get("device_code")
+    user_code = data.get("user_code")
+    verification_url = data.get("verification_url") or data.get("verification_uri")
+    verification_url_complete = data.get("verification_url_complete")
+    expires_in = _coerce_int(data.get("expires_in"), default=1800)
+    interval = _coerce_int(data.get("interval"), default=5)
+    if not all(
+        isinstance(value, str) and value
+        for value in (device_code, user_code, verification_url)
+    ):
+        raise IdleonAuthFailed("Google device authorization returned incomplete data")
+    return IdleonGoogleDeviceCode(
+        device_code=device_code,
+        user_code=user_code,
+        verification_url=verification_url,
+        verification_url_complete=(
+            verification_url_complete
+            if isinstance(verification_url_complete, str)
+            else None
+        ),
+        expires_in=expires_in,
+        interval=interval,
+    )
+
+
+def _coerce_int(value: Any, *, default: int) -> int:
+    """Return an integer from provider data."""
+    try:
+        return int(value)
+    except TypeError, ValueError:
+        return default
 
 
 def _credentials_from_refresh_response(data: Any) -> IdleonCloudCredentials:

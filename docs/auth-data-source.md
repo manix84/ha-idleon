@@ -36,9 +36,10 @@ Provider order:
 3. Steam OpenID handoff
 4. Apple sign-in
 
-Email/password is implemented first because it can be tested as a direct
-Firebase auth exchange. Google is the next best fit for Home Assistant because
-device flow works without embedding a browser in the config flow.
+Email/password and Google device flow are implemented. Email/password is a
+direct Firebase auth exchange. Google device flow works without embedding a
+browser in the config flow: Home Assistant shows a Google user code, then
+exchanges the completed Google authorization for Firebase credentials.
 
 Steam and Apple are more awkward in a Home Assistant server context because
 they require browser redirects or provider-specific handoff pages. They should
@@ -79,7 +80,7 @@ For `idleon_cloud`, the UI asks for a provider first, then provider details.
 Expected fields by provider:
 
 - `email`: email address and password. Implemented.
-- `google`: device-code flow state and verification URL.
+- `google`: device-code flow state and verification URL. Implemented.
 - `steam`: Steam redirect URL pasted by the user after signing in.
 - `apple`: Apple handoff state and verification URL.
 
@@ -160,7 +161,7 @@ Do not implement:
 3. Add diagnostics redaction for auth fields. Done.
 4. Add repair/config-flow errors for auth failures. Config-flow errors are
    implemented; repairs are still pending.
-5. Add Google device flow.
+5. Add Google device flow. Done.
 6. Decide whether Steam and Apple are viable inside HA without external helper
    services.
 7. Move `local_file` and `remote_url` under advanced/development wording.

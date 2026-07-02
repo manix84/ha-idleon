@@ -25,6 +25,7 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     AUTH_PROVIDER_EMAIL,
+    AUTH_PROVIDER_GOOGLE,
     CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
     CONF_IDLEON_EMAIL,
@@ -44,13 +45,18 @@ from .const import (
 )
 from .idleon_data import (
     IdleonAuthFailed,
+    IdleonAuthPending,
     IdleonCannotConnect,
     IdleonClient,
     IdleonInvalidJson,
     IdleonInvalidSchema,
     parse_idleon_account,
 )
-from .idleon_data.cloud import IdleonCloudClient, IdleonCloudCredentials
+from .idleon_data.cloud import (
+    IdleonCloudClient,
+    IdleonCloudCredentials,
+    IdleonGoogleDeviceCode,
+)
 from .models import IdleonDataSource
 
 _LOGGER = getLogger(__name__)
@@ -61,6 +67,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     _data_source_type: str | None = None
+    _pending_google_input: dict[str, Any] | None = None
+    _google_device_code: IdleonGoogleDeviceCode | None = None
 
     async def async_step_user(
         self,
@@ -89,6 +97,9 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._data_source_type,
                     user_input,
                 )
+                if _is_google_cloud_input(normalized_input):
+                    self._pending_google_input = normalized_input
+                    return await self.async_step_google()
                 normalized_input, data_source = await _async_prepare_source(
                     self.hass,
                     normalized_input,
@@ -119,6 +130,67 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_google(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle Google device-code authorization."""
+        errors: dict[str, str] = {}
+
+        if self._pending_google_input is None:
+            return await self.async_step_user()
+
+        if self._google_device_code is None:
+            try:
+                self._google_device_code = await IdleonCloudClient(
+                    self.hass
+                ).async_start_google_device_flow()
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except Exception:
+                _LOGGER.exception("Unexpected error starting Google authorization")
+                errors["base"] = "unknown"
+
+        if user_input is not None and self._google_device_code is not None:
+            try:
+                normalized_input, data_source = await _async_prepare_google_source(
+                    self.hass,
+                    self._pending_google_input,
+                    self._google_device_code,
+                )
+                await _async_validate_source(self.hass, data_source)
+            except IdleonAuthPending:
+                errors["base"] = "authorization_pending"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonInvalidJson:
+                errors["base"] = "invalid_json"
+            except IdleonInvalidSchema:
+                errors["base"] = "invalid_schema"
+            except Exception:
+                _LOGGER.exception("Unexpected error validating Google authorization")
+                errors["base"] = "unknown"
+            else:
+                await self.async_set_unique_id(_source_unique_id(data_source))
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=_entry_title(data_source),
+                    data=normalized_input,
+                )
+
+        return self.async_show_form(
+            step_id="google",
+            data_schema=vol.Schema({}),
+            description_placeholders=_google_description_placeholders(
+                self._google_device_code
+            ),
+            errors=errors,
+        )
+
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Create the options flow."""
@@ -133,6 +205,8 @@ class IdleonOptionsFlow(OptionsFlow):
         self._config_entry = config_entry
         current_data = {**config_entry.data, **config_entry.options}
         self._data_source_type = current_data[CONF_DATA_SOURCE_TYPE]
+        self._pending_google_input: dict[str, Any] | None = None
+        self._google_device_code: IdleonGoogleDeviceCode | None = None
 
     async def async_step_init(
         self,
@@ -161,6 +235,9 @@ class IdleonOptionsFlow(OptionsFlow):
                     self._data_source_type,
                     user_input,
                 )
+                if _is_google_cloud_input(normalized_input):
+                    self._pending_google_input = normalized_input
+                    return await self.async_step_google()
                 normalized_input, data_source = await _async_prepare_source(
                     self.hass,
                     normalized_input,
@@ -209,6 +286,77 @@ class IdleonOptionsFlow(OptionsFlow):
             errors=errors,
         )
 
+    async def async_step_google(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle Google device-code authorization in options."""
+        errors: dict[str, str] = {}
+
+        if self._pending_google_input is None:
+            return await self.async_step_init()
+
+        if self._google_device_code is None:
+            try:
+                self._google_device_code = await IdleonCloudClient(
+                    self.hass
+                ).async_start_google_device_flow()
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except Exception:
+                _LOGGER.exception("Unexpected error starting Google authorization")
+                errors["base"] = "unknown"
+
+        if user_input is not None and self._google_device_code is not None:
+            try:
+                normalized_input, data_source = await _async_prepare_google_source(
+                    self.hass,
+                    self._pending_google_input,
+                    self._google_device_code,
+                )
+                await _async_validate_source(self.hass, data_source)
+            except IdleonAuthPending:
+                errors["base"] = "authorization_pending"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonInvalidJson:
+                errors["base"] = "invalid_json"
+            except IdleonInvalidSchema:
+                errors["base"] = "invalid_schema"
+            except Exception:
+                _LOGGER.exception("Unexpected error validating Google authorization")
+                errors["base"] = "unknown"
+            else:
+                if _source_unique_id_configured(
+                    self.hass,
+                    data_source,
+                    current_entry_id=self._config_entry.entry_id,
+                ):
+                    errors["base"] = "already_configured"
+                else:
+                    self.hass.config_entries.async_update_entry(
+                        self._config_entry,
+                        title=_entry_title(data_source),
+                        unique_id=_source_unique_id(data_source),
+                    )
+                    return self.async_create_entry(
+                        title="",
+                        data=normalized_input,
+                    )
+
+        return self.async_show_form(
+            step_id="google",
+            data_schema=vol.Schema({}),
+            description_placeholders=_google_description_placeholders(
+                self._google_device_code
+            ),
+            errors=errors,
+        )
+
 
 async def _async_validate_source(
     hass: HomeAssistant,
@@ -228,6 +376,8 @@ async def _async_prepare_source(
     if data_source.source_type != DATA_SOURCE_IDLEON_CLOUD:
         return user_input, data_source
 
+    if data_source.auth_provider == AUTH_PROVIDER_GOOGLE:
+        raise IdleonAuthFailed("Google authorization is required")
     if data_source.auth_provider != AUTH_PROVIDER_EMAIL:
         raise IdleonAuthFailed("Only Idleon email/password login is supported")
     if not data_source.idleon_email:
@@ -240,6 +390,19 @@ async def _async_prepare_source(
     credentials = await IdleonCloudClient(hass).async_sign_in_email_password(
         data_source.idleon_email,
         data_source.idleon_password,
+    )
+    prepared = _entry_data_from_cloud_credentials(user_input, credentials)
+    return prepared, _data_source_from_input(prepared)
+
+
+async def _async_prepare_google_source(
+    hass: HomeAssistant,
+    user_input: dict[str, Any],
+    device_code: IdleonGoogleDeviceCode,
+) -> tuple[dict[str, Any], IdleonDataSource]:
+    """Exchange a completed Google device flow for storable source data."""
+    credentials = await IdleonCloudClient(hass).async_sign_in_google_device_code(
+        device_code.device_code
     )
     prepared = _entry_data_from_cloud_credentials(user_input, credentials)
     return prepared, _data_source_from_input(prepared)
@@ -294,17 +457,17 @@ def _source_details_schema(
             )
         ] = SelectSelector(
             SelectSelectorConfig(
-                options=[AUTH_PROVIDER_EMAIL],
+                options=[AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE],
                 mode=SelectSelectorMode.DROPDOWN,
             )
         )
         fields[
-            vol.Required(
+            vol.Optional(
                 CONF_IDLEON_EMAIL,
                 default=defaults.get(CONF_IDLEON_EMAIL, ""),
             )
         ] = TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL))
-        fields[vol.Required(CONF_IDLEON_PASSWORD)] = TextSelector(
+        fields[vol.Optional(CONF_IDLEON_PASSWORD)] = TextSelector(
             TextSelectorConfig(type=TextSelectorType.PASSWORD)
         )
     elif data_source_type == DATA_SOURCE_REMOTE_URL:
@@ -370,15 +533,16 @@ def _normalize_user_input(
         auth_provider = str(
             user_input.get(CONF_AUTH_PROVIDER) or AUTH_PROVIDER_EMAIL
         ).strip()
-        idleon_email = str(user_input.get(CONF_IDLEON_EMAIL) or "").strip()
-        idleon_password = str(user_input.get(CONF_IDLEON_PASSWORD) or "")
-        if auth_provider != AUTH_PROVIDER_EMAIL:
-            raise IdleonAuthFailed("Only Idleon email/password login is supported")
-        if not idleon_email or not idleon_password:
-            raise IdleonAuthFailed("Idleon email and password are required")
         normalized[CONF_AUTH_PROVIDER] = auth_provider
-        normalized[CONF_IDLEON_EMAIL] = idleon_email
-        normalized[CONF_IDLEON_PASSWORD] = idleon_password
+        if auth_provider == AUTH_PROVIDER_EMAIL:
+            idleon_email = str(user_input.get(CONF_IDLEON_EMAIL) or "").strip()
+            idleon_password = str(user_input.get(CONF_IDLEON_PASSWORD) or "")
+            if not idleon_email or not idleon_password:
+                raise IdleonAuthFailed("Idleon email and password are required")
+            normalized[CONF_IDLEON_EMAIL] = idleon_email
+            normalized[CONF_IDLEON_PASSWORD] = idleon_password
+        elif auth_provider != AUTH_PROVIDER_GOOGLE:
+            raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     else:
         raise IdleonCannotConnect(f"Unsupported data source type: {data_source_type}")
 
@@ -398,6 +562,32 @@ def _data_source_from_input(user_input: dict[str, Any]) -> IdleonDataSource:
         idleon_refresh_token=user_input.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=user_input[CONF_SCAN_INTERVAL],
     )
+
+
+def _is_google_cloud_input(user_input: dict[str, Any]) -> bool:
+    """Return whether normalized data starts a Google cloud authorization."""
+    return (
+        user_input.get(CONF_DATA_SOURCE_TYPE) == DATA_SOURCE_IDLEON_CLOUD
+        and user_input.get(CONF_AUTH_PROVIDER) == AUTH_PROVIDER_GOOGLE
+        and not user_input.get(CONF_IDLEON_REFRESH_TOKEN)
+    )
+
+
+def _google_description_placeholders(
+    device_code: IdleonGoogleDeviceCode | None,
+) -> dict[str, str]:
+    """Return placeholders for the Google device-code flow."""
+    if device_code is None:
+        return {
+            "verification_url": "https://www.google.com/device",
+            "user_code": "Loading...",
+            "expires_in": "",
+        }
+    return {
+        "verification_url": device_code.verification_url,
+        "user_code": device_code.user_code,
+        "expires_in": str(device_code.expires_in),
+    }
 
 
 def _source_unique_id(data_source: IdleonDataSource) -> str:

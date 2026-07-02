@@ -15,6 +15,10 @@ class IdleonAuthFailed(IdleonDataError):
     """Raised when Idleon cloud authentication fails."""
 
 
+class IdleonAuthPending(IdleonAuthFailed):
+    """Raised when a device authorization flow is not complete yet."""
+
+
 class IdleonInvalidJson(IdleonDataError):
     """Raised when the configured source does not return valid JSON."""
 

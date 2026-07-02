@@ -13,6 +13,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.idleon.const import (
     AUTH_PROVIDER_EMAIL,
+    AUTH_PROVIDER_GOOGLE,
     CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
     CONF_IDLEON_EMAIL,
@@ -75,9 +76,11 @@ class _FakeJsonResponse:
         data: Any,
         *,
         status_error: int | None = None,
+        status: int = 200,
     ) -> None:
         self._data = data
         self._status_error = status_error
+        self.status = status_error or status
 
     async def __aenter__(self) -> Self:
         return self
@@ -358,6 +361,127 @@ async def test_config_flow_idleon_cloud_auth_failure(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "auth_failed"}
+
+
+async def test_config_flow_success_idleon_cloud_google(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test creating an entry from Idleon Cloud Google device auth."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "device_code": "device-code",
+                    "user_code": "ABCD-EFGH",
+                    "verification_url": "https://www.google.com/device",
+                    "expires_in": 1800,
+                    "interval": 5,
+                }
+            ),
+            _FakeJsonResponse({"id_token": "google-id-token"}),
+            _FakeJsonResponse(
+                {
+                    "idToken": "firebase-id-token",
+                    "refreshToken": "firebase-refresh-token",
+                    "localId": "uid-google",
+                    "email": "player@gmail.com",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "id_token": "refresh-id-token",
+                    "refresh_token": "stored-refresh-token",
+                    "user_id": "uid-google",
+                }
+            ),
+            _FakeJsonResponse(["Manix84"]),
+            _FakeJsonResponse(_cloud_firestore_document()),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_AUTH_PROVIDER: AUTH_PROVIDER_GOOGLE,
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "google"
+    assert result["description_placeholders"]["user_code"] == "ABCD-EFGH"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Idleon Cloud"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_IDLEON_CLOUD
+    assert result["data"][CONF_AUTH_PROVIDER] == AUTH_PROVIDER_GOOGLE
+    assert result["data"][CONF_IDLEON_EMAIL] == "player@gmail.com"
+    assert result["data"][CONF_IDLEON_USER_ID] == "uid-google"
+    assert result["data"][CONF_IDLEON_REFRESH_TOKEN] == "firebase-refresh-token"
+    assert CONF_IDLEON_PASSWORD not in result["data"]
+    assert "device/code" in fake_session.requests[0][1]
+    assert "accounts:signInWithIdp" in fake_session.requests[2][1]
+
+
+async def test_config_flow_idleon_cloud_google_pending(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test pending Google device auth asks the user to submit again."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "device_code": "device-code",
+                    "user_code": "ABCD-EFGH",
+                    "verification_url": "https://www.google.com/device",
+                    "expires_in": 1800,
+                    "interval": 5,
+                }
+            ),
+            _FakeJsonResponse({"error": "authorization_pending"}, status=400),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_AUTH_PROVIDER: AUTH_PROVIDER_GOOGLE,
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "google"
+    assert result["errors"] == {"base": "authorization_pending"}
 
 
 async def test_config_flow_invalid_url(

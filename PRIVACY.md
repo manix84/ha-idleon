@@ -2,9 +2,10 @@
 
 🔒 HA Idleon is a read-only Home Assistant custom integration.
 
-The `idleon_cloud` data source asks for Idleon email/password credentials during
-setup, exchanges them for Firebase tokens, and does not store the password after
-a successful token exchange. Users should not paste private session tokens into
+The `idleon_cloud` data source asks for Idleon email/password credentials or
+uses Google device authorization during setup, exchanges the login result for
+Firebase tokens, and does not store the password or Google ID token after a
+successful token exchange. Users should not paste private session tokens into
 this integration.
 
 Home Assistant stores the provider type, account identifier, and refresh token

@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.4.0
+
+- Added Google device-code authorization for `idleon_cloud`, so Google-based
+  Idleon accounts can be linked without pasting session tokens.
+
 ## 🚀 0.3.0
 
 - Fixed indexed character device names so `Character 1 - Manix84` is displayed
