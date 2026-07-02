@@ -24,14 +24,17 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    AUTH_PROVIDER_EMAIL,
     CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
     CONF_IDLEON_EMAIL,
+    CONF_IDLEON_PASSWORD,
     CONF_IDLEON_REFRESH_TOKEN,
     CONF_IDLEON_USER_ID,
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
     DATA_SOURCE_REMOTE_URL,
     DATA_SOURCE_TYPES,
@@ -40,12 +43,14 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 from .idleon_data import (
+    IdleonAuthFailed,
     IdleonCannotConnect,
     IdleonClient,
     IdleonInvalidJson,
     IdleonInvalidSchema,
     parse_idleon_account,
 )
+from .idleon_data.cloud import IdleonCloudClient, IdleonCloudCredentials
 from .models import IdleonDataSource
 
 _LOGGER = getLogger(__name__)
@@ -84,8 +89,13 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._data_source_type,
                     user_input,
                 )
-                data_source = _data_source_from_input(normalized_input)
+                normalized_input, data_source = await _async_prepare_source(
+                    self.hass,
+                    normalized_input,
+                )
                 await _async_validate_source(self.hass, data_source)
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
             except IdleonCannotConnect:
                 errors["base"] = "cannot_connect"
             except IdleonInvalidJson:
@@ -151,8 +161,13 @@ class IdleonOptionsFlow(OptionsFlow):
                     self._data_source_type,
                     user_input,
                 )
-                data_source = _data_source_from_input(normalized_input)
+                normalized_input, data_source = await _async_prepare_source(
+                    self.hass,
+                    normalized_input,
+                )
                 await _async_validate_source(self.hass, data_source)
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
             except IdleonCannotConnect:
                 errors["base"] = "cannot_connect"
             except IdleonInvalidJson:
@@ -204,7 +219,47 @@ async def _async_validate_source(
     parse_idleon_account(raw_data)
 
 
-def _source_type_schema(default: str = DATA_SOURCE_LOCAL_FILE) -> vol.Schema:
+async def _async_prepare_source(
+    hass: HomeAssistant,
+    user_input: dict[str, Any],
+) -> tuple[dict[str, Any], IdleonDataSource]:
+    """Prepare entry data for validation and storage."""
+    data_source = _data_source_from_input(user_input)
+    if data_source.source_type != DATA_SOURCE_IDLEON_CLOUD:
+        return user_input, data_source
+
+    if data_source.auth_provider != AUTH_PROVIDER_EMAIL:
+        raise IdleonAuthFailed("Only Idleon email/password login is supported")
+    if not data_source.idleon_email:
+        raise IdleonAuthFailed("Idleon email is required")
+    if not data_source.idleon_password:
+        if data_source.idleon_refresh_token:
+            return user_input, data_source
+        raise IdleonAuthFailed("Idleon password is required")
+
+    credentials = await IdleonCloudClient(hass).async_sign_in_email_password(
+        data_source.idleon_email,
+        data_source.idleon_password,
+    )
+    prepared = _entry_data_from_cloud_credentials(user_input, credentials)
+    return prepared, _data_source_from_input(prepared)
+
+
+def _entry_data_from_cloud_credentials(
+    user_input: dict[str, Any],
+    credentials: IdleonCloudCredentials,
+) -> dict[str, Any]:
+    """Return storable cloud source data without the one-time password."""
+    prepared = dict(user_input)
+    prepared.pop(CONF_IDLEON_PASSWORD, None)
+    prepared[CONF_IDLEON_USER_ID] = credentials.user_id
+    prepared[CONF_IDLEON_REFRESH_TOKEN] = credentials.refresh_token
+    if credentials.email:
+        prepared[CONF_IDLEON_EMAIL] = credentials.email
+    return prepared
+
+
+def _source_type_schema(default: str = DATA_SOURCE_IDLEON_CLOUD) -> vol.Schema:
     """Return the source type selection schema."""
     return vol.Schema(
         {
@@ -231,7 +286,28 @@ def _source_details_schema(
 
     fields: dict[vol.Marker, Any] = {}
 
-    if data_source_type == DATA_SOURCE_REMOTE_URL:
+    if data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+        fields[
+            vol.Required(
+                CONF_AUTH_PROVIDER,
+                default=defaults.get(CONF_AUTH_PROVIDER, AUTH_PROVIDER_EMAIL),
+            )
+        ] = SelectSelector(
+            SelectSelectorConfig(
+                options=[AUTH_PROVIDER_EMAIL],
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+        fields[
+            vol.Required(
+                CONF_IDLEON_EMAIL,
+                default=defaults.get(CONF_IDLEON_EMAIL, ""),
+            )
+        ] = TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL))
+        fields[vol.Required(CONF_IDLEON_PASSWORD)] = TextSelector(
+            TextSelectorConfig(type=TextSelectorType.PASSWORD)
+        )
+    elif data_source_type == DATA_SOURCE_REMOTE_URL:
         fields[
             vol.Required(
                 CONF_REMOTE_URL,
@@ -290,6 +366,19 @@ def _normalize_user_input(
         if not remote_url:
             raise IdleonCannotConnect("Remote URL is required")
         normalized[CONF_REMOTE_URL] = remote_url
+    elif data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+        auth_provider = str(
+            user_input.get(CONF_AUTH_PROVIDER) or AUTH_PROVIDER_EMAIL
+        ).strip()
+        idleon_email = str(user_input.get(CONF_IDLEON_EMAIL) or "").strip()
+        idleon_password = str(user_input.get(CONF_IDLEON_PASSWORD) or "")
+        if auth_provider != AUTH_PROVIDER_EMAIL:
+            raise IdleonAuthFailed("Only Idleon email/password login is supported")
+        if not idleon_email or not idleon_password:
+            raise IdleonAuthFailed("Idleon email and password are required")
+        normalized[CONF_AUTH_PROVIDER] = auth_provider
+        normalized[CONF_IDLEON_EMAIL] = idleon_email
+        normalized[CONF_IDLEON_PASSWORD] = idleon_password
     else:
         raise IdleonCannotConnect(f"Unsupported data source type: {data_source_type}")
 
@@ -304,6 +393,7 @@ def _data_source_from_input(user_input: dict[str, Any]) -> IdleonDataSource:
         remote_url=user_input.get(CONF_REMOTE_URL),
         auth_provider=user_input.get(CONF_AUTH_PROVIDER),
         idleon_email=user_input.get(CONF_IDLEON_EMAIL),
+        idleon_password=user_input.get(CONF_IDLEON_PASSWORD),
         idleon_user_id=user_input.get(CONF_IDLEON_USER_ID),
         idleon_refresh_token=user_input.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=user_input[CONF_SCAN_INTERVAL],
@@ -316,6 +406,9 @@ def _source_unique_id(data_source: IdleonDataSource) -> str:
         parts = urlsplit(data_source.remote_url)
         redacted_url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
         return f"{DATA_SOURCE_REMOTE_URL}:{redacted_url}"
+    if data_source.source_type == DATA_SOURCE_IDLEON_CLOUD:
+        account_id = data_source.idleon_user_id or data_source.idleon_email
+        return f"{DATA_SOURCE_IDLEON_CLOUD}:{account_id}"
 
     return f"{DATA_SOURCE_LOCAL_FILE}:{data_source.local_file_path}"
 
@@ -345,6 +438,8 @@ def _source_unique_id_configured(
 
 def _entry_title(data_source: IdleonDataSource) -> str:
     """Return a human readable entry title."""
+    if data_source.source_type == DATA_SOURCE_IDLEON_CLOUD:
+        return "Idleon Cloud"
     if data_source.source_type == DATA_SOURCE_REMOTE_URL:
         return "Idleon Remote URL"
     return "Idleon Local File"

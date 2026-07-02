@@ -11,6 +11,10 @@ class IdleonCannotConnect(IdleonDataError):
     """Raised when the configured source cannot be read."""
 
 
+class IdleonAuthFailed(IdleonDataError):
+    """Raised when Idleon cloud authentication fails."""
+
+
 class IdleonInvalidJson(IdleonDataError):
     """Raised when the configured source does not return valid JSON."""
 

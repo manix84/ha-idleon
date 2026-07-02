@@ -29,13 +29,14 @@ project remains unofficial and community-maintained.
 HA Idleon reads a JSON representation of your Idleon account data and creates
 Home Assistant devices and entities for basic account and character status.
 
-🔒 The integration is read-only. The current MVP does not ask for Idleon
-credentials. Users should not paste private session tokens. Raw Idleon account
-data may contain sensitive game/account details.
+🔒 The integration is read-only. The cloud setup uses your Idleon email/password
+once to store a Firebase refresh token for future polling. Users should not
+paste private session tokens. Raw Idleon account data may contain sensitive
+game/account details.
 
-The intended future setup is an authenticated Idleon cloud data source, using
+The intended primary setup is an authenticated Idleon cloud data source, using
 the same style of login users already use for Idleon. The current `local_file`
-and `remote_url` sources are transitional development and fallback options.
+and `remote_url` sources remain transitional development and fallback options.
 
 ## 📦 Installation
 
@@ -62,7 +63,12 @@ not supported.
 
 Fields:
 
-- `data_source_type`: `local_file` or `remote_url`
+- `data_source_type`: `idleon_cloud`, `local_file`, or `remote_url`
+- `auth_provider`: required when using `idleon_cloud`; currently only `email`
+  is implemented
+- `idleon_email`: required when using `idleon_cloud`
+- `idleon_password`: required during `idleon_cloud` setup and not stored after
+  a successful token exchange
 - `local_file_path`: required when using `local_file`
 - `remote_url`: required when using `remote_url`
 - `scan_interval`: defaults to `3600` seconds, minimum `300` seconds
@@ -73,11 +79,16 @@ The integration validates the source before creating the config entry.
 
 ### 🔑 Authenticated Idleon Cloud
 
-The intended long-term data source is `idleon_cloud`, where Home Assistant logs
-in through an Idleon-supported provider and fetches read-only cloud save data.
-This is not implemented yet. See
-[docs/auth-data-source.md](docs/auth-data-source.md) for the implementation
-plan.
+The primary data source is `idleon_cloud`, where Home Assistant logs in through
+an Idleon-supported provider and fetches read-only cloud save data.
+
+The first supported provider is Idleon email/password. The setup flow exchanges
+the password for Firebase tokens, stores the refresh token in the Home Assistant
+config entry, then uses that token for future polling. The account password is
+not stored after setup.
+
+See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
+and future provider plan.
 
 ### 📄 Local File
 
@@ -141,8 +152,14 @@ entities.
 ## 🔐 Privacy And Security
 
 HA Idleon stores the configured data source in the Home Assistant config entry.
-Diagnostics redact local file paths and remote URL query strings because these
-may expose usernames, tokens, or private infrastructure.
+For `idleon_cloud`, this includes the auth provider, redacted email metadata,
+Idleon/Firebase user id metadata, and refresh-token presence. The refresh token
+itself is stored by Home Assistant so the integration can keep polling; keep
+access to your Home Assistant config private.
+
+Diagnostics redact local file paths, remote URL query strings, auth user
+metadata, and token presence because these may expose usernames, tokens, or
+private infrastructure.
 
 Raw Idleon account JSON may contain sensitive game/account details. Keep source
 files private and do not publish diagnostics that include unreviewed data from
@@ -153,17 +170,17 @@ Third-party data notices are listed in
 
 ## 🚧 Known Limitations
 
-- The parser is flexible but based on early fixture-style JSON.
-- Real Idleon export schemas may require parser updates.
-- Authenticated Idleon cloud login is planned but not implemented yet.
+- Email/password is the only implemented `idleon_cloud` login provider.
+- Google, Steam, and Apple login providers are not implemented yet.
+- The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
   characters may leave disabled or unavailable registry entries behind.
 
 ## 🗺️ Roadmap
 
-- Confirm the real Idleon data schema.
-- Add the authenticated `idleon_cloud` data source.
+- Expand authenticated cloud-source coverage beyond the initial save data.
+- Add Google device-flow login if Home Assistant can support it cleanly.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
 - Improve repair messages for invalid or stale data sources.

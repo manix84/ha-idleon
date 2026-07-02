@@ -2,8 +2,11 @@
 
 ## 🚀 0.1.18
 
-- Documented the planned authenticated Idleon cloud data source and clarified
-  that local/remote JSON sources are transitional development paths.
+- Added the first authenticated `idleon_cloud` data source using Idleon
+  email/password sign-in, stored refresh-token polling, and Firebase cloud-save
+  reads.
+- Documented the authenticated Idleon cloud data source and clarified that
+  local/remote JSON sources are transitional development paths.
 - Changed the account last-updated sensor to prefer the parsed source/export
   timestamp when available.
 - Added duplicate-source protection when changing data sources through options.

@@ -17,6 +17,7 @@ class IdleonDataSource:
     remote_url: str | None = None
     auth_provider: str | None = None
     idleon_email: str | None = None
+    idleon_password: str | None = None
     idleon_user_id: str | None = None
     idleon_refresh_token: str | None = None
     scan_interval: int = 3600

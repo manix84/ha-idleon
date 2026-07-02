@@ -1,18 +1,18 @@
 # 🔑 Authenticated Idleon Data Source
 
-This document defines the intended post-MVP data source direction for HA Idleon.
+This document defines the authenticated data source direction for HA Idleon.
 
 The long-term user setup should match how users already access Legends of
 Idleon: sign in with an Idleon-supported identity provider and let Home
 Assistant fetch the read-only cloud save data directly.
 
-`local_file` and `remote_url` remain useful for development, debugging, and
-fallback testing, but they should not be the primary user experience once the
-authenticated source is available.
+`idleon_cloud` is now the primary setup path. `local_file` and `remote_url`
+remain useful for development, debugging, and fallback testing, but they should
+not be the primary user experience.
 
 ## 🎯 Goal
 
-Add a new data source type:
+Use the data source type:
 
 ```txt
 idleon_cloud
@@ -29,16 +29,16 @@ The source should:
 
 ## 🔐 Supported Login Direction
 
-Target provider order:
+Provider order:
 
 1. Email and password
 2. Google device flow
 3. Steam OpenID handoff
 4. Apple sign-in
 
-Email/password is the smallest first implementation because it can be tested as
-a direct Firebase auth exchange. Google is the next best fit for Home Assistant
-because device flow works without embedding a browser in the config flow.
+Email/password is implemented first because it can be tested as a direct
+Firebase auth exchange. Google is the next best fit for Home Assistant because
+device flow works without embedding a browser in the config flow.
 
 Steam and Apple are more awkward in a Home Assistant server context because
 they require browser redirects or provider-specific handoff pages. They should
@@ -65,7 +65,7 @@ later when the parser exposes entities or attributes that need them.
 
 ## 🏠 Home Assistant Design
 
-The config flow should eventually offer:
+The config flow offers:
 
 ```txt
 data_source_type:
@@ -74,12 +74,11 @@ data_source_type:
   - remote_url
 ```
 
-For `idleon_cloud`, the UI should ask for a provider first, then provider
-details.
+For `idleon_cloud`, the UI asks for a provider first, then provider details.
 
 Expected fields by provider:
 
-- `email`: email address and password.
+- `email`: email address and password. Implemented.
 - `google`: device-code flow state and verification URL.
 - `steam`: Steam redirect URL pasted by the user after signing in.
 - `apple`: Apple handoff state and verification URL.
@@ -155,9 +154,12 @@ Do not implement:
 ## 🚧 Migration Plan
 
 1. Add `idleon_cloud` constants, model fields, config-flow shell, and docs.
+   Done.
 2. Implement email/password authentication and cloud save fetch behind mocks.
-3. Add diagnostics redaction for auth fields.
-4. Add repair/config-flow errors for auth failures.
+   Done.
+3. Add diagnostics redaction for auth fields. Done.
+4. Add repair/config-flow errors for auth failures. Config-flow errors are
+   implemented; repairs are still pending.
 5. Add Google device flow.
 6. Decide whether Steam and Apple are viable inside HA without external helper
    services.

@@ -2,6 +2,7 @@
 
 from .client import IdleonClient
 from .exceptions import (
+    IdleonAuthFailed,
     IdleonCannotConnect,
     IdleonDataError,
     IdleonInvalidJson,
@@ -23,6 +24,7 @@ from .website_data import (
 )
 
 __all__ = [
+    "IdleonAuthFailed",
     "IdleonCannotConnect",
     "IdleonClient",
     "IdleonDataError",

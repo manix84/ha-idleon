@@ -3,19 +3,26 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
-from aiohttp import ClientError
+from aiohttp import ClientError, ClientResponseError
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.idleon.const import (
+    AUTH_PROVIDER_EMAIL,
+    CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
+    CONF_IDLEON_EMAIL,
+    CONF_IDLEON_PASSWORD,
+    CONF_IDLEON_REFRESH_TOKEN,
+    CONF_IDLEON_USER_ID,
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
     DATA_SOURCE_REMOTE_URL,
     DOMAIN,
@@ -44,6 +51,10 @@ class _FakeResponse:
         """Return response text."""
         return self._text
 
+    async def json(self) -> Any:
+        """Return response JSON."""
+        raise AssertionError("JSON was not configured for this fake response")
+
 
 class _FakeSession:
     """Minimal aiohttp client session fake."""
@@ -54,6 +65,74 @@ class _FakeSession:
     def get(self, *_args: object, **_kwargs: object) -> _FakeResponse:
         """Return the fake response context manager."""
         return self._response
+
+
+class _FakeJsonResponse:
+    """Minimal aiohttp JSON response fake."""
+
+    def __init__(
+        self,
+        data: Any,
+        *,
+        status_error: int | None = None,
+    ) -> None:
+        self._data = data
+        self._status_error = status_error
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *_args: object) -> None:
+        return None
+
+    def raise_for_status(self) -> None:
+        """Raise a configured HTTP error."""
+        if self._status_error is not None:
+            raise ClientResponseError(
+                request_info=None,
+                history=(),
+                status=self._status_error,
+            )
+
+    async def json(self) -> Any:
+        """Return response JSON."""
+        return self._data
+
+
+class _FakeCloudSession:
+    """Minimal aiohttp client session fake for Firebase calls."""
+
+    def __init__(self, responses: list[_FakeJsonResponse]) -> None:
+        self._responses = responses
+        self.requests: list[tuple[str, str]] = []
+
+    def post(self, url: str, **_kwargs: object) -> _FakeJsonResponse:
+        """Return the next fake POST response."""
+        self.requests.append(("POST", url))
+        return self._responses.pop(0)
+
+    def get(self, url: str, **_kwargs: object) -> _FakeJsonResponse:
+        """Return the next fake GET response."""
+        self.requests.append(("GET", url))
+        return self._responses.pop(0)
+
+
+def _cloud_firestore_document() -> dict[str, Any]:
+    """Return a minimal Firestore REST document for one character."""
+    return {
+        "fields": {
+            "CharacterClass_0": {"integerValue": "14"},
+            "CurrentMap_0": {"integerValue": "325"},
+            "Lv0_0": {
+                "arrayValue": {
+                    "values": [
+                        {"integerValue": "1134"},
+                    ],
+                },
+            },
+            "GemsOwned": {"integerValue": "123"},
+        }
+    }
 
 
 async def test_config_flow_success_local_file(
@@ -187,6 +266,98 @@ async def test_config_flow_success_remote_url(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Idleon Remote URL"
     assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_REMOTE_URL
+
+
+async def test_config_flow_success_idleon_cloud_email(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test creating an entry from Idleon Cloud email/password auth."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "idToken": "setup-id-token",
+                    "refreshToken": "setup-refresh-token",
+                    "localId": "uid-123",
+                    "email": "player@example.com",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "id_token": "refresh-id-token",
+                    "refresh_token": "stored-refresh-token",
+                    "user_id": "uid-123",
+                }
+            ),
+            _FakeJsonResponse(["Manix84"]),
+            _FakeJsonResponse(_cloud_firestore_document()),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
+            CONF_IDLEON_EMAIL: "player@example.com",
+            CONF_IDLEON_PASSWORD: "super-secret",
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Idleon Cloud"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_IDLEON_CLOUD
+    assert result["data"][CONF_IDLEON_EMAIL] == "player@example.com"
+    assert result["data"][CONF_IDLEON_USER_ID] == "uid-123"
+    assert result["data"][CONF_IDLEON_REFRESH_TOKEN] == "setup-refresh-token"
+    assert CONF_IDLEON_PASSWORD not in result["data"]
+    assert fake_session.requests[0][0] == "POST"
+    assert "signInWithPassword" in fake_session.requests[0][1]
+
+
+async def test_config_flow_idleon_cloud_auth_failure(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test Idleon Cloud auth failure returns a clean error."""
+    fake_session = _FakeCloudSession([_FakeJsonResponse({}, status_error=400)])
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD},
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
+            CONF_IDLEON_EMAIL: "player@example.com",
+            CONF_IDLEON_PASSWORD: "wrong-password",
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "auth_failed"}
 
 
 async def test_config_flow_invalid_url(

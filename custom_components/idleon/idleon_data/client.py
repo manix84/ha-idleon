@@ -10,8 +10,13 @@ from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from ..const import DATA_SOURCE_LOCAL_FILE, DATA_SOURCE_REMOTE_URL
+from ..const import (
+    DATA_SOURCE_IDLEON_CLOUD,
+    DATA_SOURCE_LOCAL_FILE,
+    DATA_SOURCE_REMOTE_URL,
+)
 from ..models import IdleonDataSource
+from .cloud import IdleonCloudClient
 from .exceptions import IdleonCannotConnect, IdleonInvalidJson
 
 
@@ -29,6 +34,10 @@ class IdleonClient:
             return await self._async_get_local_file()
         if self._data_source.source_type == DATA_SOURCE_REMOTE_URL:
             return await self._async_get_remote_url()
+        if self._data_source.source_type == DATA_SOURCE_IDLEON_CLOUD:
+            return await IdleonCloudClient(self._hass).async_get_cloud_save(
+                self._data_source
+            )
 
         raise IdleonCannotConnect(
             f"Unsupported data source type: {self._data_source.source_type}"
