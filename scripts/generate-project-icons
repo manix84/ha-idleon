@@ -15,6 +15,7 @@ if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
 from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
 BADGE_SOURCE = ROOT / "assets/idleon-badge-source.png"
+OFFICIAL_IDLEON_ICON = ROOT / "assets/official-idleon-icon.png"
 ASSET_ICON = ROOT / "assets/project-icon.png"
 ASSET_ICON_TRANSPARENT = ROOT / "assets/project-icon-transparent.png"
 BRANDS_DIR = ROOT / "brands"
@@ -26,32 +27,44 @@ SIZE = 512
 
 def main() -> int:
     """Generate all icon variants."""
-    transparent = _load_transparent_icon()
+    official = _load_official_icon()
 
     ASSET_ICON.parent.mkdir(parents=True, exist_ok=True)
     BRANDS_DIR.mkdir(parents=True, exist_ok=True)
     INTEGRATION_DIR.mkdir(parents=True, exist_ok=True)
     INTEGRATION_BRAND_DIR.mkdir(parents=True, exist_ok=True)
 
-    transparent.save(ASSET_ICON)
-    transparent.save(ASSET_ICON_TRANSPARENT)
-    transparent.save(BRANDS_DIR / "icon.png")
-    transparent.save(BRANDS_DIR / "logo.png")
-    _save_2x(transparent, BRANDS_DIR / "icon@2x.png")
-    _save_2x(transparent, BRANDS_DIR / "logo@2x.png")
-    transparent.save(INTEGRATION_DIR / "icon.png")
-    transparent.save(INTEGRATION_DIR / "logo.png")
-    _save_2x(transparent, INTEGRATION_DIR / "icon@2x.png")
-    _save_2x(transparent, INTEGRATION_DIR / "logo@2x.png")
-    transparent.save(INTEGRATION_BRAND_DIR / "icon.png")
-    transparent.save(INTEGRATION_BRAND_DIR / "logo.png")
-    _save_2x(transparent, INTEGRATION_BRAND_DIR / "icon@2x.png")
-    _save_2x(transparent, INTEGRATION_BRAND_DIR / "logo@2x.png")
+    official.save(BRANDS_DIR / "icon.png")
+    official.save(BRANDS_DIR / "logo.png")
+    _save_2x(official, BRANDS_DIR / "icon@2x.png")
+    _save_2x(official, BRANDS_DIR / "logo@2x.png")
+    official.save(INTEGRATION_DIR / "icon.png")
+    official.save(INTEGRATION_DIR / "logo.png")
+    _save_2x(official, INTEGRATION_DIR / "icon@2x.png")
+    _save_2x(official, INTEGRATION_DIR / "logo@2x.png")
+    official.save(INTEGRATION_BRAND_DIR / "icon.png")
+    official.save(INTEGRATION_BRAND_DIR / "logo.png")
+    _save_2x(official, INTEGRATION_BRAND_DIR / "icon@2x.png")
+    _save_2x(official, INTEGRATION_BRAND_DIR / "logo@2x.png")
     return 0
 
 
+def _load_official_icon() -> Image.Image:
+    """Load the official Idleon icon for Home Assistant brand assets."""
+    if OFFICIAL_IDLEON_ICON.is_file():
+        return (
+            Image.open(OFFICIAL_IDLEON_ICON)
+            .convert("RGBA")
+            .resize(
+                (SIZE, SIZE),
+                Image.Resampling.LANCZOS,
+            )
+        )
+    return _load_transparent_icon()
+
+
 def _load_transparent_icon() -> Image.Image:
-    """Load the maintained transparent project icon."""
+    """Load the maintained transparent project icon fallback."""
     if ASSET_ICON_TRANSPARENT.is_file():
         return Image.open(ASSET_ICON_TRANSPARENT).convert("RGBA")
     badge = Image.open(BADGE_SOURCE).convert("RGBA")

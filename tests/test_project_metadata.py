@@ -34,6 +34,7 @@ def test_hacs_metadata() -> None:
 def test_brand_assets_exist() -> None:
     """Test HACS and local integration brand assets are present."""
     for path in (
+        ROOT / "assets/official-idleon-icon.png",
         ROOT / "assets/project-icon.png",
         ROOT / "assets/project-icon-transparent.png",
         ROOT / "brands/icon.png",
@@ -70,6 +71,13 @@ def test_served_brand_assets_are_transparent_pngs() -> None:
         ROOT / "custom_components/idleon/brand/logo@2x.png",
     ):
         assert _png_color_type(path) == 6
+
+
+def test_project_icon_is_documentation_only() -> None:
+    """Test Home Assistant brand assets are not copied from the project icon."""
+    assert (ROOT / "assets/project-icon-transparent.png").read_bytes() != (
+        ROOT / "custom_components/idleon/brand/icon.png"
+    ).read_bytes()
 
 
 def test_project_version_matches_integration_version() -> None:
