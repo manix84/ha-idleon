@@ -10,19 +10,26 @@
       },
       "source": {
         "title": "Idleon data source",
-        "description": "Configure and validate the selected read-only data source. Idleon Cloud can use email/password or Google device authorization to store a refresh token. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
+        "description": "Configure and validate the selected read-only data source. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
         "data": {
-          "auth_provider": "Idleon login provider",
-          "idleon_email": "Idleon account email",
-          "idleon_password": "Idleon account password",
+          "idleon_email": "Idleon email address",
+          "idleon_password": "Idleon password",
           "local_file_path": "Local JSON file path",
           "remote_url": "Remote JSON URL",
           "scan_interval": "Scan interval in seconds"
         }
       },
+      "auth_provider": {
+        "title": "Idleon Cloud login",
+        "description": "Choose how Home Assistant should link your read-only Idleon cloud save.",
+        "data": {
+          "auth_provider": "Login provider",
+          "scan_interval": "Scan interval in seconds"
+        }
+      },
       "google": {
         "title": "Authorize Google login",
-        "description": "Go to {verification_url}, enter code {user_code}, finish signing in with the Google account used for Idleon, then submit this form. The code expires in about {expires_in} seconds."
+        "description": "1. Open this Google login link:\n\n[{verification_url_complete}]({verification_url_complete})\n\n2. Confirm the code shown by Google matches this code:\n\n## {user_code}\n\n3. Finish signing in with the Google account used for Idleon.\n\n4. Return here and submit this form.\n\nIf the link does not prefill the code, open {verification_url} and enter the code manually. The code expires in about {expires_in} seconds."
       }
     },
     "error": {
@@ -49,19 +56,26 @@
       },
       "source": {
         "title": "Idleon data source",
-        "description": "Update and validate the selected read-only data source. Idleon Cloud can use email/password or Google device authorization to store a refresh token. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
+        "description": "Update and validate the selected read-only data source. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
         "data": {
-          "auth_provider": "Idleon login provider",
-          "idleon_email": "Idleon account email",
-          "idleon_password": "Idleon account password",
+          "idleon_email": "Idleon email address",
+          "idleon_password": "Idleon password",
           "local_file_path": "Local JSON file path",
           "remote_url": "Remote JSON URL",
           "scan_interval": "Scan interval in seconds"
         }
       },
+      "auth_provider": {
+        "title": "Idleon Cloud login",
+        "description": "Choose how Home Assistant should link your read-only Idleon cloud save.",
+        "data": {
+          "auth_provider": "Login provider",
+          "scan_interval": "Scan interval in seconds"
+        }
+      },
       "google": {
         "title": "Authorize Google login",
-        "description": "Go to {verification_url}, enter code {user_code}, finish signing in with the Google account used for Idleon, then submit this form. The code expires in about {expires_in} seconds."
+        "description": "1. Open this Google login link:\n\n[{verification_url_complete}]({verification_url_complete})\n\n2. Confirm the code shown by Google matches this code:\n\n## {user_code}\n\n3. Finish signing in with the Google account used for Idleon.\n\n4. Return here and submit this form.\n\nIf the link does not prefill the code, open {verification_url} and enter the code manually. The code expires in about {expires_in} seconds."
       }
     },
     "error": {

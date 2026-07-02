@@ -67,6 +67,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     _data_source_type: str | None = None
+    _auth_provider: str | None = None
+    _cloud_base_input: dict[str, Any] | None = None
     _pending_google_input: dict[str, Any] | None = None
     _google_device_code: IdleonGoogleDeviceCode | None = None
 
@@ -77,11 +79,31 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
         """Select the data source type."""
         if user_input is not None:
             self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
+            if self._data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+                return await self.async_step_auth_provider()
             return await self.async_step_source()
 
         return self.async_show_form(
             step_id="user",
             data_schema=_source_type_schema(),
+        )
+
+    async def async_step_auth_provider(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Select the Idleon cloud authentication provider."""
+        if user_input is not None:
+            self._auth_provider = user_input[CONF_AUTH_PROVIDER]
+            self._cloud_base_input = _normalize_cloud_base_input(user_input)
+            if self._auth_provider == AUTH_PROVIDER_GOOGLE:
+                self._pending_google_input = self._cloud_base_input
+                return await self.async_step_google()
+            return await self.async_step_source()
+
+        return self.async_show_form(
+            step_id="auth_provider",
+            data_schema=_auth_provider_schema(),
         )
 
     async def async_step_source(
@@ -96,6 +118,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 normalized_input = _normalize_user_input(
                     self._data_source_type,
                     user_input,
+                    auth_provider=self._auth_provider,
+                    base_input=self._cloud_base_input,
                 )
                 if _is_google_cloud_input(normalized_input):
                     self._pending_google_input = normalized_input
@@ -126,7 +150,10 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="source",
-            data_schema=_source_details_schema(self._data_source_type),
+            data_schema=_source_details_schema(
+                self._data_source_type,
+                auth_provider=self._auth_provider,
+            ),
             errors=errors,
         )
 
@@ -205,6 +232,8 @@ class IdleonOptionsFlow(OptionsFlow):
         self._config_entry = config_entry
         current_data = {**config_entry.data, **config_entry.options}
         self._data_source_type = current_data[CONF_DATA_SOURCE_TYPE]
+        self._auth_provider = current_data.get(CONF_AUTH_PROVIDER)
+        self._cloud_base_input: dict[str, Any] | None = None
         self._pending_google_input: dict[str, Any] | None = None
         self._google_device_code: IdleonGoogleDeviceCode | None = None
 
@@ -215,11 +244,32 @@ class IdleonOptionsFlow(OptionsFlow):
         """Select the data source type."""
         if user_input is not None:
             self._data_source_type = user_input[CONF_DATA_SOURCE_TYPE]
+            if self._data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+                return await self.async_step_auth_provider()
             return await self.async_step_source()
 
         return self.async_show_form(
             step_id="init",
             data_schema=_source_type_schema(self._data_source_type),
+        )
+
+    async def async_step_auth_provider(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Select the Idleon cloud authentication provider."""
+        current_data = {**self._config_entry.data, **self._config_entry.options}
+        if user_input is not None:
+            self._auth_provider = user_input[CONF_AUTH_PROVIDER]
+            self._cloud_base_input = _normalize_cloud_base_input(user_input)
+            if self._auth_provider == AUTH_PROVIDER_GOOGLE:
+                self._pending_google_input = self._cloud_base_input
+                return await self.async_step_google()
+            return await self.async_step_source()
+
+        return self.async_show_form(
+            step_id="auth_provider",
+            data_schema=_auth_provider_schema(current_data),
         )
 
     async def async_step_source(
@@ -234,6 +284,8 @@ class IdleonOptionsFlow(OptionsFlow):
                 normalized_input = _normalize_user_input(
                     self._data_source_type,
                     user_input,
+                    auth_provider=self._auth_provider,
+                    base_input=self._cloud_base_input,
                 )
                 if _is_google_cloud_input(normalized_input):
                     self._pending_google_input = normalized_input
@@ -282,7 +334,11 @@ class IdleonOptionsFlow(OptionsFlow):
         current_data = {**self._config_entry.data, **self._config_entry.options}
         return self.async_show_form(
             step_id="source",
-            data_schema=_source_details_schema(self._data_source_type, current_data),
+            data_schema=_source_details_schema(
+                self._data_source_type,
+                current_data,
+                auth_provider=self._auth_provider,
+            ),
             errors=errors,
         )
 
@@ -439,9 +495,40 @@ def _source_type_schema(default: str = DATA_SOURCE_IDLEON_CLOUD) -> vol.Schema:
     )
 
 
+def _auth_provider_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+    """Return the cloud authentication provider schema."""
+    defaults = defaults or {}
+    scan_interval = defaults.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_AUTH_PROVIDER,
+                default=defaults.get(CONF_AUTH_PROVIDER, AUTH_PROVIDER_GOOGLE),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=[AUTH_PROVIDER_GOOGLE, AUTH_PROVIDER_EMAIL],
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_SCAN_INTERVAL,
+                default=scan_interval,
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_SCAN_INTERVAL,
+                    mode=NumberSelectorMode.BOX,
+                    unit_of_measurement="seconds",
+                )
+            ),
+        }
+    )
+
+
 def _source_details_schema(
     data_source_type: str | None,
     defaults: dict[str, Any] | None = None,
+    *,
+    auth_provider: str | None = None,
 ) -> vol.Schema:
     """Return the source details schema."""
     defaults = defaults or {}
@@ -449,27 +536,21 @@ def _source_details_schema(
 
     fields: dict[vol.Marker, Any] = {}
 
-    if data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+    if (
+        data_source_type == DATA_SOURCE_IDLEON_CLOUD
+        and auth_provider == AUTH_PROVIDER_EMAIL
+    ):
         fields[
             vol.Required(
-                CONF_AUTH_PROVIDER,
-                default=defaults.get(CONF_AUTH_PROVIDER, AUTH_PROVIDER_EMAIL),
-            )
-        ] = SelectSelector(
-            SelectSelectorConfig(
-                options=[AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE],
-                mode=SelectSelectorMode.DROPDOWN,
-            )
-        )
-        fields[
-            vol.Optional(
                 CONF_IDLEON_EMAIL,
                 default=defaults.get(CONF_IDLEON_EMAIL, ""),
             )
         ] = TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL))
-        fields[vol.Optional(CONF_IDLEON_PASSWORD)] = TextSelector(
+        fields[vol.Required(CONF_IDLEON_PASSWORD)] = TextSelector(
             TextSelectorConfig(type=TextSelectorType.PASSWORD)
         )
+    elif data_source_type == DATA_SOURCE_IDLEON_CLOUD:
+        pass
     elif data_source_type == DATA_SOURCE_REMOTE_URL:
         fields[
             vol.Required(
@@ -485,18 +566,19 @@ def _source_details_schema(
             )
         ] = TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT))
 
-    fields[
-        vol.Required(
-            CONF_SCAN_INTERVAL,
-            default=scan_interval,
+    if data_source_type != DATA_SOURCE_IDLEON_CLOUD:
+        fields[
+            vol.Required(
+                CONF_SCAN_INTERVAL,
+                default=scan_interval,
+            )
+        ] = NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_SCAN_INTERVAL,
+                mode=NumberSelectorMode.BOX,
+                unit_of_measurement="seconds",
+            )
         )
-    ] = NumberSelector(
-        NumberSelectorConfig(
-            min=MIN_SCAN_INTERVAL,
-            mode=NumberSelectorMode.BOX,
-            unit_of_measurement="seconds",
-        )
-    )
 
     return vol.Schema(fields)
 
@@ -504,20 +586,22 @@ def _source_details_schema(
 def _normalize_user_input(
     data_source_type: str | None,
     user_input: dict[str, Any],
+    *,
+    auth_provider: str | None = None,
+    base_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate conditional fields and return normalized entry data."""
     if not data_source_type:
         raise IdleonCannotConnect("Data source type is required")
 
-    scan_interval = max(
-        MIN_SCAN_INTERVAL,
-        int(user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
-    )
-
     normalized: dict[str, Any] = {
         CONF_DATA_SOURCE_TYPE: data_source_type,
-        CONF_SCAN_INTERVAL: scan_interval,
+        CONF_SCAN_INTERVAL: _normalize_scan_interval(
+            user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        ),
     }
+    if base_input:
+        normalized.update(base_input)
 
     if data_source_type == DATA_SOURCE_LOCAL_FILE:
         local_file_path = str(user_input.get(CONF_LOCAL_FILE_PATH) or "").strip()
@@ -530,23 +614,42 @@ def _normalize_user_input(
             raise IdleonCannotConnect("Remote URL is required")
         normalized[CONF_REMOTE_URL] = remote_url
     elif data_source_type == DATA_SOURCE_IDLEON_CLOUD:
-        auth_provider = str(
-            user_input.get(CONF_AUTH_PROVIDER) or AUTH_PROVIDER_EMAIL
-        ).strip()
-        normalized[CONF_AUTH_PROVIDER] = auth_provider
-        if auth_provider == AUTH_PROVIDER_EMAIL:
+        provider = auth_provider or normalized.get(CONF_AUTH_PROVIDER)
+        if provider == AUTH_PROVIDER_EMAIL:
             idleon_email = str(user_input.get(CONF_IDLEON_EMAIL) or "").strip()
             idleon_password = str(user_input.get(CONF_IDLEON_PASSWORD) or "")
             if not idleon_email or not idleon_password:
                 raise IdleonAuthFailed("Idleon email and password are required")
+            normalized[CONF_AUTH_PROVIDER] = provider
             normalized[CONF_IDLEON_EMAIL] = idleon_email
             normalized[CONF_IDLEON_PASSWORD] = idleon_password
-        elif auth_provider != AUTH_PROVIDER_GOOGLE:
+        elif provider == AUTH_PROVIDER_GOOGLE:
+            normalized[CONF_AUTH_PROVIDER] = provider
+        else:
             raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     else:
         raise IdleonCannotConnect(f"Unsupported data source type: {data_source_type}")
 
     return normalized
+
+
+def _normalize_cloud_base_input(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Return normalized cloud source/provider data."""
+    auth_provider = str(user_input.get(CONF_AUTH_PROVIDER) or "").strip()
+    if auth_provider not in {AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE}:
+        raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
+    return {
+        CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD,
+        CONF_AUTH_PROVIDER: auth_provider,
+        CONF_SCAN_INTERVAL: _normalize_scan_interval(
+            user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        ),
+    }
+
+
+def _normalize_scan_interval(value: Any) -> int:
+    """Return a valid scan interval."""
+    return max(MIN_SCAN_INTERVAL, int(value))
 
 
 def _data_source_from_input(user_input: dict[str, Any]) -> IdleonDataSource:
@@ -580,11 +683,15 @@ def _google_description_placeholders(
     if device_code is None:
         return {
             "verification_url": "https://www.google.com/device",
+            "verification_url_complete": "https://www.google.com/device",
             "user_code": "Loading...",
             "expires_in": "",
         }
     return {
         "verification_url": device_code.verification_url,
+        "verification_url_complete": (
+            device_code.verification_url_complete or device_code.verification_url
+        ),
         "user_code": device_code.user_code,
         "expires_in": str(device_code.expires_in),
     }

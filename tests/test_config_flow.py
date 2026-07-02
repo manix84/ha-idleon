@@ -309,15 +309,24 @@ async def test_config_flow_success_idleon_cloud_email(
     )
 
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "source"
+    assert result["step_id"] == "auth_provider"
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         user_input={
             CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "source"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_IDLEON_EMAIL: "player@example.com",
             CONF_IDLEON_PASSWORD: "super-secret",
-            CONF_SCAN_INTERVAL: 3600,
         },
     )
 
@@ -353,9 +362,15 @@ async def test_config_flow_idleon_cloud_auth_failure(
         result["flow_id"],
         user_input={
             CONF_AUTH_PROVIDER: AUTH_PROVIDER_EMAIL,
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
             CONF_IDLEON_EMAIL: "player@example.com",
             CONF_IDLEON_PASSWORD: "wrong-password",
-            CONF_SCAN_INTERVAL: 3600,
         },
     )
 
@@ -375,6 +390,9 @@ async def test_config_flow_success_idleon_cloud_google(
                     "device_code": "device-code",
                     "user_code": "ABCD-EFGH",
                     "verification_url": "https://www.google.com/device",
+                    "verification_url_complete": (
+                        "https://www.google.com/device?user_code=ABCD-EFGH"
+                    ),
                     "expires_in": 1800,
                     "interval": 5,
                 }
@@ -420,6 +438,10 @@ async def test_config_flow_success_idleon_cloud_google(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "google"
     assert result["description_placeholders"]["user_code"] == "ABCD-EFGH"
+    assert (
+        result["description_placeholders"]["verification_url_complete"]
+        == "https://www.google.com/device?user_code=ABCD-EFGH"
+    )
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
@@ -450,6 +472,9 @@ async def test_config_flow_idleon_cloud_google_pending(
                     "device_code": "device-code",
                     "user_code": "ABCD-EFGH",
                     "verification_url": "https://www.google.com/device",
+                    "verification_url_complete": (
+                        "https://www.google.com/device?user_code=ABCD-EFGH"
+                    ),
                     "expires_in": 1800,
                     "interval": 5,
                 }

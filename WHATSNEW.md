@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.5.0
+
+- Split `idleon_cloud` login provider selection onto its own setup page.
+- Improved Google authorization instructions with a clearer login link and
+  prominent device code.
+
 ## 🚀 0.4.0
 
 - Added Google device-code authorization for `idleon_cloud`, so Google-based
