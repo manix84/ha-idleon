@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.3
+
+- Add class sensor entity pictures.
+
 ## 🚀 0.23.2
 
 - Nest pouch assets by type.

@@ -93,6 +93,21 @@ def test_coin_assets_exist() -> None:
         assert _png_dimensions(path) == (32, 32)
 
 
+def test_class_icon_assets_exist() -> None:
+    """Test representative class icon assets are bundled with the integration."""
+    class_icons = (
+        "beginner/beginner_icon.png",
+        "archer/bowman_icon.png",
+        "mage/bubonic_conjuror_icon.png",
+        "warrior/death_bringer_icon.png",
+    )
+
+    for class_icon in class_icons:
+        path = ROOT / f"custom_components/idleon/assets/classes/{class_icon}"
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
 def test_served_brand_assets_are_transparent_pngs() -> None:
     """Test Home Assistant served brand assets preserve transparency."""
     for path in (

@@ -800,9 +800,13 @@ class IdleonCharacterSensor(
 
     @property
     def entity_picture(self) -> str | None:
-        """Return the current coin tier picture for formatted money."""
+        """Return an entity picture for sensors with visual assets."""
         character = self._character
-        if self.entity_description.key != "character_money" or character is None:
+        if character is None:
+            return None
+        if self.entity_description.key == "character_class":
+            return _class_entity_picture(character.character_class)
+        if self.entity_description.key != "character_money":
             return None
         return _money_entity_picture(_character_money_raw(character))
 
@@ -1133,6 +1137,18 @@ def _money_entity_picture(raw_value: str) -> str:
     formatted_money = idleon_money_parts(raw_value)
     coin_slug = formatted_money.coin_tier.lower().replace(" ", "_")
     return f"{STATIC_URL_PATH}/coins/{coin_slug}.png"
+
+
+def _class_entity_picture(character_class: str) -> str | None:
+    """Return the image URL for a character class icon."""
+    class_slug = _slugify(character_class)
+    if not class_slug:
+        return None
+    class_icons = sorted((ASSETS_PATH / "classes").glob(f"*/{class_slug}_icon.png"))
+    if not class_icons:
+        return None
+    class_icon = class_icons[0]
+    return f"{STATIC_URL_PATH}/{class_icon.relative_to(ASSETS_PATH).as_posix()}"
 
 
 def _money_breakdown_attributes(

@@ -622,6 +622,10 @@ async def test_character_sensors(
 
     assert hass.states.get(level_entity_id).state == "210"
     assert hass.states.get(class_entity_id).state == "Bubonic Conjuror"
+    assert (
+        hass.states.get(class_entity_id).attributes["entity_picture"]
+        == "/idleon_static/classes/mage/bubonic_conjuror_icon.png"
+    )
     assert hass.states.get(map_entity_id).state == "Tremor Wurm Nest"
     assert hass.states.get(activity_entity_id).state == "AFK Fighting"
     assert hass.states.get(afk_entity_id).state == "12.5"
