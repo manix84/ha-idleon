@@ -589,9 +589,15 @@ def _source_type_schema(default: str = AUTH_PROVIDER_GOOGLE) -> vol.Schema:
                     options=[
                         {"value": DATA_SOURCE_LOCAL_FILE, "label": "Local JSON file"},
                         {"value": AUTH_PROVIDER_GOOGLE, "label": "Google"},
-                        {"value": AUTH_PROVIDER_APPLE, "label": "Apple"},
+                        {
+                            "value": AUTH_PROVIDER_APPLE,
+                            "label": "Apple (experimental)",
+                        },
                         {"value": AUTH_PROVIDER_EMAIL, "label": "Email"},
-                        {"value": AUTH_PROVIDER_STEAM, "label": "Steam"},
+                        {
+                            "value": AUTH_PROVIDER_STEAM,
+                            "label": "Steam (experimental)",
+                        },
                     ],
                     mode=SelectSelectorMode.DROPDOWN,
                 )

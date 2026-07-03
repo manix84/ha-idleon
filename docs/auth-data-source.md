@@ -43,10 +43,12 @@ Provider order:
 4. Apple sign-in
 
 Email/password, Google device flow, Steam OpenID handoff, and Apple sign-in are
-implemented. Email/password is a direct Firebase auth exchange. Google device
-flow works without embedding a browser in the config flow: Home Assistant shows
-a Google user code, then exchanges the completed Google authorization for
-Firebase credentials.
+implemented. Email/password and Google are the primary login paths. Steam and
+Apple are experimental until validated against more real-world linked accounts.
+Email/password is a direct Firebase auth exchange. Google device flow works
+without embedding a browser in the config flow: Home Assistant shows a Google
+user code, then exchanges the completed Google authorization for Firebase
+credentials.
 
 Steam is implemented with a Home Assistant external config-flow step: Home
 Assistant opens Steam, the user signs in, then Steam redirects back to a Home
@@ -94,8 +96,10 @@ Expected fields by provider:
 
 - `email`: email address and password. Implemented.
 - `google`: device-code flow state and verification URL. Implemented.
-- `steam`: Steam external step and Home Assistant callback. Implemented.
-- `apple`: Apple handoff state and authorization URL. Implemented.
+- `steam`: Steam external step and Home Assistant callback. Implemented,
+  experimental.
+- `apple`: Apple handoff state and authorization URL. Implemented,
+  experimental.
 
 Stored config must be explicit:
 

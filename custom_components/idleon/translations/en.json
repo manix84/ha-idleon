@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Legends of Idleon",
-        "description": "Choose how HA Idleon should read account data. Google, Apple, email, and Steam login are implemented.",
+        "description": "Choose how HA Idleon should read account data. Google and email are the primary login options. Apple and Steam are experimental.",
         "data": {
           "data_source_type": "Login or data source"
         }
@@ -22,7 +22,7 @@
       },
       "steam": {
         "title": "Authorize Steam login",
-        "description": "Choose a refresh interval, then submit to sign in with Steam. Home Assistant will open Steam and return here automatically after authorization.",
+        "description": "Steam login is experimental. Choose a refresh interval, then submit to sign in with Steam. Home Assistant will open Steam and return here automatically after authorization.",
         "data": {
           "scan_interval": "Scan interval in seconds"
         }
@@ -41,7 +41,7 @@
       },
       "apple": {
         "title": "Authorize Apple login",
-        "description": "1. Open this Apple sign-in link:\n\n[{authorization_url}]({authorization_url})\n\n2. Finish signing in with the Apple ID used for Idleon.\n\n3. Return here and submit this form.\n\nApple returns to Idleon's own authorization endpoint, then Home Assistant checks whether that authorization has completed."
+        "description": "Apple login is experimental.\n\n1. Open this Apple sign-in link:\n\n[{authorization_url}]({authorization_url})\n\n2. Finish signing in with the Apple ID used for Idleon.\n\n3. Return here and submit this form.\n\nApple returns to Idleon's own authorization endpoint, then Home Assistant checks whether that authorization has completed."
       }
     },
     "error": {

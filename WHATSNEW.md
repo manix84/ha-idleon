@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.12.3
+
+- Label Steam and Apple as experimental in the setup flow.
+- Update README and auth docs to distinguish primary and experimental providers.
+
 ## 🚀 0.12.2
 
 - Start Idleon Apple auth sessions from the config flow.
