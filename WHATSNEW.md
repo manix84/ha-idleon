@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.18.0
+
+- Add account sensors for World 1 anvil, bribes, stamps, and broader world summaries.
+- Parse forge slots, bribe purchase status, and stamp level details from raw Idleon fields.
+- Keep world-specific account details in structured attributes to avoid mass entity creation.
+
 ## 🚀 0.17.0
 
 - Add grouped account sensors for pets, achievements by world, task levels, taskboard merits, and taskboard unlocks.

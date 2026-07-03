@@ -139,6 +139,48 @@ ACCOUNT_OPTION_SCORE_INDEXES = {
     "Spiketrap": 201,
     "Darts": 442,
 }
+FORGE_UPGRADES = (
+    {
+        "name": "New Forge Slot",
+        "max_level": 16,
+        "description": "Extra slots to smelt ores",
+    },
+    {
+        "name": "Ore Capacity Boost",
+        "max_level": 50,
+        "description": "Increases max ores per slot",
+    },
+    {
+        "name": "Forge Speed",
+        "max_level": 90,
+        "description": "Ores are turned into bars faster",
+    },
+    {
+        "name": "Forge EXP Gain",
+        "max_level": 85,
+        "description": "Increased EXP gain from using the forge",
+    },
+    {
+        "name": "Bar Bonanza",
+        "max_level": 75,
+        "description": "Increased chance to make an extra bar",
+    },
+    {
+        "name": "Puff Puff Go",
+        "max_level": 60,
+        "description": "Increased chance for a card drop while AFK",
+    },
+)
+STAMP_CATEGORY_LABELS = {
+    0: "Combat",
+    1: "Skills",
+    2: "Misc",
+}
+STAMP_WEBSITE_CATEGORY_KEYS = {
+    0: "combat",
+    1: "skills",
+    2: "misc",
+}
 COMPANION_PET_CATEGORIES = (
     "Legacy Pets",
     "Fallen Spirits",
@@ -801,6 +843,22 @@ def _indexed_account_progress_details(
     if taskboard_unlocks:
         details["taskboard_unlocks"] = taskboard_unlocks
 
+    world_1_anvil = _indexed_world_1_anvil(raw_data)
+    if world_1_anvil:
+        details["world_1_anvil"] = world_1_anvil
+
+    world_1_bribes = _indexed_world_1_bribes(raw_data)
+    if world_1_bribes:
+        details["world_1_bribes"] = world_1_bribes
+
+    world_1_stamps = _indexed_world_1_stamps(raw_data)
+    if world_1_stamps:
+        details["world_1_stamps"] = world_1_stamps
+
+    world_summaries = _indexed_world_summaries(raw_data)
+    if world_summaries:
+        details["world_summaries"] = world_summaries
+
     return details
 
 
@@ -1175,6 +1233,198 @@ def _indexed_taskboard_unlocks(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     return grouped
 
 
+def _indexed_world_1_anvil(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 1 forge/anvil account details."""
+    slots = _indexed_forge_slots(raw_data)
+    upgrades = _indexed_forge_upgrades(raw_data)
+    anvil: dict[str, Any] = {}
+    if slots:
+        anvil["slots"] = slots
+    if upgrades:
+        anvil["upgrades"] = upgrades
+    return anvil
+
+
+def _indexed_forge_slots(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return forge slot contents from raw order and quantity fields."""
+    item_order = _maybe_json(raw_data.get("ForgeItemOrder"))
+    quantities = _maybe_json(raw_data.get("ForgeItemQuantity")) or _maybe_json(
+        raw_data.get("ForgeItemQty")
+    )
+    if not isinstance(item_order, list) or not isinstance(quantities, list):
+        return {}
+
+    forge_levels = _maybe_json(raw_data.get("FurnaceLevels")) or _maybe_json(
+        raw_data.get("ForgeLV")
+    )
+    forge_speed = 100
+    if isinstance(forge_levels, list):
+        forge_speed += 5 * (_coerce_float(_list_value(forge_levels, 2)) or 0)
+
+    slots: dict[str, Any] = {}
+    for slot_index, row_start in enumerate(range(0, len(item_order), 3), start=1):
+        ore_raw = _list_value(item_order, row_start)
+        accelerant_raw = _list_value(item_order, row_start + 1)
+        bar_raw = _list_value(item_order, row_start + 2)
+        ore_count = _coerce_float(_list_value(quantities, row_start)) or 0
+        accelerant_count = _coerce_float(_list_value(quantities, row_start + 1)) or 0
+        bar_count = _coerce_float(_list_value(quantities, row_start + 2)) or 0
+
+        if not any((ore_count, accelerant_count, bar_count)) and all(
+            _is_blank_item(value) for value in (ore_raw, accelerant_raw, bar_raw)
+        ):
+            continue
+
+        slots[f"Slot {slot_index}"] = {
+            "ore": _forge_item_quantity(ore_raw, ore_count),
+            "accelerant": _forge_item_quantity(accelerant_raw, accelerant_count),
+            "bars": _forge_item_quantity(bar_raw, bar_count),
+            "time_until_ore_depleted_seconds": _forge_time_until_empty_seconds(
+                ore_raw=ore_raw,
+                ore_count=ore_count,
+                accelerant_raw=accelerant_raw,
+                forge_speed=forge_speed,
+            ),
+        }
+    return slots
+
+
+def _indexed_forge_upgrades(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return forge upgrade levels and status."""
+    forge_levels = _maybe_json(raw_data.get("FurnaceLevels")) or _maybe_json(
+        raw_data.get("ForgeLV")
+    )
+    if not isinstance(forge_levels, list):
+        return {}
+
+    upgrades: dict[str, Any] = {}
+    for index, upgrade in enumerate(FORGE_UPGRADES):
+        level = _coerce_int(_list_value(forge_levels, index)) or 0
+        max_level = int(upgrade["max_level"])
+        upgrades[str(upgrade["name"])] = {
+            "level": f"{level}/{max_level}",
+            "description": upgrade["description"],
+            "cost_for_next_level": "Maxed" if level >= max_level else "Unknown",
+            "total_cost_to_max": "Maxed" if level >= max_level else "Unknown",
+        }
+    return upgrades
+
+
+def _indexed_world_1_bribes(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 1 bribes with purchase status and price."""
+    bribe_status = _maybe_json(raw_data.get("BribeStatus"))
+    if not isinstance(bribe_status, list):
+        return {}
+
+    bribes = _website_data_list("bribes")
+    if not bribes:
+        return {}
+
+    parsed: dict[str, Any] = {}
+    for index, bribe in enumerate(bribes):
+        if not isinstance(bribe, Mapping):
+            continue
+        name = _clean_display_text(str(bribe.get("name") or f"Bribe {index + 1}"))
+        purchased = _coerce_int(_list_value(bribe_status, index)) == 1
+        parsed[name] = {
+            "description": _clean_display_text(str(bribe.get("desc") or "")),
+            "price": "Purchased"
+            if purchased
+            else _compact_number(_coerce_float(bribe.get("price")) or 0),
+        }
+    return parsed
+
+
+def _indexed_world_1_stamps(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 1 stamp levels, effects, and next cost estimates."""
+    stamp_levels = _maybe_json(raw_data.get("StampLv")) or _maybe_json(
+        raw_data.get("StampLevel")
+    )
+    stamp_max_levels = _maybe_json(raw_data.get("StampLvM")) or _maybe_json(
+        raw_data.get("StampLevelMAX")
+    )
+    if not isinstance(stamp_levels, list):
+        return {}
+
+    stamps = _website_data_mapping("stamps")
+    if not stamps:
+        return {}
+
+    parsed: dict[str, Any] = {}
+    for category_index, category_levels in enumerate(stamp_levels):
+        if not isinstance(category_levels, Mapping):
+            continue
+        website_category_key = STAMP_WEBSITE_CATEGORY_KEYS.get(category_index)
+        category_label = STAMP_CATEGORY_LABELS.get(
+            category_index,
+            f"Category {category_index + 1}",
+        )
+        website_category = stamps.get(website_category_key)
+        if not isinstance(website_category, Mapping):
+            continue
+
+        category_max_levels = _list_value(stamp_max_levels, category_index)
+        category_stamps: dict[str, Any] = {}
+        for key, level_value in category_levels.items():
+            if key == "length":
+                continue
+            stamp = website_category.get(str(key))
+            if not isinstance(stamp, Mapping):
+                continue
+            level = _coerce_int(level_value) or 0
+            if level <= 0:
+                continue
+            max_level = (
+                _coerce_int(category_max_levels.get(key))
+                if isinstance(category_max_levels, Mapping)
+                else None
+            )
+            name = _clean_display_text(str(stamp.get("displayName") or f"Stamp {key}"))
+            category_stamps[name] = {
+                "current_level": level,
+                "maximum_level": max_level,
+                "effect": _clean_display_text(str(stamp.get("effect") or "")),
+                "cost_to_level_up": _stamp_cost_to_level(level, stamp),
+            }
+
+        if category_stamps:
+            parsed[category_label] = category_stamps
+    return parsed
+
+
+def _indexed_world_summaries(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return compact per-world summaries for account-wide systems."""
+    summaries: dict[str, Any] = {}
+
+    cauldron_bubbles = _cauldron_bubble_total(raw_data)
+    if cauldron_bubbles:
+        summaries["World 2"] = {
+            "Alchemy bubble levels": _compact_number(cauldron_bubbles)
+        }
+
+    world_3: dict[str, Any] = {}
+    refined_salts = _refined_salt_total(raw_data)
+    if refined_salts:
+        world_3["Refined salts"] = _compact_number(refined_salts)
+    printed = _printer_total(raw_data)
+    if printed:
+        world_3["Printer sample total"] = _compact_number(printed)
+    if world_3:
+        summaries["World 3"] = world_3
+
+    for world_label, raw_keys in (
+        ("World 4", ("Cooking", "Lab")),
+        ("World 5", ("Sailing", "Gaming", "Divinity")),
+        ("World 6", ("FarmCrop", "Summon")),
+        ("World 7", ("Holes",)),
+    ):
+        summary = _raw_system_presence_summary(raw_data, raw_keys)
+        if summary:
+            summaries[world_label] = summary
+
+    return summaries
+
+
 def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
     """Return raw slab/looty item list from known export shapes."""
     cards = _maybe_json(raw_data.get("Cards"))
@@ -1395,6 +1645,19 @@ def _account_details(
             "taskboard_unlocks",
             ("taskboard_unlocks", "taskboardUnlocks", "task_unlocks", "taskUnlocks"),
         ),
+        ("world_1_anvil", ("world_1_anvil", "world1Anvil", "anvil", "forge")),
+        ("world_1_bribes", ("world_1_bribes", "world1Bribes", "bribes")),
+        ("world_1_stamps", ("world_1_stamps", "world1Stamps", "stamps")),
+        (
+            "world_summaries",
+            (
+                "world_summaries",
+                "worldSummaries",
+                "world_information",
+                "worldInformation",
+                "worlds",
+            ),
+        ),
     ):
         if detail_key not in details:
             value = _first_mapping(account_data, aliases)
@@ -1601,6 +1864,144 @@ def _printer_total(raw_data: Mapping[str, Any]) -> float:
             continue
         total += _coerce_float(value) or 0.0
     return total
+
+
+def _forge_item_quantity(raw_item: Any, count: float) -> dict[str, Any]:
+    """Return a forge slot item with a display label and count."""
+    return {
+        "type": _item_label(raw_item),
+        "count": _compact_number(count),
+    }
+
+
+def _forge_time_until_empty_seconds(
+    *,
+    ore_raw: Any,
+    ore_count: float,
+    accelerant_raw: Any,
+    forge_speed: float,
+) -> int | float:
+    """Return an estimated number of seconds until a forge slot runs out of ore."""
+    if ore_count <= 0 or _is_blank_item(ore_raw):
+        return 0
+
+    ore = _item_data(ore_raw)
+    ore_amount = _coerce_float(ore.get("Amount")) if isinstance(ore, Mapping) else None
+    ore_cooldown = (
+        _coerce_float(ore.get("Cooldown")) if isinstance(ore, Mapping) else None
+    )
+    if not ore_amount or not ore_cooldown:
+        return 0
+
+    accelerant = _item_data(accelerant_raw)
+    speed_multiplier = 1.0
+    if (
+        isinstance(accelerant, Mapping)
+        and accelerant.get("Effect") == "SpeedForge"
+        and (amount := _coerce_float(accelerant.get("Amount")))
+    ):
+        speed_multiplier = amount
+
+    slot_speed = (round(forge_speed) / 100) * speed_multiplier * 0.25
+    if slot_speed <= 0:
+        return 0
+    seconds = round(ore_count / ore_amount) * (ore_cooldown / (4 * slot_speed))
+    return _compact_number(seconds)
+
+
+def _stamp_cost_to_level(level: int, stamp: Mapping[str, Any]) -> str:
+    """Return a readable estimate of a stamp's next level cost."""
+    material_cost = _stamp_material_cost(level, stamp)
+    coin_cost = _stamp_coin_cost(level, stamp)
+    item = _list_value(stamp.get("itemReq", []), 0)
+    item_name = "Unknown item"
+    if isinstance(item, Mapping):
+        item_name = _clean_display_text(str(item.get("name") or item.get("rawName")))
+
+    return (
+        f"{_compact_number(material_cost)} {item_name}; "
+        f"{_compact_number(coin_cost)} coins"
+    )
+
+
+def _stamp_material_cost(level: int, stamp: Mapping[str, Any]) -> float:
+    """Return a no-discount estimate of the material cost for the next stamp level."""
+    base_cost = _coerce_float(stamp.get("baseMatCost")) or 0
+    pow_base = _coerce_float(stamp.get("powMatBase")) or 1
+    req_level = _coerce_float(stamp.get("reqItemMultiplicationLevel")) or 1
+    exponent = max(round(level / req_level) - 1, 0) ** 0.8
+    return max(1.0, base_cost * pow(pow_base, exponent))
+
+
+def _stamp_coin_cost(level: int, stamp: Mapping[str, Any]) -> float:
+    """Return a no-discount estimate of the coin cost for the next stamp level."""
+    base_cost = _coerce_float(stamp.get("baseCoinCost")) or 0
+    pow_base = _coerce_float(stamp.get("powCoinBase")) or 1.05
+    req_level = _coerce_float(stamp.get("reqItemMultiplicationLevel")) or 1
+    ratio = level / (level + 5 * req_level) if level + 5 * req_level else 0
+    adjusted_pow_base = max(1.05, pow_base - ratio * 0.25)
+    return base_cost * pow(adjusted_pow_base, level * (10 / req_level))
+
+
+def _raw_system_presence_summary(
+    raw_data: Mapping[str, Any],
+    keys: tuple[str, ...],
+) -> dict[str, Any]:
+    """Return compact counts for raw world system fields that are present."""
+    summary: dict[str, Any] = {}
+    for key in keys:
+        value = _maybe_json(raw_data.get(key))
+        if isinstance(value, Mapping):
+            summary[_clean_display_text(key)] = len(
+                [item for item in value.values() if item not in (None, 0, "", [])]
+            )
+        elif isinstance(value, list):
+            summary[_clean_display_text(key)] = len(
+                [item for item in value if item not in (None, 0, "", [], {})]
+            )
+    return summary
+
+
+def _website_data_list(key: str) -> list[Any]:
+    """Return a websiteData part when it is a list."""
+    with suppress(WebsiteDataNotFoundError):
+        data = load_default_website_data_part(key)
+        if isinstance(data, list):
+            return data
+    return []
+
+
+def _website_data_mapping(key: str) -> Mapping[str, Any]:
+    """Return a websiteData part when it is a mapping."""
+    with suppress(WebsiteDataNotFoundError):
+        data = load_default_website_data_part(key)
+        if isinstance(data, Mapping):
+            return data
+    return {}
+
+
+def _item_data(raw_item: Any) -> Mapping[str, Any]:
+    """Return websiteData item metadata for a raw item name."""
+    raw_value = str(raw_item)
+    items = _website_data_mapping("items")
+    item = items.get(raw_value)
+    return item if isinstance(item, Mapping) else {}
+
+
+def _item_label(raw_item: Any) -> str:
+    """Return an item display label for a raw item name."""
+    if _is_blank_item(raw_item):
+        return "Empty"
+    item = _item_data(raw_item)
+    display_name = item.get("displayName")
+    if isinstance(display_name, str) and display_name:
+        return _clean_display_text(display_name)
+    return _clean_display_text(str(raw_item))
+
+
+def _is_blank_item(value: Any) -> bool:
+    """Return whether a raw item value means an empty slot."""
+    return str(value).strip().lower() in {"", "blank", "none", "null", "0"}
 
 
 def _companion_pet_names() -> dict[int, str]:

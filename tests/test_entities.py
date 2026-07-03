@@ -140,6 +140,26 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_taskboard_unlocks",
     )
+    world_1_anvil_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_1_anvil",
+    )
+    world_1_bribes_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_1_bribes",
+    )
+    world_1_stamps_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_1_stamps",
+    )
+    world_summaries_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_summaries",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
@@ -163,6 +183,10 @@ async def test_account_sensors(
     assert hass.states.get(task_levels_entity_id).state == "2"
     assert hass.states.get(taskboard_merits_entity_id).state == "2"
     assert hass.states.get(taskboard_unlocks_entity_id).state == "3"
+    assert hass.states.get(world_1_anvil_entity_id).state == "2"
+    assert hass.states.get(world_1_bribes_entity_id).state == "2"
+    assert hass.states.get(world_1_stamps_entity_id).state == "1"
+    assert hass.states.get(world_summaries_entity_id).state == "4"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -244,6 +268,27 @@ async def test_account_sensors(
             "Tab 1"
         ]["Militia Helm"]
         == "Available"
+    )
+    assert hass.states.get(world_1_anvil_entity_id).attributes["world_1_anvil"][
+        "slots"
+    ]["Slot 1"]["ore"] == {"type": "Copper Ore", "count": 250}
+    assert (
+        hass.states.get(world_1_bribes_entity_id).attributes["world_1_bribes"][
+            "Insider Trading"
+        ]["price"]
+        == "Purchased"
+    )
+    assert (
+        hass.states.get(world_1_stamps_entity_id).attributes["world_1_stamps"][
+            "Combat"
+        ]["Sword Stamp"]["current_level"]
+        == 25
+    )
+    assert (
+        hass.states.get(world_summaries_entity_id).attributes["world_summaries"][
+            "World 3"
+        ]["Refined salts"]
+        == 1084541
     )
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     assert hass.states.get(last_updated_entity_id) is None

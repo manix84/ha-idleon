@@ -145,6 +145,18 @@
       "account_taskboard_unlocks": {
         "name": "Taskboard unlocks"
       },
+      "account_world_1_anvil": {
+        "name": "World 1 anvil"
+      },
+      "account_world_1_bribes": {
+        "name": "World 1 bribes"
+      },
+      "account_world_1_stamps": {
+        "name": "World 1 stamps"
+      },
+      "account_world_summaries": {
+        "name": "World summaries"
+      },
       "character_level": {
         "name": "Level"
       },

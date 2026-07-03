@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.17.0-blue" alt="Version 0.17.0">
+  <img src="https://img.shields.io/badge/version-0.18.0-blue" alt="Version 0.18.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -188,6 +188,10 @@ Account sensors:
 - Task levels
 - Taskboard merits
 - Taskboard unlocks
+- World 1 anvil
+- World 1 bribes
+- World 1 stamps
+- World summaries
 - Last updated is available but disabled by default because diagnostics now
   exposes the same timestamp for troubleshooting
 - Raw money is kept as a disabled-by-default compatibility sensor

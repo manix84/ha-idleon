@@ -132,6 +132,65 @@
         "Tab 2": {
           "Royal Bayonet": "Unavailable"
         }
+      },
+      "world_1_anvil": {
+        "slots": {
+          "Slot 1": {
+            "ore": {
+              "type": "Copper Ore",
+              "count": 250
+            },
+            "accelerant": {
+              "type": "Oil Barrel",
+              "count": 4
+            },
+            "bars": {
+              "type": "Copper Bar",
+              "count": 18
+            },
+            "time_until_ore_depleted_seconds": 3600
+          }
+        },
+        "upgrades": {
+          "Forge Speed": {
+            "level": "12/90",
+            "description": "Ores are turned into bars faster",
+            "cost_for_next_level": "Unknown",
+            "total_cost_to_max": "Unknown"
+          }
+        }
+      },
+      "world_1_bribes": {
+        "Insider Trading": {
+          "description": "All stamps cost 5% less coins to upgrade.",
+          "price": "Purchased"
+        },
+        "Tracking Chips": {
+          "description": "Stamps drop more often.",
+          "price": 1800
+        }
+      },
+      "world_1_stamps": {
+        "Combat": {
+          "Sword Stamp": {
+            "current_level": 25,
+            "maximum_level": 30,
+            "effect": "+ Base Damage",
+            "cost_to_level_up": "75 Spore Cap; 1200 coins"
+          }
+        }
+      },
+      "world_summaries": {
+        "World 2": {
+          "Alchemy bubble levels": 15123
+        },
+        "World 3": {
+          "Refined salts": 1084541,
+          "Printer sample total": 275000
+        },
+        "World 4": {
+          "Cooking meals": 42
+        }
       }
     },
     "characters": [

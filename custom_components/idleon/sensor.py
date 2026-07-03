@@ -225,6 +225,42 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
         detail_keys=("taskboard_unlocks",),
     ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_1_anvil",
+        translation_key="account_world_1_anvil",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_1_anvil",
+        ),
+        detail_keys=("world_1_anvil",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_1_bribes",
+        translation_key="account_world_1_bribes",
+        value_fn=lambda coordinator: _account_detail_count(
+            coordinator,
+            "world_1_bribes",
+        ),
+        detail_keys=("world_1_bribes",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_1_stamps",
+        translation_key="account_world_1_stamps",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_1_stamps",
+        ),
+        detail_keys=("world_1_stamps",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_summaries",
+        translation_key="account_world_summaries",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_summaries",
+        ),
+        detail_keys=("world_summaries",),
+    ),
 )
 
 CHARACTER_SENSOR_DESCRIPTIONS = (

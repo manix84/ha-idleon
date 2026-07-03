@@ -300,7 +300,6 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
                 {"0": 1000, "1": 10, "2": 20, "length": 3},
                 {"0": 1000, "1": 30, "length": 2},
             ],
-            "StampLv": [{"0": 5, "1": 6, "length": 2}],
             "Refinery": [[], [], [100, 200, 300]],
             "Print": [0, "Fish1", 100, "Tree1", 200],
             "CYDeliveryBoxComplete": 2357,
@@ -310,6 +309,25 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
             "TaskZZ1": [[1, 2], [1]],
             "TaskZZ2": [[3, 5], [2]],
             "TaskZZ3": [[1, 0], [1]],
+            "ForgeItemOrder": [
+                "Copper",
+                "OilBarrel1",
+                "CopperBar",
+                "Iron",
+                "Blank",
+                "IronBar",
+            ],
+            "ForgeItemQty": [100, 2, 30, 250, 0, 10],
+            "ForgeLV": [16, 50, 12, 85, 75, 60],
+            "BribeStatus": [1, 0],
+            "StampLv": [{"0": 5, "length": 1}, {"0": 10, "length": 1}],
+            "StampLvM": [{"0": 6, "length": 1}, {"0": 12, "length": 1}],
+            "Cooking": [1, 0, 2],
+            "Sailing": [1, 2],
+            "Divinity": [1],
+            "FarmCrop": [1, 2, 3],
+            "Summon": [1, 0],
+            "Holes": {"a": 1, "b": 0},
             "companions": {
                 "l": [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                 "t": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -335,7 +353,7 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
         "Mining": 6,
     }
     assert account.details["progress_totals"]["Bubbles"] == 60
-    assert account.details["progress_totals"]["Stamps"] == 11
+    assert account.details["progress_totals"]["Stamps"] == 15
     assert account.details["progress_totals"]["Statues"] == 848
     assert account.details["progress_totals"]["Shrines"] == 80
     assert account.details["progress_totals"]["PO Orders"] == 2357
@@ -360,6 +378,36 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
         "Unlock 1": "Achieved",
         "Unlock 2": "Unavailable",
     }
+    assert account.details["world_1_anvil"]["slots"]["Slot 1"]["ore"] == {
+        "type": "Copper Ore",
+        "count": 100,
+    }
+    assert (
+        account.details["world_1_anvil"]["upgrades"]["New Forge Slot"][
+            "cost_for_next_level"
+        ]
+        == "Maxed"
+    )
+    assert (
+        account.details["world_1_anvil"]["upgrades"]["Forge Speed"][
+            "cost_for_next_level"
+        ]
+        == "Unknown"
+    )
+    assert account.details["world_1_bribes"]["Insider Trading"]["price"] == "Purchased"
+    assert account.details["world_1_bribes"]["Tracking Chips"]["price"] == 1800
+    assert (
+        account.details["world_1_stamps"]["Combat"]["Sword Stamp"]["current_level"] == 5
+    )
+    assert (
+        "Spore Cap"
+        in account.details["world_1_stamps"]["Combat"]["Sword Stamp"][
+            "cost_to_level_up"
+        ]
+    )
+    assert account.details["world_summaries"]["World 2"]["Alchemy bubble levels"] == 60
+    assert account.details["world_summaries"]["World 4"]["Cooking"] == 2
+    assert account.details["world_summaries"]["World 7"]["Holes"] == 1
 
 
 def test_parser_uses_packaged_item_label_fallbacks(
