@@ -183,6 +183,48 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
         detail_keys=("progress_totals",),
     ),
+    IdleonAccountSensorEntityDescription(
+        key="account_pets",
+        translation_key="account_pets",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "pets",
+        ),
+        detail_keys=("pets",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_achievements_by_world",
+        translation_key="account_achievements_by_world",
+        value_fn=lambda coordinator: _account_achievement_total(coordinator),
+        detail_keys=("achievement_status",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_task_levels",
+        translation_key="account_task_levels",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "task_levels",
+        ),
+        detail_keys=("task_levels",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_taskboard_merits",
+        translation_key="account_taskboard_merits",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "taskboard_merits",
+        ),
+        detail_keys=("taskboard_merits",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_taskboard_unlocks",
+        translation_key="account_taskboard_unlocks",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "taskboard_unlocks",
+        ),
+        detail_keys=("taskboard_unlocks",),
+    ),
 )
 
 CHARACTER_SENSOR_DESCRIPTIONS = (
@@ -570,6 +612,40 @@ def _account_detail_count(
     if isinstance(value, Mapping):
         return len(value)
     return 0
+
+
+def _account_detail_nested_count(
+    coordinator: IdleonDataUpdateCoordinator,
+    key: str,
+) -> int:
+    """Return the number of nested values in a grouped account detail."""
+    value = coordinator.data.details.get(key)
+    if not isinstance(value, Mapping):
+        return 0
+
+    total = 0
+    for detail_value in value.values():
+        if isinstance(detail_value, Mapping):
+            total += len(detail_value)
+        else:
+            total += 1
+    return total
+
+
+def _account_achievement_total(coordinator: IdleonDataUpdateCoordinator) -> int:
+    """Return the total achieved achievements from grouped status details."""
+    value = coordinator.data.details.get("achievement_status")
+    if not isinstance(value, Mapping):
+        return int(coordinator.data.details.get("achievements_completed", 0) or 0)
+
+    total = 0
+    for detail_value in value.values():
+        if not isinstance(detail_value, Mapping):
+            continue
+        achieved = detail_value.get("achieved")
+        if isinstance(achieved, int | float):
+            total += int(achieved)
+    return total
 
 
 def _account_detail_sum(

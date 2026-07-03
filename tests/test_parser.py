@@ -304,6 +304,16 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
             "Refinery": [[], [], [100, 200, 300]],
             "Print": [0, "Fish1", 100, "Tree1", 200],
             "CYDeliveryBoxComplete": 2357,
+            "AchieveReg": [-1, 0, 25, -1],
+            "SteamAchieve": [-1, 100, 0],
+            "TaskZZ0": [[5000, 40], [10]],
+            "TaskZZ1": [[1, 2], [1]],
+            "TaskZZ2": [[3, 5], [2]],
+            "TaskZZ3": [[1, 0], [1]],
+            "companions": {
+                "l": [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                "t": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            },
         }
     )
 
@@ -331,6 +341,25 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
     assert account.details["progress_totals"]["PO Orders"] == 2357
     assert account.details["progress_totals"]["Refined Salts"] == 600
     assert account.details["progress_totals"]["Mats Printed"] == 300
+    assert account.details["pets"]["Legacy Pets"]["King Doot"] == "1/2"
+    assert account.details["pets"]["Fallen Spirits"]["Ancient Golem"] == "1/1"
+    assert account.details["achievement_status"]["World 1"]["achieved"] == 2
+    assert 25 in account.details["achievement_status"]["World 1"]["progress"].values()
+    assert account.details["achievement_status"]["Steam"]["achieved"] == 1
+    assert account.details["task_levels"]["World 1"]["Faceless Deathmachine"] == {
+        "level": "1/10",
+        "progress_percent": 37.5,
+    }
+    assert (
+        account.details["taskboard_merits"]["World 1"][
+            "Inventory Bag  is applied to everyone,"
+        ]
+        == "3/5"
+    )
+    assert account.details["taskboard_unlocks"]["Tab 1"] == {
+        "Unlock 1": "Achieved",
+        "Unlock 2": "Unavailable",
+    }
 
 
 def test_parser_uses_packaged_item_label_fallbacks(

@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.17.0
+
+- Add grouped account sensors for pets, achievements by world, task levels, taskboard merits, and taskboard unlocks.
+- Parse raw achievement/task fields with websiteData labels and progress percentages where available.
+- Keep detailed account-wide data in attributes to avoid creating hundreds of entities.
+
 ## 🚀 0.16.0
 
 - Add grouped account sensors for currencies, shrine levels, statue levels, colosseum scores, minigame scores, and progress totals.

@@ -79,6 +79,59 @@
         "Mats Printed": 275000,
         "Trashed Cogs": 42,
         "Plants Picked": 321
+      },
+      "pets": {
+        "Legacy Pets": {
+          "Bored Bean": "1/2",
+          "Slime": "0/1"
+        },
+        "Fallen Spirits": {
+          "Ancient Golem": "1/1"
+        }
+      },
+      "achievement_status": {
+        "World 1": {
+          "achieved": 32,
+          "not_started": 4,
+          "progress": {
+            "Achievement Hunter": 66
+          }
+        },
+        "World 2": {
+          "achieved": 46,
+          "not_started": 9
+        }
+      },
+      "task_levels": {
+        "World 1": {
+          "Faceless Deathmachine": {
+            "level": "9/10",
+            "progress_percent": 42
+          }
+        },
+        "World 2": {
+          "Yum-Yum Sheriff": {
+            "level": "6/10",
+            "progress_percent": 75
+          }
+        }
+      },
+      "taskboard_merits": {
+        "World 1": {
+          "Inventory Bag bonus": "5/5"
+        },
+        "World 2": {
+          "Obol drops": "3/7"
+        }
+      },
+      "taskboard_unlocks": {
+        "Tab 1": {
+          "Steel Axe": "Achieved",
+          "Militia Helm": "Available"
+        },
+        "Tab 2": {
+          "Royal Bayonet": "Unavailable"
+        }
       }
     },
     "characters": [

@@ -115,6 +115,31 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_progress_totals",
     )
+    pets_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_pets",
+    )
+    achievements_by_world_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_achievements_by_world",
+    )
+    task_levels_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_task_levels",
+    )
+    taskboard_merits_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_taskboard_merits",
+    )
+    taskboard_unlocks_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_taskboard_unlocks",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
@@ -133,6 +158,11 @@ async def test_account_sensors(
     assert hass.states.get(colosseum_scores_entity_id).state == "382839961.69"
     assert hass.states.get(minigame_scores_entity_id).state == "1827"
     assert hass.states.get(progress_totals_entity_id).state == "11"
+    assert hass.states.get(pets_entity_id).state == "3"
+    assert hass.states.get(achievements_by_world_entity_id).state == "78"
+    assert hass.states.get(task_levels_entity_id).state == "2"
+    assert hass.states.get(taskboard_merits_entity_id).state == "2"
+    assert hass.states.get(taskboard_unlocks_entity_id).state == "3"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -186,6 +216,34 @@ async def test_account_sensors(
             "Highest Damage"
         ]
         == 123456789
+    )
+    assert hass.states.get(pets_entity_id).attributes["pets"]["Legacy Pets"] == {
+        "Bored Bean": "1/2",
+        "Slime": "0/1",
+    }
+    assert (
+        hass.states.get(achievements_by_world_entity_id).attributes[
+            "achievement_status"
+        ]["World 1"]["progress"]["Achievement Hunter"]
+        == 66
+    )
+    assert (
+        hass.states.get(task_levels_entity_id).attributes["task_levels"]["World 1"][
+            "Faceless Deathmachine"
+        ]["progress_percent"]
+        == 42
+    )
+    assert (
+        hass.states.get(taskboard_merits_entity_id).attributes["taskboard_merits"][
+            "World 2"
+        ]["Obol drops"]
+        == "3/7"
+    )
+    assert (
+        hass.states.get(taskboard_unlocks_entity_id).attributes["taskboard_unlocks"][
+            "Tab 1"
+        ]["Militia Helm"]
+        == "Available"
     )
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     assert hass.states.get(last_updated_entity_id) is None

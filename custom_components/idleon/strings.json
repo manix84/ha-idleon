@@ -130,6 +130,21 @@
       "account_progress_totals": {
         "name": "Progress totals"
       },
+      "account_pets": {
+        "name": "Pets"
+      },
+      "account_achievements_by_world": {
+        "name": "Achievements by world"
+      },
+      "account_task_levels": {
+        "name": "Task levels"
+      },
+      "account_taskboard_merits": {
+        "name": "Taskboard merits"
+      },
+      "account_taskboard_unlocks": {
+        "name": "Taskboard unlocks"
+      },
       "character_level": {
         "name": "Level"
       },

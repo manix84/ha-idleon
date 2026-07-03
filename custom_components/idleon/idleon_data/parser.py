@@ -139,6 +139,22 @@ ACCOUNT_OPTION_SCORE_INDEXES = {
     "Spiketrap": 201,
     "Darts": 442,
 }
+COMPANION_PET_CATEGORIES = (
+    "Legacy Pets",
+    "Fallen Spirits",
+    "Shallow Waters",
+    "Exclusive Pets",
+    "Special Pets",
+)
+COMPANION_PET_CATEGORY_SIZE = 12
+TASK_WORLD_LABELS = (
+    "World 1",
+    "World 2",
+    "World 3",
+    "World 4",
+    "World 5",
+    "World 6",
+)
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -765,6 +781,26 @@ def _indexed_account_progress_details(
     if progress_totals:
         details["progress_totals"] = progress_totals
 
+    pets = _indexed_companion_pets(raw_data)
+    if pets:
+        details["pets"] = pets
+
+    achievement_status = _indexed_achievement_status(raw_data)
+    if achievement_status:
+        details["achievement_status"] = achievement_status
+
+    task_levels = _indexed_task_levels(raw_data)
+    if task_levels:
+        details["task_levels"] = task_levels
+
+    taskboard_merits = _indexed_taskboard_merits(raw_data)
+    if taskboard_merits:
+        details["taskboard_merits"] = taskboard_merits
+
+    taskboard_unlocks = _indexed_taskboard_unlocks(raw_data)
+    if taskboard_unlocks:
+        details["taskboard_unlocks"] = taskboard_unlocks
+
     return details
 
 
@@ -945,6 +981,198 @@ def _indexed_progress_totals(
         totals["Mats Printed"] = _compact_number(mats_printed)
 
     return totals
+
+
+def _indexed_companion_pets(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return grouped companion pet ownership from cloud companion data."""
+    companion_data = _maybe_json(
+        _first_value(
+            raw_data,
+            (
+                "companions",
+                "Companions",
+                "companion",
+                "Companion",
+                "companionData",
+                "CompanionData",
+            ),
+        )
+    )
+    if not isinstance(companion_data, Mapping):
+        return {}
+
+    explicit_pets = _first_mapping(
+        companion_data,
+        ("pets", "companions", "categories", "companion_pets", "companionPets"),
+    )
+    if explicit_pets:
+        return {
+            _clean_display_text(str(category)): dict(pets)
+            for category, pets in explicit_pets.items()
+            if isinstance(pets, Mapping)
+        }
+
+    owned_counts = companion_data.get("l")
+    if not isinstance(owned_counts, list):
+        owned_counts = companion_data.get("owned")
+    if not isinstance(owned_counts, list):
+        return {}
+
+    tradeable_counts = companion_data.get("t")
+    if not isinstance(tradeable_counts, list):
+        tradeable_counts = companion_data.get("tradeable")
+
+    pet_names = _companion_pet_names()
+    grouped: dict[str, dict[str, str]] = {}
+    for index, owned_value in enumerate(owned_counts):
+        owned = _coerce_int(owned_value) or 0
+        tradeable = _coerce_int(_list_value(tradeable_counts, index)) or 0
+        if owned == 0 and tradeable == 0:
+            continue
+
+        category = _companion_pet_category(index)
+        pet_name = pet_names.get(index, f"Pet {index + 1}")
+        grouped.setdefault(category, {})[pet_name] = f"{tradeable}/{owned}"
+
+    return grouped
+
+
+def _indexed_achievement_status(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return achievement completion and progress grouped by world."""
+    achievements = _maybe_json(raw_data.get("AchieveReg"))
+    if not isinstance(achievements, list):
+        return {}
+
+    labels = _achievement_labels()
+    status: dict[str, Any] = {}
+    offset = 0
+    for world_index, task_count in enumerate(_achievement_world_sizes()):
+        world_values = achievements[offset : offset + task_count]
+        offset += task_count
+        group = _achievement_group_status(
+            world_values,
+            labels=labels,
+            label_offset=offset - task_count,
+        )
+        if group:
+            status[_world_label(world_index)] = group
+
+    if offset < len(achievements):
+        group = _achievement_group_status(
+            achievements[offset:],
+            labels=labels,
+            label_offset=offset,
+        )
+        if group:
+            status["Other"] = group
+
+    steam_achievements = _maybe_json(raw_data.get("SteamAchieve"))
+    if isinstance(steam_achievements, list):
+        group = _achievement_group_status(
+            steam_achievements,
+            labels={},
+            label_offset=0,
+            fallback_prefix="Steam Achievement",
+        )
+        if group:
+            status["Steam"] = group
+
+    return status
+
+
+def _indexed_task_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return task levels and progress grouped by world."""
+    task_progress = _maybe_json(raw_data.get("TaskZZ0"))
+    task_levels = _maybe_json(raw_data.get("TaskZZ1"))
+    if not isinstance(task_levels, list):
+        return {}
+
+    labels = _task_labels()
+    grouped: dict[str, Any] = {}
+    for world_index, level_row in enumerate(task_levels):
+        if not isinstance(level_row, list):
+            continue
+        world_tasks: dict[str, Any] = {}
+        progress_row = (
+            _list_value(task_progress, world_index)
+            if isinstance(task_progress, list)
+            else None
+        )
+        breakpoints = _task_breakpoints_for_world(world_index)
+        for task_index, level_value in enumerate(level_row):
+            level = _coerce_int(level_value) or 0
+            raw_progress = (
+                _coerce_float(_list_value(progress_row, task_index))
+                if isinstance(progress_row, list)
+                else None
+            )
+            if level == 0 and not raw_progress:
+                continue
+
+            max_level = max(len(_list_value(breakpoints, task_index) or []), 10)
+            task_label = labels.get((world_index, task_index), f"Task {task_index + 1}")
+            entry: dict[str, Any] = {"level": f"{level}/{max_level}"}
+            progress_percent = _task_progress_percent(
+                level=level,
+                raw_progress=raw_progress,
+                breakpoints=_list_value(breakpoints, task_index),
+            )
+            if progress_percent is not None:
+                entry["progress_percent"] = progress_percent
+            elif raw_progress is not None:
+                entry["progress"] = _compact_number(raw_progress)
+            world_tasks[task_label] = entry
+
+        if world_tasks:
+            grouped[_world_label(world_index)] = world_tasks
+    return grouped
+
+
+def _indexed_taskboard_merits(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return taskboard merit levels grouped by world."""
+    merit_levels = _maybe_json(raw_data.get("TaskZZ2"))
+    if not isinstance(merit_levels, list):
+        return {}
+
+    labels, max_levels = _merit_metadata()
+    grouped: dict[str, Any] = {}
+    for world_index, level_row in enumerate(merit_levels):
+        if not isinstance(level_row, list):
+            continue
+        world_merits: dict[str, str] = {}
+        for merit_index, level_value in enumerate(level_row):
+            level = _coerce_int(level_value) or 0
+            if level == 0:
+                continue
+            merit_label = labels.get(
+                (world_index, merit_index),
+                f"Merit {merit_index + 1}",
+            )
+            max_level = max_levels.get((world_index, merit_index), "?")
+            world_merits[merit_label] = f"{level}/{max_level}"
+        if world_merits:
+            grouped[_world_label(world_index)] = world_merits
+    return grouped
+
+
+def _indexed_taskboard_unlocks(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return taskboard unlock states grouped by tab."""
+    unlock_rows = _maybe_json(raw_data.get("TaskZZ3"))
+    if not isinstance(unlock_rows, list):
+        return {}
+
+    grouped: dict[str, Any] = {}
+    for tab_index, unlock_row in enumerate(unlock_rows):
+        if not isinstance(unlock_row, list):
+            continue
+        tab_unlocks: dict[str, str] = {}
+        for unlock_index, raw_state in enumerate(unlock_row):
+            state = _coerce_int(raw_state) or 0
+            label = f"Unlock {unlock_index + 1}"
+            tab_unlocks[label] = "Achieved" if state > 0 else "Unavailable"
+        if tab_unlocks:
+            grouped[f"Tab {tab_index + 1}"] = tab_unlocks
+    return grouped
 
 
 def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
@@ -1151,6 +1379,22 @@ def _account_details(
         ("colosseum_scores", ("colosseum_scores", "colosseumScores")),
         ("minigame_scores", ("minigame_scores", "minigameScores")),
         ("progress_totals", ("progress_totals", "progressTotals", "totals")),
+        ("pets", ("pets", "companions", "companion_pets", "companionPets")),
+        (
+            "achievement_status",
+            (
+                "achievement_status",
+                "achievementStatus",
+                "achievements_by_world",
+                "achievementsByWorld",
+            ),
+        ),
+        ("task_levels", ("task_levels", "taskLevels", "tasks")),
+        ("taskboard_merits", ("taskboard_merits", "taskboardMerits", "merits")),
+        (
+            "taskboard_unlocks",
+            ("taskboard_unlocks", "taskboardUnlocks", "task_unlocks", "taskUnlocks"),
+        ),
     ):
         if detail_key not in details:
             value = _first_mapping(account_data, aliases)
@@ -1357,6 +1601,197 @@ def _printer_total(raw_data: Mapping[str, Any]) -> float:
             continue
         total += _coerce_float(value) or 0.0
     return total
+
+
+def _companion_pet_names() -> dict[int, str]:
+    """Return companion pet display names by index."""
+    with suppress(WebsiteDataNotFoundError):
+        companions = load_default_website_data_part("companions")
+        if isinstance(companions, list):
+            names: dict[int, str] = {}
+            for index, companion in enumerate(companions):
+                if not isinstance(companion, Mapping):
+                    continue
+                name = companion.get("name")
+                if isinstance(name, str) and name:
+                    names[index] = _clean_display_text(name)
+            return names
+    return {}
+
+
+def _companion_pet_category(index: int) -> str:
+    """Return the companion pet category for a companion index."""
+    category_index = min(
+        index // COMPANION_PET_CATEGORY_SIZE,
+        len(COMPANION_PET_CATEGORIES) - 1,
+    )
+    return COMPANION_PET_CATEGORIES[category_index]
+
+
+def _achievement_world_sizes() -> tuple[int, ...]:
+    """Return achievement counts per world from websiteData when available."""
+    with suppress(WebsiteDataNotFoundError):
+        achievements = load_default_website_data_part("achievements")
+        if isinstance(achievements, list):
+            sizes = tuple(
+                len(world)
+                for world in achievements
+                if isinstance(world, list) and world
+            )
+            if sizes:
+                return sizes
+    return (70, 70, 70, 70, 70, 70)
+
+
+def _achievement_labels() -> dict[int, str]:
+    """Return achievement labels by global index."""
+    labels: dict[int, str] = {}
+    with suppress(WebsiteDataNotFoundError):
+        achievements = load_default_website_data_part("achievements")
+        if isinstance(achievements, list):
+            if all(isinstance(achievement, Mapping) for achievement in achievements):
+                for index, achievement in enumerate(achievements):
+                    name = achievement.get("name")
+                    if isinstance(name, str) and name:
+                        labels[index] = _clean_display_text(name)
+                return labels
+
+            index = 0
+            for world in achievements:
+                if not isinstance(world, list):
+                    continue
+                for achievement in world:
+                    if isinstance(achievement, Mapping):
+                        name = achievement.get("name")
+                        if isinstance(name, str) and name:
+                            labels[index] = _clean_display_text(name)
+                    index += 1
+    return labels
+
+
+def _achievement_group_status(
+    values: list[Any],
+    *,
+    labels: Mapping[int, str],
+    label_offset: int,
+    fallback_prefix: str = "Achievement",
+) -> dict[str, Any]:
+    """Return a compact achieved/progress summary for achievement values."""
+    achieved = 0
+    not_started = 0
+    progress: dict[str, Any] = {}
+
+    for index, raw_value in enumerate(values):
+        value = _coerce_float(raw_value)
+        if value is None:
+            continue
+        if value == -1:
+            achieved += 1
+            continue
+        if value == 0:
+            not_started += 1
+            continue
+
+        global_index = label_offset + index
+        label = labels.get(global_index, f"{fallback_prefix} {index + 1}")
+        progress[label] = _compact_number(value)
+
+    details: dict[str, Any] = {
+        "achieved": achieved,
+        "not_started": not_started,
+    }
+    if progress:
+        details["progress"] = progress
+    return details
+
+
+def _task_labels() -> dict[tuple[int, int], str]:
+    """Return task labels keyed by world and task index."""
+    labels: dict[tuple[int, int], str] = {}
+    with suppress(WebsiteDataNotFoundError):
+        tasks = load_default_website_data_part("tasks")
+        if isinstance(tasks, list):
+            for world_index, world_tasks in enumerate(tasks):
+                if not isinstance(world_tasks, list):
+                    continue
+                for task_index, task in enumerate(world_tasks):
+                    if isinstance(task, Mapping):
+                        name = task.get("name")
+                        if isinstance(name, str) and name:
+                            labels[(world_index, task_index)] = _clean_display_text(
+                                name
+                            )
+    return labels
+
+
+def _task_breakpoints_for_world(world_index: int) -> list[list[Any]]:
+    """Return task breakpoints for one world."""
+    with suppress(WebsiteDataNotFoundError):
+        tasks = load_default_website_data_part("tasks")
+        if isinstance(tasks, list):
+            world_tasks = _list_value(tasks, world_index)
+            if isinstance(world_tasks, list):
+                return [
+                    task.get("breakpoints", []) if isinstance(task, Mapping) else []
+                    for task in world_tasks
+                ]
+    return []
+
+
+def _task_progress_percent(
+    *,
+    level: int,
+    raw_progress: float | None,
+    breakpoints: Any,
+) -> int | float | None:
+    """Return progress towards the next task level when breakpoints are known."""
+    if raw_progress is None or not isinstance(breakpoints, list):
+        return None
+    if level >= len(breakpoints):
+        return 100
+
+    current_required = _coerce_float(_list_value(breakpoints, level - 1)) or 0.0
+    next_required = _coerce_float(_list_value(breakpoints, level))
+    if next_required is None or next_required <= current_required:
+        return None
+
+    progress = max(raw_progress - current_required, 0)
+    needed = next_required - current_required
+    return _compact_number(min((progress / needed) * 100, 100))
+
+
+def _merit_metadata() -> tuple[dict[tuple[int, int], str], dict[tuple[int, int], Any]]:
+    """Return merit labels and max levels keyed by world and merit index."""
+    labels: dict[tuple[int, int], str] = {}
+    max_levels: dict[tuple[int, int], Any] = {}
+    with suppress(WebsiteDataNotFoundError):
+        merits = load_default_website_data_part("merits")
+        if isinstance(merits, list):
+            for world_index, world_merits in enumerate(merits):
+                if not isinstance(world_merits, list):
+                    continue
+                for merit_index, merit in enumerate(world_merits):
+                    if not isinstance(merit, Mapping):
+                        continue
+                    label = _merit_label(merit, fallback=f"Merit {merit_index + 1}")
+                    labels[(world_index, merit_index)] = label
+                    total_levels = _coerce_int(merit.get("totalLevels"))
+                    if total_levels is not None:
+                        max_levels[(world_index, merit_index)] = total_levels
+    return labels, max_levels
+
+
+def _merit_label(merit: Mapping[str, Any], *, fallback: str) -> str:
+    """Return a readable label for a taskboard merit."""
+    desc_line = merit.get("descLine1")
+    if isinstance(desc_line, str) and desc_line:
+        return _clean_display_text(desc_line.replace("{", "").replace("}", ""))
+    return fallback
+
+
+def _world_label(index: int) -> str:
+    """Return a stable world label for a zero-based world index."""
+    return _list_value(list(TASK_WORLD_LABELS), index) or f"World {index + 1}"
 
 
 def _looks_numeric(value: str) -> bool:
