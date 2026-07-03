@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.10.1
+
+- Run the release workflow when code is pushed to main.
+- Create the v<version> tag before publishing the GitHub release.
+
 ## 🚀 0.10.0
 
 - Add Steam OpenID callback exchange for Idleon cloud setup.

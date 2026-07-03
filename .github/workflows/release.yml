@@ -3,11 +3,15 @@ name: Release
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -17,6 +21,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -64,6 +70,25 @@ jobs:
             echo "Release ${RELEASE_TAG} already exists; skipping publish."
           else
             echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Create release tag
+        if: steps.existing_release.outputs.exists == 'false'
+        env:
+          RELEASE_TAG: ${{ steps.build.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            git fetch --depth=1 origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+            tag_sha="$(git rev-list -n 1 "${RELEASE_TAG}")"
+            if [ "${tag_sha}" != "${GITHUB_SHA}" ]; then
+              echo "::error::Tag ${RELEASE_TAG} already exists at ${tag_sha}, not current commit ${GITHUB_SHA}."
+              exit 1
+            fi
+            echo "Tag ${RELEASE_TAG} already exists for this commit."
+          else
+            git tag "${RELEASE_TAG}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${RELEASE_TAG}"
+            echo "Created tag ${RELEASE_TAG}."
           fi
 
       - name: Publish GitHub release
