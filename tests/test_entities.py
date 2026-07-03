@@ -85,6 +85,36 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_achievements_completed",
     )
+    currencies_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_currencies",
+    )
+    shrine_levels_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_shrine_levels",
+    )
+    statue_levels_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_statue_levels",
+    )
+    colosseum_scores_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_colosseum_scores",
+    )
+    minigame_scores_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_minigame_scores",
+    )
+    progress_totals_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_progress_totals",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
@@ -97,6 +127,12 @@ async def test_account_sensors(
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert hass.states.get(slab_entity_id).state == "456"
     assert hass.states.get(achievements_entity_id).state == "78"
+    assert hass.states.get(currencies_entity_id).state == "12"
+    assert hass.states.get(shrine_levels_entity_id).state == "236"
+    assert hass.states.get(statue_levels_entity_id).state == "848"
+    assert hass.states.get(colosseum_scores_entity_id).state == "382839961.69"
+    assert hass.states.get(minigame_scores_entity_id).state == "1827"
+    assert hass.states.get(progress_totals_entity_id).state == "11"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -111,6 +147,46 @@ async def test_account_sensors(
         "Oak Logs",
         "Copper Ore",
     ]
+    assert (
+        hass.states.get(currencies_entity_id).attributes["currencies"][
+            "World Teleports"
+        ]
+        == 1700
+    )
+    assert (
+        hass.states.get(currencies_entity_id).attributes["currencies"][
+            "Forest Villa Keys"
+        ]
+        == 2737
+    )
+    assert (
+        hass.states.get(shrine_levels_entity_id).attributes["shrine_levels"][
+            "Primordial Shrine"
+        ]
+        == 23
+    )
+    assert (
+        hass.states.get(statue_levels_entity_id).attributes["statue_levels"]["Power"]
+        == 284
+    )
+    assert (
+        hass.states.get(colosseum_scores_entity_id).attributes["colosseum_scores"][
+            "Whimsical"
+        ]
+        == 266855608.33
+    )
+    assert (
+        hass.states.get(minigame_scores_entity_id).attributes["minigame_scores"][
+            "Poing"
+        ]
+        == 1471
+    )
+    assert (
+        hass.states.get(progress_totals_entity_id).attributes["progress_totals"][
+            "Highest Damage"
+        ]
+        == 123456789
+    )
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     assert hass.states.get(last_updated_entity_id) is None
 

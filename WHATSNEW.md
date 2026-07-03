@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.16.0
+
+- Add grouped account sensors for currencies, shrine levels, statue levels, colosseum scores, minigame scores, and progress totals.
+- Parse known Idleon raw fields for account currencies, scores, shrines, statues, stamps, bubbles, refinery salts, printer totals, and storage candies.
+- Keep detailed values as attributes to avoid creating dozens of noisy default entities.
+
 ## 🚀 0.15.0
 
 - Add Total money to the account device.

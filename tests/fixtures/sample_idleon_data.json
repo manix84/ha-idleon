@@ -17,7 +17,69 @@
         "Copper Ore"
       ],
       "slab_items_obtained": 456,
-      "achievements_completed": 78
+      "achievements_completed": 78,
+      "currencies": {
+        "World Teleports": 1700,
+        "Obol Fragments": 31183,
+        "Colosseum Tickets": 327,
+        "Silver Pens": 84579,
+        "Gems": 1234,
+        "Mini-Game Plays remaining": 21,
+        "Forest Villa Keys": 2737,
+        "Efaunt's Tomb Keys": 14158,
+        "Chizoar's Cavern Keys": 27164,
+        "Troll's Enclave Keys": 13425,
+        "Kruk's Volcano Keys": 542702,
+        "Candys": 497
+      },
+      "shrine_levels": {
+        "Woodular Shrine": 27,
+        "Isaccian Shrine": 27,
+        "Crystal Shrine": 27,
+        "Pantheon Shrine": 27,
+        "Clover Shrine": 27,
+        "Summereading Shrine": 27,
+        "Crescent Shrine": 26,
+        "Undead Shrine": 25,
+        "Primordial Shrine": 23
+      },
+      "statue_levels": {
+        "Power": 284,
+        "Speed": 292,
+        "Mining": 272
+      },
+      "colosseum_scores": {
+        "Whimsical": 266855608.33,
+        "Astro": 79993226.38,
+        "Molten": 25077530.87,
+        "Chillsnap": 9163910.87,
+        "Sandstone": 1349042.18,
+        "Dewdrop": 400643.06
+      },
+      "minigame_scores": {
+        "Poing": 1471,
+        "Darts": 97,
+        "Chopping": 93,
+        "Pen pals": 86,
+        "Fishing": 27,
+        "Catching": 23,
+        "Hoops": 14,
+        "Spiketrap": 10,
+        "Mining": 6
+      },
+      "progress_totals": {
+        "Bubbles": 15123,
+        "Stamps": 9988,
+        "Statues": 848,
+        "Shrines": 236,
+        "Highest Damage": 123456789,
+        "PO Orders": 2357,
+        "Monsters Killed": 987654321,
+        "Refined Salts": 1084541,
+        "Mats Printed": 275000,
+        "Trashed Cogs": 42,
+        "Plants Picked": 321
+      }
     },
     "characters": [
       {

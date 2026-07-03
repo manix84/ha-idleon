@@ -257,6 +257,82 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert character.details["attack_loadout"] == ["90", "91"]
 
 
+def test_parser_extracts_indexed_account_progress_groups() -> None:
+    """Test indexed exports expose grouped account progress details."""
+    account_options = [0] * 443
+    account_options[99] = 86
+    account_options[201] = 10
+    account_options[242] = 14
+    account_options[442] = 97
+
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "Lv0_0": [1103],
+            "CYWorldTeleports": 1700,
+            "CYObolFragments": 31183,
+            "CYColosseumTickets": 327,
+            "CYSilverPens": 84579,
+            "GemsOwned": 3469,
+            "PVMinigamePlays_0": 21,
+            "CYKeysAll": [2737, 14158, 27164, 13425, 542702],
+            "ChestOrder": ["Timecandy1", "Timecandy2", "CraftMat1"],
+            "ChestQuantity": [347, 86, 10],
+            "Shrine": [
+                [300, 0, -10, 27, 1, 0],
+                [300, 0, 54, 27, 1, 0],
+                [300, 0, 118, 26, 1, 0],
+            ],
+            "StatueLevels_0": [[284, 1], [292, 1], [272, 1]],
+            "FamValColosseumHighscores": [
+                0,
+                400643.056,
+                1349042.18,
+                9163910.868,
+                "7.999322637599999E7",
+                "2.5077530872544438E7",
+                "2.6685560833145946E8",
+            ],
+            "FamValMinigameHiscores": [93, 27, 23, 6],
+            "OptLacc": account_options,
+            "Gaming": [0] * 10 + [1471],
+            "CauldronInfo": [
+                {"0": 1000, "1": 10, "2": 20, "length": 3},
+                {"0": 1000, "1": 30, "length": 2},
+            ],
+            "StampLv": [{"0": 5, "1": 6, "length": 2}],
+            "Refinery": [[], [], [100, 200, 300]],
+            "Print": [0, "Fish1", 100, "Tree1", 200],
+            "CYDeliveryBoxComplete": 2357,
+        }
+    )
+
+    assert account.details["currencies"]["World Teleports"] == 1700
+    assert account.details["currencies"]["Candys"] == 433
+    assert account.details["currencies"]["Kruk's Volcano Keys"] == 542702
+    assert account.details["shrine_levels"]["Woodular Shrine"] == 27
+    assert account.details["statue_levels"]["Power"] == 284
+    assert account.details["colosseum_scores"]["Whimsical"] == 266855608.33
+    assert account.details["minigame_scores"] == {
+        "Poing": 1471,
+        "Darts": 97,
+        "Chopping": 93,
+        "Pen pals": 86,
+        "Fishing": 27,
+        "Catching": 23,
+        "Hoops": 14,
+        "Spiketrap": 10,
+        "Mining": 6,
+    }
+    assert account.details["progress_totals"]["Bubbles"] == 60
+    assert account.details["progress_totals"]["Stamps"] == 11
+    assert account.details["progress_totals"]["Statues"] == 848
+    assert account.details["progress_totals"]["Shrines"] == 80
+    assert account.details["progress_totals"]["PO Orders"] == 2357
+    assert account.details["progress_totals"]["Refined Salts"] == 600
+    assert account.details["progress_totals"]["Mats Printed"] == 300
+
+
 def test_parser_uses_packaged_item_label_fallbacks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

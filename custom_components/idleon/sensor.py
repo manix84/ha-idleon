@@ -132,6 +132,57 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             0,
         ),
     ),
+    IdleonAccountSensorEntityDescription(
+        key="account_currencies",
+        translation_key="account_currencies",
+        value_fn=lambda coordinator: _account_detail_count(coordinator, "currencies"),
+        detail_keys=("currencies",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_shrine_levels",
+        translation_key="account_shrine_levels",
+        value_fn=lambda coordinator: _account_detail_sum(
+            coordinator,
+            "shrine_levels",
+        ),
+        detail_keys=("shrine_levels",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_statue_levels",
+        translation_key="account_statue_levels",
+        value_fn=lambda coordinator: _account_detail_sum(
+            coordinator,
+            "statue_levels",
+        ),
+        detail_keys=("statue_levels",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_colosseum_scores",
+        translation_key="account_colosseum_scores",
+        value_fn=lambda coordinator: _account_detail_sum(
+            coordinator,
+            "colosseum_scores",
+        ),
+        detail_keys=("colosseum_scores",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_minigame_scores",
+        translation_key="account_minigame_scores",
+        value_fn=lambda coordinator: _account_detail_sum(
+            coordinator,
+            "minigame_scores",
+        ),
+        detail_keys=("minigame_scores",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_progress_totals",
+        translation_key="account_progress_totals",
+        value_fn=lambda coordinator: _account_detail_count(
+            coordinator,
+            "progress_totals",
+        ),
+        detail_keys=("progress_totals",),
+    ),
 )
 
 CHARACTER_SENSOR_DESCRIPTIONS = (
@@ -508,6 +559,40 @@ def _account_detail_value(
 ) -> Any:
     """Return a single parsed account detail value."""
     return coordinator.data.details.get(key, default)
+
+
+def _account_detail_count(
+    coordinator: IdleonDataUpdateCoordinator,
+    key: str,
+) -> int:
+    """Return the number of values in a grouped account detail."""
+    value = coordinator.data.details.get(key)
+    if isinstance(value, Mapping):
+        return len(value)
+    return 0
+
+
+def _account_detail_sum(
+    coordinator: IdleonDataUpdateCoordinator,
+    key: str,
+) -> int | float:
+    """Return the numeric sum of values in a grouped account detail."""
+    value = coordinator.data.details.get(key)
+    if not isinstance(value, Mapping):
+        return 0
+
+    total = 0.0
+    for detail_value in value.values():
+        if isinstance(detail_value, int | float):
+            total += detail_value
+            continue
+        try:
+            total += float(detail_value)
+        except TypeError, ValueError:
+            continue
+    if total.is_integer():
+        return int(total)
+    return round(total, 2)
 
 
 def _account_total_money(coordinator: IdleonDataUpdateCoordinator) -> Any:

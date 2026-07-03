@@ -61,6 +61,84 @@ SKILL_LEVEL_LABELS = (
     "Sneaking",
     "Summoning",
 )
+CURRENCY_KEY_LABELS = (
+    "Forest Villa Keys",
+    "Efaunt's Tomb Keys",
+    "Chizoar's Cavern Keys",
+    "Troll's Enclave Keys",
+    "Kruk's Volcano Keys",
+)
+CURRENCY_FIELD_LABELS = {
+    "CYWorldTeleports": "World Teleports",
+    "CYObolFragments": "Obol Fragments",
+    "CYColosseumTickets": "Colosseum Tickets",
+    "CYSilverPens": "Silver Pens",
+}
+SHRINE_LEVEL_LABELS = (
+    "Woodular Shrine",
+    "Isaccian Shrine",
+    "Crystal Shrine",
+    "Pantheon Shrine",
+    "Clover Shrine",
+    "Summereading Shrine",
+    "Crescent Shrine",
+    "Undead Shrine",
+    "Primordial Shrine",
+)
+STATUE_LEVEL_LABELS = (
+    "Power",
+    "Speed",
+    "Mining",
+    "Feasty",
+    "Health",
+    "Kachow",
+    "Lumberbob",
+    "Thicc Skin",
+    "Oceanman",
+    "Ol Reliable",
+    "Exp Book",
+    "Anvil",
+    "Cauldron",
+    "Beholder",
+    "Bullseye",
+    "Box",
+    "Twosoul",
+    "EhExPee",
+    "Seesaw",
+    "Pecunia",
+    "Mutton",
+    "Egg",
+    "Battleaxe",
+    "Spiral",
+    "Boat",
+    "Compost",
+    "Stealth",
+    "Essence",
+    "Villager",
+    "Dragon Warrior",
+    "Spelunky",
+    "Reef Coral",
+)
+COLOSSEUM_SCORE_INDEXES = {
+    "Whimsical": 6,
+    "Astro": 4,
+    "Molten": 5,
+    "Chillsnap": 3,
+    "Sandstone": 2,
+    "Dewdrop": 1,
+}
+MINIGAME_SCORE_INDEXES = {
+    "Chopping": 0,
+    "Fishing": 1,
+    "Catching": 2,
+    "Mining": 3,
+}
+ACCOUNT_OPTION_SCORE_INDEXES = {
+    "Pen pals": 99,
+    "Hoops": 242,
+    "Spiketrap": 201,
+    "Darts": 442,
+}
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -647,7 +725,226 @@ def _indexed_account_details(
             1 for value in achievements if value == -1
         )
 
+    details.update(_indexed_account_progress_details(raw_data, characters))
+
     return _remove_empty_detail_values(details)
+
+
+def _indexed_account_progress_details(
+    raw_data: Mapping[str, Any],
+    characters: tuple[IdleonCharacter, ...],
+) -> dict[str, Any]:
+    """Return grouped account progression details for indexed exports."""
+    details: dict[str, Any] = {}
+
+    currencies = _indexed_currencies(raw_data, characters)
+    if currencies:
+        details["currencies"] = currencies
+
+    shrine_levels = _indexed_shrine_levels(raw_data)
+    if shrine_levels:
+        details["shrine_levels"] = shrine_levels
+
+    statue_levels = _indexed_statue_levels(raw_data)
+    if statue_levels:
+        details["statue_levels"] = statue_levels
+
+    colosseum_scores = _indexed_colosseum_scores(raw_data)
+    if colosseum_scores:
+        details["colosseum_scores"] = colosseum_scores
+
+    minigame_scores = _indexed_minigame_scores(raw_data)
+    if minigame_scores:
+        details["minigame_scores"] = minigame_scores
+
+    progress_totals = _indexed_progress_totals(
+        raw_data,
+        shrine_levels=shrine_levels,
+        statue_levels=statue_levels,
+    )
+    if progress_totals:
+        details["progress_totals"] = progress_totals
+
+    return details
+
+
+def _indexed_currencies(
+    raw_data: Mapping[str, Any],
+    characters: tuple[IdleonCharacter, ...],
+) -> dict[str, Any]:
+    """Return named account currency values from indexed exports."""
+    currencies = {
+        label: _compact_number(value)
+        for raw_key, label in CURRENCY_FIELD_LABELS.items()
+        if (value := _coerce_float(raw_data.get(raw_key))) is not None
+    }
+
+    gems = _coerce_float(raw_data.get("GemsOwned"))
+    if gems is not None:
+        currencies["Gems"] = _compact_number(gems)
+
+    minigame_plays = [
+        _coerce_float(raw_data.get(f"PVMinigamePlays_{index}"))
+        for index, _character in enumerate(characters)
+    ]
+    minigame_plays = [value for value in minigame_plays if value is not None]
+    if minigame_plays:
+        currencies["Mini-Game Plays remaining"] = _compact_number(max(minigame_plays))
+
+    keys_all = _maybe_json(raw_data.get("CYKeysAll"))
+    if isinstance(keys_all, list):
+        for index, label in enumerate(CURRENCY_KEY_LABELS):
+            value = _coerce_float(_list_value(keys_all, index))
+            if value is not None:
+                currencies[label] = _compact_number(value)
+
+    candy_total = _storage_item_prefix_total(raw_data, "Timecandy")
+    if candy_total:
+        currencies["Candys"] = _compact_number(candy_total)
+
+    return currencies
+
+
+def _indexed_shrine_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return named shrine levels from indexed exports."""
+    shrines = _maybe_json(raw_data.get("ShrineInfo")) or _maybe_json(
+        raw_data.get("Shrine")
+    )
+    if not isinstance(shrines, list):
+        return {}
+
+    levels: dict[str, Any] = {}
+    for index, label in enumerate(SHRINE_LEVEL_LABELS):
+        shrine = _list_value(shrines, index)
+        if not isinstance(shrine, list):
+            continue
+        value = _coerce_float(_list_value(shrine, 3))
+        if value is not None:
+            levels[label] = _compact_number(value)
+    return levels
+
+
+def _indexed_statue_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return named account-wide statue levels from indexed exports."""
+    statue_data = _maybe_json(raw_data.get("StatueLevels_0"))
+    if not isinstance(statue_data, list):
+        for key, value in raw_data.items():
+            if key.startswith("StatueLevels_"):
+                statue_data = _maybe_json(value)
+                if isinstance(statue_data, list):
+                    break
+    if not isinstance(statue_data, list):
+        return {}
+
+    levels: dict[str, Any] = {}
+    for index, label in enumerate(STATUE_LEVEL_LABELS):
+        statue = _list_value(statue_data, index)
+        if not isinstance(statue, list):
+            continue
+        value = _coerce_float(_list_value(statue, 0))
+        if value is not None:
+            levels[label] = _compact_number(value)
+    return levels
+
+
+def _indexed_colosseum_scores(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return named colosseum high scores from indexed exports."""
+    scores = _maybe_json(raw_data.get("FamValColosseumHighscores"))
+    if not isinstance(scores, list):
+        family_values = _maybe_json(raw_data.get("FamilyValuesMap"))
+        if isinstance(family_values, Mapping):
+            scores = _maybe_json(family_values.get("ColosseumHighscores"))
+    if not isinstance(scores, list):
+        return {}
+
+    return {
+        label: _compact_number(value)
+        for label, index in COLOSSEUM_SCORE_INDEXES.items()
+        if (value := _coerce_float(_list_value(scores, index))) is not None
+    }
+
+
+def _indexed_minigame_scores(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return named minigame high scores from indexed exports."""
+    raw_scores = _maybe_json(raw_data.get("FamValMinigameHiscores"))
+    if not isinstance(raw_scores, list):
+        family_values = _maybe_json(raw_data.get("FamilyValuesMap"))
+        if isinstance(family_values, Mapping):
+            raw_scores = _maybe_json(family_values.get("MinigameHiscores"))
+    scores: dict[str, Any] = {}
+    if isinstance(raw_scores, list):
+        scores.update(
+            {
+                label: _compact_number(value)
+                for label, index in MINIGAME_SCORE_INDEXES.items()
+                if (value := _coerce_float(_list_value(raw_scores, index))) is not None
+            }
+        )
+
+    account_options = _maybe_json(raw_data.get("accountOptions")) or _maybe_json(
+        raw_data.get("OptLacc")
+    )
+    if isinstance(account_options, list):
+        for label, index in ACCOUNT_OPTION_SCORE_INDEXES.items():
+            value = _coerce_float(_list_value(account_options, index))
+            if value is not None:
+                scores[label] = _compact_number(value)
+
+    gaming = _maybe_json(raw_data.get("Gaming"))
+    if isinstance(gaming, list):
+        poing_score = _coerce_float(_list_value(gaming, 10))
+        if poing_score is not None:
+            scores["Poing"] = _compact_number(poing_score)
+
+    ordered_labels = (
+        "Poing",
+        "Darts",
+        "Chopping",
+        "Pen pals",
+        "Fishing",
+        "Catching",
+        "Hoops",
+        "Spiketrap",
+        "Mining",
+    )
+    return {label: scores[label] for label in ordered_labels if label in scores}
+
+
+def _indexed_progress_totals(
+    raw_data: Mapping[str, Any],
+    *,
+    shrine_levels: Mapping[str, Any],
+    statue_levels: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return compact account progress totals from indexed exports."""
+    totals: dict[str, Any] = {}
+
+    bubbles = _cauldron_bubble_total(raw_data)
+    if bubbles:
+        totals["Bubbles"] = _compact_number(bubbles)
+
+    stamp_total = _stamp_level_total(raw_data)
+    if stamp_total:
+        totals["Stamps"] = _compact_number(stamp_total)
+
+    if statue_levels:
+        totals["Statues"] = _compact_number(_sum_mapping_numbers(statue_levels))
+    if shrine_levels:
+        totals["Shrines"] = _compact_number(_sum_mapping_numbers(shrine_levels))
+
+    po_orders = _coerce_float(raw_data.get("CYDeliveryBoxComplete"))
+    if po_orders is not None:
+        totals["PO Orders"] = _compact_number(po_orders)
+
+    refined_salts = _refined_salt_total(raw_data)
+    if refined_salts:
+        totals["Refined Salts"] = _compact_number(refined_salts)
+
+    mats_printed = _printer_total(raw_data)
+    if mats_printed:
+        totals["Mats Printed"] = _compact_number(mats_printed)
+
+    return totals
 
 
 def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
@@ -847,6 +1144,18 @@ def _account_details(
     details.update(_computed_account_details(characters))
     if "total_money" not in details and "raw_money" in details:
         details["total_money"] = details["raw_money"]
+    for detail_key, aliases in (
+        ("currencies", ("currencies", "currency")),
+        ("shrine_levels", ("shrine_levels", "shrineLevels", "shrines")),
+        ("statue_levels", ("statue_levels", "statueLevels", "statues")),
+        ("colosseum_scores", ("colosseum_scores", "colosseumScores")),
+        ("minigame_scores", ("minigame_scores", "minigameScores")),
+        ("progress_totals", ("progress_totals", "progressTotals", "totals")),
+    ):
+        if detail_key not in details:
+            value = _first_mapping(account_data, aliases)
+            if value:
+                details[detail_key] = dict(value)
     return _remove_empty_detail_values(details)
 
 
@@ -953,6 +1262,106 @@ def _compact_number(value: float) -> int | float:
     if value.is_integer():
         return int(value)
     return round(value, 2)
+
+
+def _list_value(values: list[Any], index: int) -> Any:
+    """Return a list value if the index exists."""
+    if index < 0 or index >= len(values):
+        return None
+    return values[index]
+
+
+def _sum_mapping_numbers(values: Mapping[str, Any]) -> float:
+    """Return the sum of numeric mapping values."""
+    return sum(
+        number
+        for value in values.values()
+        if (number := _coerce_float(value)) is not None
+    )
+
+
+def _mapping_numeric_values(value: Any) -> Iterable[float]:
+    """Yield numeric values from lists or indexed object maps."""
+    parsed = _maybe_json(value)
+    if isinstance(parsed, Mapping):
+        iterable = parsed.items()
+        for key, item_value in iterable:
+            if key == "length":
+                continue
+            number = _coerce_float(item_value)
+            if number is not None:
+                yield number
+    elif isinstance(parsed, list):
+        for item_value in parsed:
+            number = _coerce_float(item_value)
+            if number is not None:
+                yield number
+
+
+def _storage_item_prefix_total(raw_data: Mapping[str, Any], prefix: str) -> float:
+    """Return total storage quantity for item IDs that start with a prefix."""
+    order = _maybe_json(raw_data.get("ChestOrder"))
+    quantities = _maybe_json(raw_data.get("ChestQuantity"))
+    if not isinstance(order, list) or not isinstance(quantities, list):
+        return 0.0
+
+    total = 0.0
+    for index, item in enumerate(order):
+        if not isinstance(item, str) or not item.startswith(prefix):
+            continue
+        total += _coerce_float(_list_value(quantities, index)) or 0.0
+    return total
+
+
+def _cauldron_bubble_total(raw_data: Mapping[str, Any]) -> float:
+    """Return a rough total of alchemy bubble levels."""
+    cauldron_info = _maybe_json(raw_data.get("CauldronInfo"))
+    if not isinstance(cauldron_info, list):
+        return 0.0
+
+    total = 0.0
+    for cauldron in cauldron_info[:4]:
+        levels = list(_mapping_numeric_values(cauldron))
+        if len(levels) > 1:
+            total += sum(levels[1:])
+    return total
+
+
+def _stamp_level_total(raw_data: Mapping[str, Any]) -> float:
+    """Return total stamp levels from raw stamp level groups."""
+    stamp_levels = _maybe_json(raw_data.get("StampLv")) or _maybe_json(
+        raw_data.get("StampLevel")
+    )
+    if not isinstance(stamp_levels, list):
+        return 0.0
+    return sum(sum(_mapping_numeric_values(group)) for group in stamp_levels)
+
+
+def _refined_salt_total(raw_data: Mapping[str, Any]) -> float:
+    """Return total stored refined salts from raw refinery data."""
+    refinery = _maybe_json(raw_data.get("Refinery"))
+    if not isinstance(refinery, list):
+        return 0.0
+    return sum(_mapping_numeric_values(_list_value(refinery, 2)))
+
+
+def _printer_total(raw_data: Mapping[str, Any]) -> float:
+    """Return total sampled material print amounts from raw printer data."""
+    printer = _maybe_json(raw_data.get("Print")) or _maybe_json(raw_data.get("Printer"))
+    if not isinstance(printer, list):
+        return 0.0
+
+    total = 0.0
+    for value in printer:
+        if isinstance(value, str) and not _looks_numeric(value):
+            continue
+        total += _coerce_float(value) or 0.0
+    return total
+
+
+def _looks_numeric(value: str) -> bool:
+    """Return whether a string looks numeric."""
+    return _coerce_float(value) is not None
 
 
 def _first_bool(data: Mapping[str, Any], keys: tuple[str, ...]) -> bool | None:

@@ -112,6 +112,24 @@
       "account_achievements_completed": {
         "name": "Achievements completed"
       },
+      "account_currencies": {
+        "name": "Currencies"
+      },
+      "account_shrine_levels": {
+        "name": "Shrine levels"
+      },
+      "account_statue_levels": {
+        "name": "Statue levels"
+      },
+      "account_colosseum_scores": {
+        "name": "Colosseum scores"
+      },
+      "account_minigame_scores": {
+        "name": "Minigame scores"
+      },
+      "account_progress_totals": {
+        "name": "Progress totals"
+      },
       "character_level": {
         "name": "Level"
       },
