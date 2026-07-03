@@ -42,17 +42,18 @@ Provider order:
 3. Steam OpenID handoff
 4. Apple sign-in
 
-Email/password, Google device flow, and Steam OpenID handoff are implemented.
-Email/password is a direct Firebase auth exchange. Google device flow works
-without embedding a browser in the config flow: Home Assistant shows a Google
-user code, then exchanges the completed Google authorization for Firebase
-credentials.
+Email/password, Google device flow, Steam OpenID handoff, and Apple sign-in are
+implemented. Email/password is a direct Firebase auth exchange. Google device
+flow works without embedding a browser in the config flow: Home Assistant shows
+a Google user code, then exchanges the completed Google authorization for
+Firebase credentials.
 
 Steam is implemented with a Home Assistant external config-flow step: Home
 Assistant opens Steam, the user signs in, then Steam redirects back to a Home
-Assistant callback endpoint that resumes the flow. Apple is still more awkward
-in a Home Assistant server context because it requires provider-specific browser
-handoff pages.
+Assistant callback endpoint that resumes the flow. Apple uses Idleon's own
+Apple handoff endpoints: Home Assistant starts an Apple auth session, opens
+Apple Sign In, then checks Idleon's auth status after the user returns and
+submits the setup form.
 
 ## ☁️ Data Shape
 
@@ -94,7 +95,7 @@ Expected fields by provider:
 - `email`: email address and password. Implemented.
 - `google`: device-code flow state and verification URL. Implemented.
 - `steam`: Steam external step and Home Assistant callback. Implemented.
-- `apple`: Apple handoff state and verification URL.
+- `apple`: Apple handoff state and authorization URL. Implemented.
 
 Stored config must be explicit:
 
@@ -175,5 +176,5 @@ Do not implement:
    implemented; repairs are still pending.
 5. Add Google device flow. Done.
 6. Add Steam OpenID handoff. Done.
-7. Decide whether Apple is viable inside HA without external helper services.
+7. Add Apple sign-in through Idleon's Apple auth handoff. Done.
 8. Move `local_file` and `remote_url` under advanced/development wording.

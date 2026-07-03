@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.12.2
+
+- Start Idleon Apple auth sessions from the config flow.
+- Open Apple Sign In with Idleon handoff details and poll completion.
+- Store Firebase refresh credentials after successful Apple authorization.
+
 ## 🚀 0.12.1
 
 - Align Steam OpenID parameters with the IdleonToolbox login flow.

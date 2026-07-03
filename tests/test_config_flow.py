@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from yarl import URL
 
 from custom_components.idleon.const import (
+    AUTH_PROVIDER_APPLE,
     AUTH_PROVIDER_EMAIL,
     AUTH_PROVIDER_GOOGLE,
     AUTH_PROVIDER_STEAM,
@@ -473,6 +474,145 @@ async def test_config_flow_success_idleon_cloud_google(
     assert CONF_IDLEON_PASSWORD not in result["data"]
     assert "device/code" in fake_session.requests[0][1]
     assert "accounts:signInWithIdp" in fake_session.requests[2][1]
+
+
+async def test_config_flow_success_idleon_cloud_apple(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test creating an entry from Apple auth."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "device_code": "apple-device-code",
+                    "h_nonce": "apple-nonce",
+                    "statusToken": "apple-status-token",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "id_token": "apple-id-token",
+                    "nonce": "apple-raw-nonce",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "idToken": "firebase-id-token",
+                    "refreshToken": "firebase-refresh-token",
+                    "localId": "uid-apple",
+                    "email": "apple@example.com",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "id_token": "refresh-id-token",
+                    "refresh_token": "stored-refresh-token",
+                    "user_id": "uid-apple",
+                }
+            ),
+            _FakeJsonResponse(["AppleChar"]),
+            _FakeJsonResponse(_cloud_firestore_document()),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_APPLE,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "apple"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_SCAN_INTERVAL: 3600},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "apple"
+    authorization_url = result["description_placeholders"]["authorization_url"]
+    assert "appleid.apple.com/auth/authorize" in authorization_url
+    authorization_params = parse_qs(urlsplit(authorization_url).query)
+    assert authorization_params["client_id"] == ["com.lavaflame.idleon.service.signin"]
+    assert authorization_params["code"] == ["apple-device-code"]
+    assert authorization_params["state"] == ["apple-status-token"]
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Idleon Cloud"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_IDLEON_CLOUD
+    assert result["data"][CONF_AUTH_PROVIDER] == AUTH_PROVIDER_APPLE
+    assert result["data"][CONF_IDLEON_EMAIL] == "apple@example.com"
+    assert result["data"][CONF_IDLEON_USER_ID] == "uid-apple"
+    assert result["data"][CONF_IDLEON_REFRESH_TOKEN] == "firebase-refresh-token"
+    assert "cloudfunctions.net/tspa" in fake_session.requests[0][1]
+    assert "cloudfunctions.net/capsc" in fake_session.requests[1][1]
+    status_payload = fake_session.requests[1][2]["data"]
+    assert status_payload == {
+        "device_code": "apple-device-code",
+        "statusToken": "apple-status-token",
+    }
+    assert "accounts:signInWithIdp" in fake_session.requests[2][1]
+    apple_payload = fake_session.requests[2][2]["json"]
+    assert isinstance(apple_payload, dict)
+    assert apple_payload["postBody"] == (
+        "id_token=apple-id-token&nonce=apple-raw-nonce&providerId=apple.com"
+    )
+
+
+async def test_config_flow_idleon_cloud_apple_authorization_pending(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test an unfinished Apple authorization returns a clean pending error."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "device_code": "apple-device-code",
+                    "h_nonce": "apple-nonce",
+                    "statusToken": "apple-status-token",
+                }
+            ),
+            _FakeJsonResponse({}),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_APPLE,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={CONF_SCAN_INTERVAL: 3600},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "apple"
+    assert result["errors"] == {"base": "authorization_pending"}
 
 
 async def test_config_flow_success_idleon_cloud_steam(

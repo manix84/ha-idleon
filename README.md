@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.12.1-blue" alt="Version 0.12.1">
+  <img src="https://img.shields.io/badge/version-0.12.2-blue" alt="Version 0.12.2">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -93,7 +93,9 @@ Supported providers:
 - `steam`: opens Steam as a Home Assistant external setup step. After Steam
   authorization, Steam redirects back to Home Assistant, which exchanges the
   returned OpenID data for Firebase tokens and stores only the refresh token.
-- `apple`: visible in the first setup choice but not implemented yet.
+- `apple`: starts Idleon's Apple sign-in handoff, opens Apple Sign In, then
+  checks Idleon's authorization status when you return to Home Assistant. Only
+  the Firebase refresh token is stored after setup.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
 and future provider plan.
@@ -179,10 +181,13 @@ Third-party data notices are listed in
 
 ## 🚧 Known Limitations
 
-- Email/password, Google, and Steam are the implemented cloud login providers.
+- Email/password, Google, Apple, and Steam are the implemented cloud login
+  providers.
 - Steam setup requires Home Assistant to have an HTTPS external URL so Steam can
   redirect back to the config flow.
-- Apple login is not implemented yet.
+- Apple setup returns to Idleon's own authorization endpoint, so you need to
+  return to Home Assistant and submit the setup form after completing Apple Sign
+  In.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
@@ -191,8 +196,8 @@ Third-party data notices are listed in
 ## 🗺️ Roadmap
 
 - Expand authenticated cloud-source coverage beyond the initial save data.
-- Harden Steam callback error handling as more real-world accounts are tested.
-- Add Apple login if it can be supported cleanly in Home Assistant.
+- Harden provider callback and handoff error handling as more real-world
+  accounts are tested.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
 - Improve repair messages for invalid or stale data sources.

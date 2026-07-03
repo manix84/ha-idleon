@@ -35,6 +35,12 @@ GOOGLE_CLIENT_SECRET = "HzoZF-UKUNfFwBuz4vafwsaR"
 GOOGLE_AUTH_PROVIDER_ID = "google.com"
 GOOGLE_OAUTH_SCOPE = "email profile"
 FIREBASE_AUTH_REQUEST_URI = "http://localhost"
+APPLE_AUTH_PROVIDER_ID = "apple.com"
+APPLE_AUTH_URL = "https://appleid.apple.com/auth/authorize"
+APPLE_CLIENT_ID = "com.lavaflame.idleon.service.signin"
+APPLE_REDIRECT_URI = "https://us-central1-idlemmo.cloudfunctions.net/xapsi"
+APPLE_TOKEN_START_URL = "https://us-central1-idlemmo.cloudfunctions.net/tspa"
+APPLE_TOKEN_STATUS_URL = "https://us-central1-idlemmo.cloudfunctions.net/capsc"
 STEAM_AUTH_PROVIDER_ID = "steam.com"
 STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login"
 STEAM_OPENID_NS = "http://specs.openid.net/auth/2.0"
@@ -62,6 +68,15 @@ class IdleonGoogleDeviceCode:
     verification_url_complete: str | None
     expires_in: int
     interval: int
+
+
+@dataclass(frozen=True, slots=True)
+class IdleonAppleAuthSession:
+    """Apple authorization session details returned by Idleon."""
+
+    device_code: str
+    nonce: str
+    status_token: str
 
 
 class IdleonCloudClient:
@@ -133,6 +148,67 @@ class IdleonCloudClient:
             f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithIdp?key={FIREBASE_API_KEY}",
             payload,
             auth_error_message="Google authentication failed",
+        )
+        return _credentials_from_auth_response(data)
+
+    async def async_start_apple_auth_session(self) -> IdleonAppleAuthSession:
+        """Start an Idleon Apple authorization session."""
+        data = await self._async_post_form(
+            APPLE_TOKEN_START_URL,
+            {},
+            auth_error_message="Apple authorization could not be started",
+        )
+        return _apple_auth_session_from_response(data)
+
+    async def async_sign_in_apple_auth_session(
+        self,
+        auth_session: IdleonAppleAuthSession,
+    ) -> IdleonCloudCredentials:
+        """Poll Idleon's Apple auth status and exchange it for Firebase credentials."""
+        apple_token = await self.async_get_apple_id_token(auth_session)
+        return await self.async_sign_in_apple_id_token(
+            apple_token["id_token"],
+            nonce=apple_token["nonce"],
+        )
+
+    async def async_get_apple_id_token(
+        self,
+        auth_session: IdleonAppleAuthSession,
+    ) -> dict[str, str]:
+        """Return an Apple identity token from a completed Idleon Apple session."""
+        data = await self._async_post_form(
+            APPLE_TOKEN_STATUS_URL,
+            {
+                "device_code": auth_session.device_code,
+                "statusToken": auth_session.status_token,
+            },
+            auth_error_message="Apple authorization failed",
+        )
+        return _apple_token_from_status_response(data)
+
+    async def async_sign_in_apple_id_token(
+        self,
+        id_token: str,
+        *,
+        nonce: str,
+    ) -> IdleonCloudCredentials:
+        """Sign in to Firebase using an Apple identity token."""
+        payload = {
+            "postBody": urlencode(
+                {
+                    "id_token": id_token,
+                    "nonce": nonce,
+                    "providerId": APPLE_AUTH_PROVIDER_ID,
+                }
+            ),
+            "requestUri": FIREBASE_AUTH_REQUEST_URI,
+            "returnIdpCredential": True,
+            "returnSecureToken": True,
+        }
+        data = await self._async_post_json(
+            f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithIdp?key={FIREBASE_API_KEY}",
+            payload,
+            auth_error_message="Apple authentication failed",
         )
         return _credentials_from_auth_response(data)
 
@@ -428,6 +504,57 @@ def _google_device_code_from_response(data: Any) -> IdleonGoogleDeviceCode:
         ),
         expires_in=expires_in,
         interval=interval,
+    )
+
+
+def _apple_auth_session_from_response(data: Any) -> IdleonAppleAuthSession:
+    """Return normalized Idleon Apple auth session details."""
+    if not isinstance(data, dict):
+        raise IdleonAuthFailed("Apple authorization returned invalid data")
+    device_code = data.get("device_code")
+    nonce = data.get("h_nonce")
+    status_token = data.get("statusToken")
+    if not all(
+        isinstance(value, str) and value for value in (device_code, nonce, status_token)
+    ):
+        raise IdleonAuthFailed("Apple authorization returned incomplete data")
+    return IdleonAppleAuthSession(
+        device_code=device_code,
+        nonce=nonce,
+        status_token=status_token,
+    )
+
+
+def _apple_token_from_status_response(data: Any) -> dict[str, str]:
+    """Return Apple identity token details from Idleon's status response."""
+    if not isinstance(data, dict):
+        raise IdleonAuthFailed("Apple authorization returned invalid data")
+    id_token = data.get("id_token")
+    nonce = data.get("nonce")
+    if not isinstance(id_token, str) or not id_token:
+        raise IdleonAuthPending("Apple authorization is not complete yet")
+    if not isinstance(nonce, str):
+        raise IdleonAuthFailed("Apple authorization returned incomplete data")
+    return {"id_token": id_token, "nonce": nonce}
+
+
+def apple_authorize_url(auth_session: IdleonAppleAuthSession) -> str:
+    """Return the Apple Sign In URL for an Idleon Apple auth session."""
+    return (
+        APPLE_AUTH_URL
+        + "?"
+        + urlencode(
+            {
+                "client_id": APPLE_CLIENT_ID,
+                "nonce": auth_session.nonce,
+                "redirect_uri": APPLE_REDIRECT_URI,
+                "response_mode": "form_post",
+                "response_type": "code id_token",
+                "scope": "email",
+                "code": auth_session.device_code,
+                "state": auth_session.status_token,
+            }
+        )
     )
 
 

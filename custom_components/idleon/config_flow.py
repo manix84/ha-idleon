@@ -58,9 +58,11 @@ from .idleon_data import (
     parse_idleon_account,
 )
 from .idleon_data.cloud import (
+    IdleonAppleAuthSession,
     IdleonCloudClient,
     IdleonCloudCredentials,
     IdleonGoogleDeviceCode,
+    apple_authorize_url,
     steam_openid_login_url,
 )
 from .models import IdleonDataSource
@@ -81,11 +83,13 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
     _auth_provider: str | None = None
     _cloud_base_input: dict[str, Any] | None = None
     _pending_google_input: dict[str, Any] | None = None
+    _pending_apple_input: dict[str, Any] | None = None
     _pending_steam_input: dict[str, Any] | None = None
     _steam_openid_response_url: str | None = None
     _steam_state: str | None = None
     _steam_auth_failed_reason: str = "auth_failed"
     _google_device_code: IdleonGoogleDeviceCode | None = None
+    _apple_auth_session: IdleonAppleAuthSession | None = None
 
     async def async_step_user(
         self,
@@ -99,6 +103,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             self._auth_provider = _auth_provider_from_source_type(
                 user_input[CONF_DATA_SOURCE_TYPE]
             )
+            if self._auth_provider == AUTH_PROVIDER_APPLE:
+                return await self.async_step_apple()
             if self._auth_provider == AUTH_PROVIDER_STEAM:
                 return await self.async_step_steam()
             return await self.async_step_source()
@@ -116,6 +122,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._auth_provider = user_input[CONF_AUTH_PROVIDER]
             self._cloud_base_input = _normalize_cloud_base_input(user_input)
+            if self._auth_provider == AUTH_PROVIDER_APPLE:
+                return await self.async_step_apple()
             if self._auth_provider == AUTH_PROVIDER_GOOGLE:
                 self._pending_google_input = self._cloud_base_input
                 return await self.async_step_google()
@@ -359,6 +367,95 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_apple(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle Apple authorization through Idleon's Apple auth bridge."""
+        errors: dict[str, str] = {}
+
+        if self._pending_apple_input is None:
+            if user_input is not None:
+                try:
+                    self._pending_apple_input = _normalize_user_input(
+                        self._data_source_type,
+                        user_input,
+                        auth_provider=self._auth_provider,
+                        base_input=self._cloud_base_input,
+                    )
+                except IdleonAuthFailed:
+                    errors["base"] = "auth_failed"
+                except IdleonCannotConnect:
+                    errors["base"] = "cannot_connect"
+                except Exception:
+                    _LOGGER.exception("Unexpected error starting Apple authorization")
+                    errors["base"] = "unknown"
+            if self._pending_apple_input is None:
+                return self.async_show_form(
+                    step_id="apple",
+                    data_schema=_source_details_schema(
+                        self._data_source_type,
+                        auth_provider=self._auth_provider,
+                    ),
+                    description_placeholders=_apple_description_placeholders(None),
+                    errors=errors,
+                )
+
+        if self._apple_auth_session is None:
+            try:
+                self._apple_auth_session = await IdleonCloudClient(
+                    self.hass
+                ).async_start_apple_auth_session()
+            except IdleonCannotConnect:
+                errors["base"] = "cannot_connect"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except Exception:
+                _LOGGER.exception("Unexpected error starting Apple authorization")
+                errors["base"] = "unknown"
+
+        elif user_input is not None:
+            try:
+                normalized_input, data_source = await _async_prepare_apple_source(
+                    self.hass,
+                    self._pending_apple_input,
+                    self._apple_auth_session,
+                )
+                await _async_validate_source(self.hass, data_source)
+            except IdleonAuthPending:
+                errors["base"] = "authorization_pending"
+            except IdleonAuthFailed as err:
+                _LOGGER.warning("Apple authorization failed: %s", err)
+                errors["base"] = "auth_failed"
+            except IdleonCannotConnect as err:
+                _LOGGER.warning(
+                    "Apple authorization data could not be fetched: %s", err
+                )
+                errors["base"] = "cannot_connect"
+            except IdleonInvalidJson:
+                errors["base"] = "invalid_json"
+            except IdleonInvalidSchema:
+                errors["base"] = "invalid_schema"
+            except Exception:
+                _LOGGER.exception("Unexpected error validating Apple authorization")
+                errors["base"] = "unknown"
+            else:
+                await self.async_set_unique_id(_source_unique_id(data_source))
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=_entry_title(data_source),
+                    data=normalized_input,
+                )
+
+        return self.async_show_form(
+            step_id="apple",
+            data_schema=vol.Schema({}),
+            description_placeholders=_apple_description_placeholders(
+                self._apple_auth_session
+            ),
+            errors=errors,
+        )
+
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Create the options flow."""
@@ -447,6 +544,19 @@ async def _async_prepare_google_source(
     """Exchange a completed Google device flow for storable source data."""
     credentials = await IdleonCloudClient(hass).async_sign_in_google_device_code(
         device_code.device_code
+    )
+    prepared = _entry_data_from_cloud_credentials(user_input, credentials)
+    return prepared, _data_source_from_input(prepared)
+
+
+async def _async_prepare_apple_source(
+    hass: HomeAssistant,
+    user_input: dict[str, Any],
+    auth_session: IdleonAppleAuthSession,
+) -> tuple[dict[str, Any], IdleonDataSource]:
+    """Exchange a completed Apple authorization for storable source data."""
+    credentials = await IdleonCloudClient(hass).async_sign_in_apple_auth_session(
+        auth_session
     )
     prepared = _entry_data_from_cloud_credentials(user_input, credentials)
     return prepared, _data_source_from_input(prepared)
@@ -673,7 +783,7 @@ def _normalize_user_input(
             normalized[CONF_AUTH_PROVIDER] = provider
             normalized[CONF_IDLEON_EMAIL] = idleon_email
             normalized[CONF_IDLEON_PASSWORD] = idleon_password
-        elif provider == AUTH_PROVIDER_GOOGLE:
+        elif provider in {AUTH_PROVIDER_GOOGLE, AUTH_PROVIDER_APPLE}:
             normalized[CONF_AUTH_PROVIDER] = provider
         elif provider == AUTH_PROVIDER_STEAM:
             steam_response_url = str(
@@ -684,8 +794,6 @@ def _normalize_user_input(
             normalized[CONF_AUTH_PROVIDER] = provider
             if steam_response_url:
                 normalized[CONF_STEAM_OPENID_RESPONSE_URL] = steam_response_url
-        elif provider == AUTH_PROVIDER_APPLE:
-            raise IdleonAuthFailed(f"{provider.title()} login is not implemented yet")
         else:
             raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     else:
@@ -700,6 +808,7 @@ def _normalize_cloud_base_input(user_input: dict[str, Any]) -> dict[str, Any]:
     if auth_provider not in {
         AUTH_PROVIDER_EMAIL,
         AUTH_PROVIDER_GOOGLE,
+        AUTH_PROVIDER_APPLE,
         AUTH_PROVIDER_STEAM,
     }:
         raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
@@ -761,6 +870,15 @@ def _google_description_placeholders(
         "user_code": device_code.user_code,
         "expires_in": str(device_code.expires_in),
     }
+
+
+def _apple_description_placeholders(
+    auth_session: IdleonAppleAuthSession | None,
+) -> dict[str, str]:
+    """Return placeholders for the Apple authorization flow."""
+    if auth_session is None:
+        return {"authorization_url": "Loading..."}
+    return {"authorization_url": apple_authorize_url(auth_session)}
 
 
 def _source_description_placeholders(auth_provider: str | None) -> dict[str, str]:

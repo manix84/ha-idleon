@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Legends of Idleon",
-        "description": "Choose how HA Idleon should read account data. Google, email, and Steam login are implemented; Apple is a placeholder for future support.",
+        "description": "Choose how HA Idleon should read account data. Google, Apple, email, and Steam login are implemented.",
         "data": {
           "data_source_type": "Login or data source"
         }
@@ -38,11 +38,15 @@
       "google": {
         "title": "Authorize Google login",
         "description": "1. Open this Google login link:\n\n[{verification_url_complete}]({verification_url_complete})\n\n2. Confirm the code shown by Google matches this code:\n\n## {user_code}\n\n3. Finish signing in with the Google account used for Idleon.\n\n4. Return here and submit this form.\n\nIf the link does not prefill the code, open {verification_url} and enter the code manually. The code expires in about {expires_in} seconds."
+      },
+      "apple": {
+        "title": "Authorize Apple login",
+        "description": "1. Open this Apple sign-in link:\n\n[{authorization_url}]({authorization_url})\n\n2. Finish signing in with the Apple ID used for Idleon.\n\n3. Return here and submit this form.\n\nApple returns to Idleon's own authorization endpoint, then Home Assistant checks whether that authorization has completed."
       }
     },
     "error": {
       "already_configured": "This data source is already configured.",
-      "authorization_pending": "Google authorization is not complete yet. Finish the browser sign-in, then submit again.",
+      "authorization_pending": "Authorization is not complete yet. Finish the browser sign-in, then submit again.",
       "auth_failed": "Idleon authentication failed. Check the account details and try again.",
       "cannot_connect": "Cannot connect to or read the data source.",
       "invalid_json": "The data source did not return valid JSON.",
@@ -65,7 +69,7 @@
       }
     },
     "error": {
-      "authorization_pending": "Google authorization is not complete yet. Finish the browser sign-in, then submit again.",
+      "authorization_pending": "Authorization is not complete yet. Finish the browser sign-in, then submit again.",
       "auth_failed": "Idleon authentication failed. Check the account details and try again.",
       "cannot_connect": "Cannot connect to or read the data source.",
       "invalid_json": "The data source did not return valid JSON.",
