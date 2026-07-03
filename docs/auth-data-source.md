@@ -111,6 +111,40 @@ Stored config must be explicit:
 Passwords should not be stored after a successful token exchange unless the
 chosen API cannot refresh without them.
 
+## 🧾 Experimental Provider Logging
+
+Steam and Apple are instrumented with warning-level logs for setup failures and
+debug-level breadcrumbs for provider handoff stages. Logs must not include raw
+OpenID responses, Apple identity tokens, Firebase tokens, refresh tokens, or raw
+save data.
+
+Default warning logs should identify failures at these stages:
+
+- Steam callback state mismatch.
+- Missing HTTPS external URL for Steam.
+- Steam OpenID to Idleon custom-token exchange.
+- Steam custom token to Firebase credential exchange.
+- Apple auth-session start.
+- Apple pending authorization status.
+- Apple identity-token to Firebase credential exchange.
+- Cloud-save validation after provider auth succeeds.
+
+Enable debug logs during real-account testing when the warning is not enough:
+
+```yaml
+logger:
+  logs:
+    custom_components.idleon.config_flow: debug
+    custom_components.idleon.idleon_data.cloud: debug
+```
+
+Useful search strings:
+
+- `Steam authorization`
+- `Steam custom-token exchange failed`
+- `Steam Firebase custom-token sign-in failed`
+- `Apple authorization`
+
 ## 🔄 Coordinator Behavior
 
 For `idleon_cloud`, the coordinator should:

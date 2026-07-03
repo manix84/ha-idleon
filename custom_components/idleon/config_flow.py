@@ -155,6 +155,7 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.warning("Steam authorization callback state did not match")
                 self._steam_auth_failed_reason = "auth_failed"
                 return self.async_external_step_done(next_step_id="steam_auth_failed")
+            _LOGGER.debug("Steam authorization callback received for Idleon setup")
             self._steam_openid_response_url = str(
                 user_input[CONF_STEAM_OPENID_RESPONSE_URL]
             )
@@ -177,14 +178,21 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                     self.flow_id,
                     self._steam_state,
                 )
-            except NoURLAvailableError:
+            except NoURLAvailableError as err:
+                _LOGGER.warning(
+                    "Steam authorization could not start because no HTTPS external "
+                    "Home Assistant URL is available: %s",
+                    err,
+                )
                 errors["base"] = "no_url_available"
-            except IdleonAuthFailed:
+            except IdleonAuthFailed as err:
+                _LOGGER.warning("Steam authorization could not start: %s", err)
                 errors["base"] = "auth_failed"
             except Exception:
                 _LOGGER.exception("Unexpected error starting Steam authorization")
                 errors["base"] = "unknown"
             else:
+                _LOGGER.debug("Starting Steam authorization external step")
                 return self.async_external_step(
                     step_id="steam",
                     url=steam_openid_login_url(
@@ -406,9 +414,11 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._apple_auth_session = await IdleonCloudClient(
                     self.hass
                 ).async_start_apple_auth_session()
-            except IdleonCannotConnect:
+            except IdleonCannotConnect as err:
+                _LOGGER.warning("Apple authorization could not start: %s", err)
                 errors["base"] = "cannot_connect"
-            except IdleonAuthFailed:
+            except IdleonAuthFailed as err:
+                _LOGGER.warning("Apple authorization could not start: %s", err)
                 errors["base"] = "auth_failed"
             except Exception:
                 _LOGGER.exception("Unexpected error starting Apple authorization")
@@ -422,7 +432,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._apple_auth_session,
                 )
                 await _async_validate_source(self.hass, data_source)
-            except IdleonAuthPending:
+            except IdleonAuthPending as err:
+                _LOGGER.warning("Apple authorization is still pending: %s", err)
                 errors["base"] = "authorization_pending"
             except IdleonAuthFailed as err:
                 _LOGGER.warning("Apple authorization failed: %s", err)

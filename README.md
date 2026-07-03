@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.12.3-blue" alt="Version 0.12.3">
+  <img src="https://img.shields.io/badge/version-0.12.4-blue" alt="Version 0.12.4">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -194,6 +194,28 @@ Third-party data notices are listed in
 - No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
   characters may leave disabled or unavailable registry entries behind.
+
+## 🧾 Troubleshooting Experimental Login
+
+Steam and Apple setup failures should write warning-level logs without exposing
+tokens or raw account data. If a setup flow fails, check Home Assistant logs for:
+
+- `Steam authorization`
+- `Steam custom-token exchange failed`
+- `Steam Firebase custom-token sign-in failed`
+- `Apple authorization`
+
+For deeper handoff debugging, temporarily enable debug logging:
+
+```yaml
+logger:
+  logs:
+    custom_components.idleon.config_flow: debug
+    custom_components.idleon.idleon_data.cloud: debug
+```
+
+Debug logs include provider stage breadcrumbs, but they still avoid returned
+tokens and raw save data. Turn debug logging back off after testing.
 
 ## 🗺️ Roadmap
 

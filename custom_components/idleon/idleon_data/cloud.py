@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
@@ -46,6 +47,8 @@ STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login"
 STEAM_OPENID_NS = "http://specs.openid.net/auth/2.0"
 STEAM_OPENID_IDENTIFIER_SELECT = f"{STEAM_OPENID_NS}/identifier_select"
 STEAM_CUSTOM_TOKEN_URL = "https://us-central1-idlemmo.cloudfunctions.net/asil"
+
+_LOGGER = getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,6 +156,7 @@ class IdleonCloudClient:
 
     async def async_start_apple_auth_session(self) -> IdleonAppleAuthSession:
         """Start an Idleon Apple authorization session."""
+        _LOGGER.debug("Starting Idleon Apple authorization session")
         data = await self._async_post_form(
             APPLE_TOKEN_START_URL,
             {},
@@ -165,7 +169,9 @@ class IdleonCloudClient:
         auth_session: IdleonAppleAuthSession,
     ) -> IdleonCloudCredentials:
         """Poll Idleon's Apple auth status and exchange it for Firebase credentials."""
+        _LOGGER.debug("Checking Idleon Apple authorization status")
         apple_token = await self.async_get_apple_id_token(auth_session)
+        _LOGGER.debug("Idleon Apple authorization completed; signing in to Firebase")
         return await self.async_sign_in_apple_id_token(
             apple_token["id_token"],
             nonce=apple_token["nonce"],
@@ -217,7 +223,9 @@ class IdleonCloudClient:
         response_url: str,
     ) -> IdleonCloudCredentials:
         """Sign in to Firebase using a Steam OpenID response URL."""
+        _LOGGER.debug("Exchanging Steam OpenID response for Idleon custom token")
         custom_token = await self.async_get_steam_custom_token(response_url)
+        _LOGGER.debug("Steam custom token received; signing in to Firebase")
         return await self.async_sign_in_custom_token(custom_token)
 
     async def async_get_steam_custom_token(self, response_url: str) -> str:
@@ -225,7 +233,7 @@ class IdleonCloudClient:
         data = await self._async_post_json(
             STEAM_CUSTOM_TOKEN_URL,
             {"data": _steam_custom_token_request(response_url)},
-            auth_error_message="Steam authentication failed",
+            auth_error_message="Steam custom-token exchange failed",
         )
         return _custom_token_from_steam_response(data)
 
@@ -242,7 +250,7 @@ class IdleonCloudClient:
             f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithCustomToken"
             f"?key={FIREBASE_API_KEY}",
             payload,
-            auth_error_message="Steam authentication failed",
+            auth_error_message="Steam Firebase custom-token sign-in failed",
         )
         return _credentials_from_auth_response(data)
 

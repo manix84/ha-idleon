@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.12.4
+
+- Add stage-specific Steam and Apple login logging.
+- Document debug logger configuration for experimental provider testing.
+- Keep provider logs free of tokens and raw account data.
+
 ## 🚀 0.12.3
 
 - Label Steam and Apple as experimental in the setup flow.
