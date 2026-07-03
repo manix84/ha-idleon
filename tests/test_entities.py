@@ -349,6 +349,14 @@ async def test_account_sensors(
     }
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(total_money_entity_id).attributes["coin_tier"] == "Gold"
+    assert (
+        hass.states.get(total_money_entity_id).attributes["formatted_number"]
+        == "987.65K"
+    )
+    assert hass.states.get(total_money_entity_id).attributes["number_suffix"] == "K"
+    assert (
+        hass.states.get(total_money_entity_id).attributes["number_mantissa"] == "987.65"
+    )
     assert hass.states.get(green_stacks_entity_id).attributes["green_stack_sample"] == [
         "Oak Logs",
         "Copper Ore",
@@ -607,6 +615,9 @@ async def test_character_sensors(
     assert hass.states.get(money_raw_entity_id).state == "12345"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
     assert hass.states.get(money_entity_id).attributes["coin_tier"] == "Gold"
+    assert hass.states.get(money_entity_id).attributes["formatted_number"] == "12.34K"
+    assert hass.states.get(money_entity_id).attributes["number_suffix"] == "K"
+    assert hass.states.get(money_entity_id).attributes["number_mantissa"] == "12.34"
     assert hass.states.get(wisdom_entity_id) is None
     wisdom_registry_entry = entity_registry.async_get_entity_id(
         "sensor",

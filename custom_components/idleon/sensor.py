@@ -25,7 +25,11 @@ from . import IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
 from .models import IdleonCharacter
-from .utils.number_format import idleon_money_parts, idleon_raw_value
+from .utils.number_format import (
+    idleon_money_parts,
+    idleon_number_parts,
+    idleon_raw_value,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -986,11 +990,15 @@ def _character_money_raw(character: IdleonCharacter) -> str:
 
 def _money_attributes(raw_value: str) -> dict[str, str]:
     """Return standard formatted money attributes."""
-    formatted = idleon_money_parts(raw_value)
+    formatted_money = idleon_money_parts(raw_value)
+    formatted_number = idleon_number_parts(raw_value)
     return {
-        "raw_value": formatted.raw_value,
-        "coin_tier": formatted.coin_tier,
-        "coin_tier_value": formatted.coin_tier_value,
+        "raw_value": formatted_money.raw_value,
+        "coin_tier": formatted_money.coin_tier,
+        "coin_tier_value": formatted_money.coin_tier_value,
+        "formatted_number": formatted_number.formatted,
+        "number_suffix": formatted_number.suffix,
+        "number_mantissa": formatted_number.mantissa,
     }
 
 

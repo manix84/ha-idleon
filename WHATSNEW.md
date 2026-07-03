@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.22.1
+
+- Add generic Idleon suffix formatting attributes to formatted money sensors.
+- Cover account and character money abbreviation attributes in entity tests.
+
 ## 🚀 0.22.0
 
 - Add shared Idleon number and coin-tier money formatters that preserve exact raw values.

@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.22.0-blue" alt="Version 0.22.0">
+  <img src="https://img.shields.io/badge/version-0.22.1-blue" alt="Version 0.22.1">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -285,10 +285,10 @@ Money sensors follow this pattern:
 - `money`: formatted display value, such as `12.34 Gold`
 - `money_raw`: exact copper value as a string
 
-Formatted money sensors expose `raw_value`, `coin_tier`, and
-`coin_tier_value` attributes. Formatted money is intentionally not a numeric
-Home Assistant state because large Idleon values can exceed JavaScript-safe
-integer limits.
+Formatted money sensors expose `raw_value`, `coin_tier`, `coin_tier_value`,
+`formatted_number`, `number_suffix`, and `number_mantissa` attributes.
+Formatted money is intentionally not a numeric Home Assistant state because
+large Idleon values can exceed JavaScript-safe integer limits.
 
 ## 🔐 Privacy And Security
 
