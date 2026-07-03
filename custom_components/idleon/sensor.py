@@ -33,6 +33,12 @@ from .utils.number_format import (
 )
 
 ASSETS_PATH = Path(__file__).with_name("assets")
+CHARACTER_STAT_SENSOR_KEYS = {
+    "character_strength": "strength",
+    "character_agility": "agility",
+    "character_wisdom": "wisdom",
+    "character_luck": "luck",
+}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -806,6 +812,8 @@ class IdleonCharacterSensor(
             return None
         if self.entity_description.key == "character_class":
             return _class_entity_picture(character.character_class)
+        if stat_key := CHARACTER_STAT_SENSOR_KEYS.get(self.entity_description.key):
+            return _stat_entity_picture(stat_key)
         if self.entity_description.key != "character_money":
             return None
         return _money_entity_picture(_character_money_raw(character))
@@ -1149,6 +1157,14 @@ def _class_entity_picture(character_class: str) -> str | None:
         return None
     class_icon = class_icons[0]
     return f"{STATIC_URL_PATH}/{class_icon.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _stat_entity_picture(stat_key: str) -> str | None:
+    """Return the image URL for a character stat icon."""
+    stat_icon = ASSETS_PATH / "stats" / f"{stat_key}.png"
+    if not stat_icon.is_file():
+        return None
+    return f"{STATIC_URL_PATH}/{stat_icon.relative_to(ASSETS_PATH).as_posix()}"
 
 
 def _money_breakdown_attributes(

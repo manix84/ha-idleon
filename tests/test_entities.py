@@ -726,6 +726,39 @@ async def test_binary_sensors(
     assert "inventory_slots_used" not in hass.states.get(attention_entity_id).attributes
 
 
+async def test_character_stat_sensor_pictures(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+) -> None:
+    """Test enabled character stat sensors expose stat pictures."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    entry.add_to_hass(hass)
+    entity_registry = er.async_get(hass)
+    registry_entry = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_wisdom",
+        suggested_object_id="idleon_bubo_main_wisdom",
+        disabled_by=None,
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(registry_entry.entity_id)
+    assert state is not None
+    assert state.state == "320"
+    assert state.attributes["entity_picture"] == "/idleon_static/stats/wisdom.png"
+
+
 async def test_device_model(
     hass: HomeAssistant,
     sample_data_path: Path,

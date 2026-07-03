@@ -108,6 +108,14 @@ def test_class_icon_assets_exist() -> None:
         assert path.stat().st_size > 0
 
 
+def test_stat_assets_exist() -> None:
+    """Test main character stat assets are bundled with the integration."""
+    for stat_name in ("strength", "agility", "wisdom", "luck"):
+        path = ROOT / f"custom_components/idleon/assets/stats/{stat_name}.png"
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
 def test_served_brand_assets_are_transparent_pngs() -> None:
     """Test Home Assistant served brand assets preserve transparency."""
     for path in (

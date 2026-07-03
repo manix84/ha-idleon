@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.4
+
+- Add stat sensor entity pictures.
+
 ## 🚀 0.23.3
 
 - Add class sensor entity pictures.
