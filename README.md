@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.20.0-blue" alt="Version 0.20.0">
+  <img src="https://img.shields.io/badge/version-0.21.0-blue" alt="Version 0.21.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -211,6 +211,33 @@ Account sensors:
 - World 3 construction
 - World 3 armor smithy
 - World 3 hat rack
+- World 4 cooking
+- World 4 breeding
+- World 4 laboratory
+- World 4 rift
+- World 4 tome
+- World 5 sailing
+- World 5 divinity
+- World 5 gaming
+- World 5 hole
+- World 5 slab
+- World 6 farming
+- World 6 sneaking
+- World 6 summoning
+- World 6 beanstalk
+- World 6 emperor
+- World 7 spelunking
+- World 7 research
+- World 7 gallery
+- World 7 legend talents
+- World 7 coral reef
+- World 7 zenith market
+- World 7 clam work
+- World 7 advice fish
+- World 7 minehead
+- World 7 glimbo
+- World 7 sushi station
+- World 7 the button
 - Last updated is available but disabled by default because diagnostics now
   exposes the same timestamp for troubleshooting
 - Raw money

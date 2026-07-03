@@ -291,6 +291,114 @@
       "world_3_hat_rack": {
         "eligible_hats": 8,
         "bonus": 12
+      },
+      "world_4_cooking": {
+        "meals_unlocked": 42,
+        "total_meal_levels": 1234
+      },
+      "world_4_breeding": {
+        "pets_unlocked": 18,
+        "arena_wave": 250
+      },
+      "world_4_laboratory": {
+        "nodes_active": 11,
+        "jewels_owned": 9
+      },
+      "world_4_rift": {
+        "rift_level": 56,
+        "bonuses_unlocked": 12
+      },
+      "world_4_tome": {
+        "score": 9876,
+        "bonuses_unlocked": 15
+      },
+      "world_5_sailing": {
+        "boats": 20,
+        "artifacts_acquired": 65
+      },
+      "world_5_divinity": {
+        "gods_unlocked": 10,
+        "linked_characters": 11
+      },
+      "world_5_gaming": {
+        "bits": 123456,
+        "superbits_unlocked": 24
+      },
+      "world_5_hole": {
+        "caverns_unlocked": 17,
+        "schematics_unlocked": 35
+      },
+      "world_5_slab": {
+        "items_obtained": 1234,
+        "bonus_tier": 7
+      },
+      "world_6_farming": {
+        "crops_unlocked": 48,
+        "land_rank_total": 321
+      },
+      "world_6_sneaking": {
+        "jade": 654321,
+        "floors_unlocked": 12
+      },
+      "world_6_summoning": {
+        "highest_summoning_level": 92,
+        "bonuses_unlocked": 18
+      },
+      "world_6_beanstalk": {
+        "total_level": 44,
+        "charms_equipped": 8
+      },
+      "world_6_emperor": {
+        "bonuses_unlocked": 6,
+        "ribbons": 14
+      },
+      "world_7_spelunking": {
+        "chapters": 4,
+        "amber": 26531
+      },
+      "world_7_research": {
+        "occurrences": 25,
+        "grid_squares": 64
+      },
+      "world_7_gallery": {
+        "podiums_owned": 15,
+        "trophies_owned": 8
+      },
+      "world_7_legend_talents": {
+        "points_owned": 120,
+        "points_spent": 95
+      },
+      "world_7_coral_reef": {
+        "reef_level": 13,
+        "daily_gain": 500
+      },
+      "world_7_zenith_market": {
+        "bubbles_available": 4,
+        "purchases": 7
+      },
+      "world_7_clam_work": {
+        "jobs_completed": 19,
+        "bonus": 28
+      },
+      "world_7_advice_fish": {
+        "fish_level": 10,
+        "bonus": 33
+      },
+      "world_7_minehead": {
+        "upgrades": 21,
+        "trades": 55
+      },
+      "world_7_glimbo": {
+        "total_trades": 55,
+        "bonus": 12
+      },
+      "world_7_sushi_station": {
+        "upgrades": 16,
+        "bonus": 24
+      },
+      "world_7_the_button": {
+        "presses": 99,
+        "tasks_completed": 6
       }
     },
     "characters": [

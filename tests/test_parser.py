@@ -365,11 +365,38 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
             "StampLv": [{"0": 5, "length": 1}, {"0": 10, "length": 1}],
             "StampLvM": [{"0": 6, "length": 1}, {"0": 12, "length": 1}],
             "Cooking": [1, 0, 2],
+            "Breeding": [1, 0, 2],
+            "Meals": [1, 2],
+            "CookMaster": {"rank": 1},
+            "Pets": [1, 2],
+            "PetsStored": [0, 1],
+            "Lab": [1, 0, 2],
+            "Rift": [1, 2],
+            "tome": {"score": 1},
             "Sailing": [1, 2],
+            "Boats": [1, 2],
+            "Captains": [1],
+            "SailChests": [0, 1],
             "Divinity": [1],
+            "deityMinorBonus": [1],
+            "divinity": {"linked": 1},
+            "GamingSprout": [1],
+            "Research": [1, 0, 2],
+            "Jars": [1],
+            "Cards": [[], ["CraftMat1", "CraftMat2"]],
+            "Cards1": ["CraftMat1", "CraftMat2"],
             "FarmCrop": [1, 2, 3],
+            "FarmPlot": [1, 0],
+            "FarmRank": [1],
+            "FarmUpg": [1, 2],
+            "KRbest": [1],
             "Summon": [1, 0],
+            "Emperor": [1],
             "Holes": {"a": 1, "b": 0},
+            "gallery": [1, 2],
+            "level": 100,
+            "Sushi": [1, 2],
+            "stats": [1, 2],
             "companions": {
                 "l": [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                 "t": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -503,6 +530,40 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
     assert account.details["world_3_construction"]["CogMap"] == 1
     assert account.details["world_3_armor_smithy"] == {"ServerGemsReceived": 2}
     assert account.details["world_3_hat_rack"] == {"Spelunk": 2}
+    for detail_key in (
+        "world_4_cooking",
+        "world_4_breeding",
+        "world_4_laboratory",
+        "world_4_rift",
+        "world_4_tome",
+        "world_5_sailing",
+        "world_5_divinity",
+        "world_5_gaming",
+        "world_5_hole",
+        "world_5_slab",
+        "world_6_farming",
+        "world_6_sneaking",
+        "world_6_summoning",
+        "world_6_beanstalk",
+        "world_6_emperor",
+        "world_7_spelunking",
+        "world_7_research",
+        "world_7_gallery",
+        "world_7_legend_talents",
+        "world_7_coral_reef",
+        "world_7_zenith_market",
+        "world_7_clam_work",
+        "world_7_advice_fish",
+        "world_7_minehead",
+        "world_7_glimbo",
+        "world_7_sushi_station",
+        "world_7_the_button",
+    ):
+        assert account.details[detail_key]
+    assert account.details["world_4_cooking"]["Cooking"] == 2
+    assert account.details["world_5_sailing"]["Boats"] == 2
+    assert account.details["world_6_farming"]["FarmCrop"] == 3
+    assert account.details["world_7_sushi_station"]["Sushi"] == 2
 
 
 def test_parser_uses_packaged_item_label_fallbacks(

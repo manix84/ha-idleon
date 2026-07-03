@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.21.0
+
+- Add account sensors for requested World 4, World 5, World 6, and World 7 systems.
+- Parse compact later-world summaries from known raw Idleon fields and clean-data aliases.
+- Cover the new later-world entities and parser details in tests and documentation.
+
 ## 🚀 0.20.0
 
 - Add account sensors for World 3 printer, refinery, atom collider, equinox, buildings, death note, worship, prayers, traps, salt lick, construction, armor smithy, and hat rack.

@@ -298,6 +298,45 @@ async def test_account_sensors(
     assert hass.states.get(world_3_construction_entity_id).state == "2"
     assert hass.states.get(world_3_armor_smithy_entity_id).state == "2"
     assert hass.states.get(world_3_hat_rack_entity_id).state == "2"
+    later_world_entities = {
+        "world_4_cooking": "meals_unlocked",
+        "world_4_breeding": "pets_unlocked",
+        "world_4_laboratory": "nodes_active",
+        "world_4_rift": "rift_level",
+        "world_4_tome": "score",
+        "world_5_sailing": "boats",
+        "world_5_divinity": "gods_unlocked",
+        "world_5_gaming": "bits",
+        "world_5_hole": "caverns_unlocked",
+        "world_5_slab": "items_obtained",
+        "world_6_farming": "crops_unlocked",
+        "world_6_sneaking": "jade",
+        "world_6_summoning": "highest_summoning_level",
+        "world_6_beanstalk": "total_level",
+        "world_6_emperor": "bonuses_unlocked",
+        "world_7_spelunking": "chapters",
+        "world_7_research": "occurrences",
+        "world_7_gallery": "podiums_owned",
+        "world_7_legend_talents": "points_owned",
+        "world_7_coral_reef": "reef_level",
+        "world_7_zenith_market": "bubbles_available",
+        "world_7_clam_work": "jobs_completed",
+        "world_7_advice_fish": "fish_level",
+        "world_7_minehead": "upgrades",
+        "world_7_glimbo": "total_trades",
+        "world_7_sushi_station": "upgrades",
+        "world_7_the_button": "presses",
+    }
+    later_world_entity_ids = {
+        detail_key: entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_{detail_key}",
+        )
+        for detail_key in later_world_entities
+    }
+    for entity_id in later_world_entity_ids.values():
+        assert hass.states.get(entity_id).state == "2"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -467,6 +506,13 @@ async def test_account_sensors(
         ]
         == 8
     )
+    for detail_key, attribute_key in later_world_entities.items():
+        assert (
+            hass.states.get(later_world_entity_ids[detail_key]).attributes[detail_key][
+                attribute_key
+            ]
+            > 0
+        )
     assert last_updated_entity.entity_category is EntityCategory.DIAGNOSTIC
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     assert hass.states.get(last_updated_entity_id) is None

@@ -211,6 +211,87 @@
       "account_world_3_hat_rack": {
         "name": "World 3 hat rack"
       },
+      "account_world_4_cooking": {
+        "name": "World 4 cooking"
+      },
+      "account_world_4_breeding": {
+        "name": "World 4 breeding"
+      },
+      "account_world_4_laboratory": {
+        "name": "World 4 laboratory"
+      },
+      "account_world_4_rift": {
+        "name": "World 4 rift"
+      },
+      "account_world_4_tome": {
+        "name": "World 4 tome"
+      },
+      "account_world_5_sailing": {
+        "name": "World 5 sailing"
+      },
+      "account_world_5_divinity": {
+        "name": "World 5 divinity"
+      },
+      "account_world_5_gaming": {
+        "name": "World 5 gaming"
+      },
+      "account_world_5_hole": {
+        "name": "World 5 hole"
+      },
+      "account_world_5_slab": {
+        "name": "World 5 slab"
+      },
+      "account_world_6_farming": {
+        "name": "World 6 farming"
+      },
+      "account_world_6_sneaking": {
+        "name": "World 6 sneaking"
+      },
+      "account_world_6_summoning": {
+        "name": "World 6 summoning"
+      },
+      "account_world_6_beanstalk": {
+        "name": "World 6 beanstalk"
+      },
+      "account_world_6_emperor": {
+        "name": "World 6 emperor"
+      },
+      "account_world_7_spelunking": {
+        "name": "World 7 spelunking"
+      },
+      "account_world_7_research": {
+        "name": "World 7 research"
+      },
+      "account_world_7_gallery": {
+        "name": "World 7 gallery"
+      },
+      "account_world_7_legend_talents": {
+        "name": "World 7 legend talents"
+      },
+      "account_world_7_coral_reef": {
+        "name": "World 7 coral reef"
+      },
+      "account_world_7_zenith_market": {
+        "name": "World 7 zenith market"
+      },
+      "account_world_7_clam_work": {
+        "name": "World 7 clam work"
+      },
+      "account_world_7_advice_fish": {
+        "name": "World 7 advice fish"
+      },
+      "account_world_7_minehead": {
+        "name": "World 7 minehead"
+      },
+      "account_world_7_glimbo": {
+        "name": "World 7 glimbo"
+      },
+      "account_world_7_sushi_station": {
+        "name": "World 7 sushi station"
+      },
+      "account_world_7_the_button": {
+        "name": "World 7 the button"
+      },
       "character_level": {
         "name": "Level"
       },

@@ -253,6 +253,36 @@ WORLD_3_SYSTEM_RAW_FIELDS: Mapping[str, tuple[str, ...]] = {
     "world_3_armor_smithy": ("ServerGemsReceived",),
     "world_3_hat_rack": ("Spelunk",),
 }
+WORLD_SYSTEM_RAW_FIELDS: Mapping[str, tuple[str, ...]] = {
+    **WORLD_3_SYSTEM_RAW_FIELDS,
+    "world_4_cooking": ("Cooking", "Meals", "CookMaster", "Territory"),
+    "world_4_breeding": ("Breeding", "Cooking", "Pets", "PetsStored", "Territory"),
+    "world_4_laboratory": ("Lab",),
+    "world_4_rift": ("Rift",),
+    "world_4_tome": ("tome", "Tome"),
+    "world_5_sailing": ("Boats", "Captains", "SailChests", "Sailing"),
+    "world_5_divinity": ("Divinity", "deityMinorBonus", "divinity"),
+    "world_5_gaming": ("Gaming", "GamingSprout", "Research", "Spelunk"),
+    "world_5_hole": ("Holes", "Jars"),
+    "world_5_slab": ("Cards", "Cards1"),
+    "world_6_farming": ("FarmCrop", "FarmPlot", "FarmRank", "FarmUpg"),
+    "world_6_sneaking": ("Ninja", "Spelunk"),
+    "world_6_summoning": ("KRbest", "Summon"),
+    "world_6_beanstalk": ("Ninja",),
+    "world_6_emperor": ("Emperor", "Emporium", "serverVars"),
+    "world_7_spelunking": ("Spelunk", "Tower", "TowerInfo"),
+    "world_7_research": ("Research",),
+    "world_7_gallery": ("Spelunk", "gallery"),
+    "world_7_legend_talents": ("level", "Lv0"),
+    "world_7_coral_reef": ("Spelunk", "Tower", "TowerInfo"),
+    "world_7_zenith_market": ("Research", "Spelunk"),
+    "world_7_clam_work": ("Spelunk",),
+    "world_7_advice_fish": ("Research", "Spelunk"),
+    "world_7_minehead": ("Research",),
+    "world_7_glimbo": ("Research",),
+    "world_7_sushi_station": ("Sushi",),
+    "world_7_the_button": ("stats",),
+}
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -939,8 +969,8 @@ def _indexed_account_progress_details(
     if killroy:
         details["world_2_killroy"] = killroy
 
-    world_3_details = _indexed_world_3_details(raw_data)
-    details.update(world_3_details)
+    world_system_details = _indexed_world_system_details(raw_data)
+    details.update(world_system_details)
 
     return details
 
@@ -1686,8 +1716,8 @@ def _indexed_killroy(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _indexed_world_3_details(raw_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Return compact World 3 account system summaries."""
+def _indexed_world_system_details(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return compact account system summaries for later worlds."""
     details: dict[str, Any] = {}
 
     printer = _indexed_world_3_printer(raw_data)
@@ -1698,7 +1728,7 @@ def _indexed_world_3_details(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     if refinery:
         details["world_3_refinery"] = refinery
 
-    for detail_key, raw_keys in WORLD_3_SYSTEM_RAW_FIELDS.items():
+    for detail_key, raw_keys in WORLD_SYSTEM_RAW_FIELDS.items():
         if detail_key in details:
             continue
         summary = _raw_system_presence_summary(raw_data, raw_keys)
@@ -2035,6 +2065,60 @@ def _account_details(
             ("world_3_armor_smithy", "world3ArmorSmithy", "armor_smithy"),
         ),
         ("world_3_hat_rack", ("world_3_hat_rack", "world3HatRack", "hat_rack")),
+        ("world_4_cooking", ("world_4_cooking", "world4Cooking", "cooking")),
+        ("world_4_breeding", ("world_4_breeding", "world4Breeding", "breeding")),
+        (
+            "world_4_laboratory",
+            ("world_4_laboratory", "world4Laboratory", "laboratory", "lab"),
+        ),
+        ("world_4_rift", ("world_4_rift", "world4Rift", "rift")),
+        ("world_4_tome", ("world_4_tome", "world4Tome", "tome")),
+        ("world_5_sailing", ("world_5_sailing", "world5Sailing", "sailing")),
+        ("world_5_divinity", ("world_5_divinity", "world5Divinity", "divinity")),
+        ("world_5_gaming", ("world_5_gaming", "world5Gaming", "gaming")),
+        ("world_5_hole", ("world_5_hole", "world5Hole", "hole", "holes")),
+        ("world_5_slab", ("world_5_slab", "world5Slab", "slab", "looty")),
+        ("world_6_farming", ("world_6_farming", "world6Farming", "farming")),
+        ("world_6_sneaking", ("world_6_sneaking", "world6Sneaking", "sneaking")),
+        ("world_6_summoning", ("world_6_summoning", "world6Summoning", "summoning")),
+        ("world_6_beanstalk", ("world_6_beanstalk", "world6Beanstalk", "beanstalk")),
+        ("world_6_emperor", ("world_6_emperor", "world6Emperor", "emperor")),
+        (
+            "world_7_spelunking",
+            ("world_7_spelunking", "world7Spelunking", "spelunking"),
+        ),
+        ("world_7_research", ("world_7_research", "world7Research", "research")),
+        ("world_7_gallery", ("world_7_gallery", "world7Gallery", "gallery")),
+        (
+            "world_7_legend_talents",
+            ("world_7_legend_talents", "world7LegendTalents", "legend_talents"),
+        ),
+        (
+            "world_7_coral_reef",
+            ("world_7_coral_reef", "world7CoralReef", "coral_reef"),
+        ),
+        (
+            "world_7_zenith_market",
+            ("world_7_zenith_market", "world7ZenithMarket", "zenith_market"),
+        ),
+        (
+            "world_7_clam_work",
+            ("world_7_clam_work", "world7ClamWork", "clam_work"),
+        ),
+        (
+            "world_7_advice_fish",
+            ("world_7_advice_fish", "world7AdviceFish", "advice_fish"),
+        ),
+        ("world_7_minehead", ("world_7_minehead", "world7Minehead", "minehead")),
+        ("world_7_glimbo", ("world_7_glimbo", "world7Glimbo", "glimbo")),
+        (
+            "world_7_sushi_station",
+            ("world_7_sushi_station", "world7SushiStation", "sushi_station"),
+        ),
+        (
+            "world_7_the_button",
+            ("world_7_the_button", "world7TheButton", "the_button"),
+        ),
         (
             "world_summaries",
             (
@@ -2456,6 +2540,8 @@ def _raw_system_presence_summary(
             summary[_clean_display_text(key)] = len(
                 [item for item in value if item not in (None, 0, "", [], {})]
             )
+        elif value not in (None, 0, ""):
+            summary[_clean_display_text(key)] = 1
     return summary
 
 

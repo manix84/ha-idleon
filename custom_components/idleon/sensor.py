@@ -43,6 +43,37 @@ class IdleonCharacterSensorEntityDescription(SensorEntityDescription):
     detail_keys: tuple[str, ...] = ()
 
 
+LATER_WORLD_ACCOUNT_DETAIL_KEYS = (
+    "world_4_cooking",
+    "world_4_breeding",
+    "world_4_laboratory",
+    "world_4_rift",
+    "world_4_tome",
+    "world_5_sailing",
+    "world_5_divinity",
+    "world_5_gaming",
+    "world_5_hole",
+    "world_5_slab",
+    "world_6_farming",
+    "world_6_sneaking",
+    "world_6_summoning",
+    "world_6_beanstalk",
+    "world_6_emperor",
+    "world_7_spelunking",
+    "world_7_research",
+    "world_7_gallery",
+    "world_7_legend_talents",
+    "world_7_coral_reef",
+    "world_7_zenith_market",
+    "world_7_clam_work",
+    "world_7_advice_fish",
+    "world_7_minehead",
+    "world_7_glimbo",
+    "world_7_sushi_station",
+    "world_7_the_button",
+)
+
+
 ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_total_level",
@@ -424,6 +455,17 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             "world_3_hat_rack",
         ),
         detail_keys=("world_3_hat_rack",),
+    ),
+    *(
+        IdleonAccountSensorEntityDescription(
+            key=f"account_{detail_key}",
+            translation_key=f"account_{detail_key}",
+            value_fn=lambda coordinator, detail_key=detail_key: (
+                _account_detail_nested_count(coordinator, detail_key)
+            ),
+            detail_keys=(detail_key,),
+        )
+        for detail_key in LATER_WORLD_ACCOUNT_DETAIL_KEYS
     ),
 )
 
