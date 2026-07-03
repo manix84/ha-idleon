@@ -9,6 +9,7 @@ import zipfile
 from pathlib import Path
 
 from custom_components.idleon.const import DEFAULT_SCAN_INTERVAL, DOMAIN, VERSION
+from scripts.release_asset_manifest import release_asset_paths
 
 ROOT = Path(__file__).parents[1]
 
@@ -191,6 +192,53 @@ def test_release_archive_is_hacs_compatible() -> None:
         and parts[0] == "custom_components"
     }
     assert integrations == {"idleon"}
+
+
+def test_release_archive_contains_only_runtime_assets() -> None:
+    """Test release archives exclude source and unused asset categories."""
+    result = subprocess.run(
+        ["scripts/build-release"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    archive_path = Path(result.stdout.strip())
+
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+
+    expected_runtime_assets = {
+        "custom_components/idleon/assets/gem.png",
+        "custom_components/idleon/assets/coins/gold.png",
+        "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
+        "custom_components/idleon/assets/pouches/bug/big.png",
+        "custom_components/idleon/assets/stats/wisdom.png",
+    }
+    assert expected_runtime_assets <= names
+    assert (
+        "custom_components/idleon/assets/classes/mage/bubonic_conjuror.png" not in names
+    )
+    assert not any(name.startswith("assets/") for name in names)
+    assert not any(name.endswith((".psd", ".pdf")) for name in names)
+
+
+def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
+    """Test the release asset manifest includes only runtime asset categories."""
+    names = {path.as_posix() for path in release_asset_paths(ROOT)}
+
+    assert "custom_components/idleon/assets/gem.png" in names
+    assert "custom_components/idleon/assets/coins/polarity.png" in names
+    assert (
+        "custom_components/idleon/assets/classes/warrior/death_bringer_icon.png"
+        in names
+    )
+    assert "custom_components/idleon/assets/pouches/mining/average.png" in names
+    assert "custom_components/idleon/assets/stats/strength.png" in names
+    assert (
+        "custom_components/idleon/assets/classes/warrior/death_bringer.png" not in names
+    )
+    assert not any("/candy/" in name for name in names)
 
 
 def _png_color_type(path: Path) -> int:

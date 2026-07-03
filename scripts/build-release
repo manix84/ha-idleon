@@ -14,6 +14,8 @@ import tomllib
 import zipfile
 from pathlib import Path
 
+from scripts.release_asset_manifest import should_include_integration_file
+
 root = Path.cwd()
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
@@ -38,7 +40,7 @@ if manifest["version"] != version:
 
 with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
     for path in sorted((root / "custom_components/idleon").rglob("*")):
-        if path.is_file() and "__pycache__" not in path.parts:
+        if should_include_integration_file(path, root):
             archive.write(path, path.relative_to(root))
 
     for path in include_files:
