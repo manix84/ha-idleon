@@ -60,6 +60,7 @@ async def test_diagnostics_redaction(
     assert diagnostics["data_source"]["idleon_user_id"] == ("<redacted idleon user id>")
     assert diagnostics["data_source"]["has_idleon_refresh_token"] is True
     assert diagnostics["account"]["character_count"] == 2
+    assert diagnostics["account"]["last_updated"] == "2026-06-29T12:00:00+00:00"
     assert diagnostics["account"]["source_updated_at"] == "2026-06-29T12:00:00+00:00"
     assert "raw" not in diagnostics
     assert "characters" not in diagnostics["account"]

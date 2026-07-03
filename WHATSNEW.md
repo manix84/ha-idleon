@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.14.0
+
+- Add an explicit account last_updated timestamp to diagnostics.
+- Disable the Last updated account sensor by default.
+
 ## 🚀 0.13.0
 
 - Add a top-level quick start and screenshots for HACS users.

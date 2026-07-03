@@ -65,6 +65,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         value_fn=lambda coordinator: (
             coordinator.data.source_updated_at or coordinator.last_successful_update
         ),
+        entity_registry_enabled_default=False,
     ),
     IdleonAccountSensorEntityDescription(
         key="account_highest_character_level",
