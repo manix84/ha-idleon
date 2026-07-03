@@ -12,6 +12,7 @@ from custom_components.idleon.idleon_data import (
     IdleonInvalidSchema,
     parse_idleon_account,
 )
+from custom_components.idleon.idleon_data.website_data import WebsiteDataNotFoundError
 
 
 def test_parser_invalid_schema() -> None:
@@ -225,6 +226,40 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert character.details["equipped_tool_count"] == 1
     assert character.details["equipped_food_count"] == 1
     assert character.details["attack_loadout"] == ["90", "91"]
+
+
+def test_parser_uses_packaged_item_label_fallbacks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test core item labels work without ignored websiteData files."""
+    from custom_components.idleon.idleon_data import parser
+
+    def _raise_missing_website_data(key: str) -> None:
+        raise WebsiteDataNotFoundError(key)
+
+    monkeypatch.setattr(
+        parser,
+        "load_default_website_data_part",
+        _raise_missing_website_data,
+    )
+
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "InventoryOrder_0": ["FoodHealth1", "EquipmentHats1"],
+            "InvBagsUsed_0": ["InvBag1", "InvBag100"],
+        }
+    )
+
+    character = account.characters[0]
+
+    assert character.details["inventory_sample"] == ["Nomwich", "Farmer Brim"]
+    assert character.details["inventory_bags"] == [
+        "Inventory Bag A",
+        "Snakeskinventory Bag",
+    ]
 
 
 def test_parser_treats_inventory_as_full_when_all_usable_slots_are_occupied() -> None:

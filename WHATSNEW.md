@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.9.3
+
+- Add packaged fallback labels for core item and inventory bag IDs used by tests.
+- Cover parser behavior when ignored websiteData files are unavailable.
+
 ## 🚀 0.9.2
 
 - Generate WHATSNEW entries from commit subjects or body bullets.

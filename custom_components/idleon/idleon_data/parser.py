@@ -29,6 +29,18 @@ MAX_CARRY_CAPACITY_IGNORED_KEYS = {"fillerz"}
 MAX_CARRY_CAPACITY_LABELS = {
     "bCraft": "Materials",
 }
+FALLBACK_WEBSITE_LABELS = {
+    "invBags": {
+        "InvBag1": "Inventory Bag A",
+        "InvBag100": "Snakeskinventory Bag",
+    },
+    "items": {
+        "EquipmentHats1": "Farmer Brim",
+        "EquipmentShirts1": "Orange Tee",
+        "EquipmentTools1": "Copper Pickaxe",
+        "FoodHealth1": "Nomwich",
+    },
+}
 SKILL_LEVEL_LABELS = (
     "Character",
     "Mining",
@@ -880,6 +892,9 @@ def _display_label(value: Any, *, website_data_key: str) -> str:
                 display_name = item.get("displayName")
                 if isinstance(display_name, str) and display_name:
                     return _clean_display_text(display_name)
+    fallback = FALLBACK_WEBSITE_LABELS.get(website_data_key, {}).get(raw_value)
+    if fallback:
+        return fallback
     return _clean_display_text(raw_value)
 
 
