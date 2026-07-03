@@ -97,11 +97,11 @@
       "account_total_skill_level": {
         "name": "Total skill level"
       },
-      "account_total_money": {
-        "name": "Total money"
+      "account_money": {
+        "name": "Money"
       },
-      "account_raw_money": {
-        "name": "Raw money"
+      "account_money_raw": {
+        "name": "Money raw"
       },
       "account_green_stacks": {
         "name": "Green stacks"
@@ -321,6 +321,9 @@
       },
       "character_money": {
         "name": "Money"
+      },
+      "character_money_raw": {
+        "name": "Money raw"
       },
       "character_strength": {
         "name": "Strength"

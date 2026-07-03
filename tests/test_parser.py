@@ -61,8 +61,8 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.source_updated_at == datetime(2026, 6, 29, 12, tzinfo=UTC)
     assert account.details["highest_character_level"] == 123
     assert account.details["highest_level_character"] == "Wizard One"
-    assert account.details["total_money"] == 12345
-    assert account.details["raw_money"] == 12345
+    assert account.details["total_money"] == "12345"
+    assert account.details["raw_money"] == "12345"
     assert account.details["class_counts"] == {
         "Elemental Sorcerer": 1,
         "Squire": 1,
@@ -96,6 +96,28 @@ def test_parser_defaults_invalid_numbers() -> None:
     assert account.gems == 0
     assert account.characters[0].level == 0
     assert account.characters[0].afk_hours == 0.0
+
+
+def test_parser_preserves_large_money_values() -> None:
+    """Test parser preserves money values too large for JS-safe integers."""
+    raw_value = "125730617448470844548605638835437568"
+
+    account = parse_idleon_account(
+        {
+            "characters": [
+                {
+                    "name": "Big Money",
+                    "level": 1,
+                    "money": raw_value,
+                }
+            ],
+            "totalMoney": raw_value,
+        }
+    )
+
+    assert account.details["total_money"] == raw_value
+    assert account.details["raw_money"] == raw_value
+    assert account.characters[0].details["money"] == raw_value
 
 
 def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
@@ -224,11 +246,11 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
 
     character = account.characters[0]
 
-    assert account.details["raw_money"] == 1025
-    assert account.details["total_money"] == 1025
+    assert account.details["raw_money"] == "1025"
+    assert account.details["total_money"] == "1025"
     assert account.details["money_breakdown"] == {
-        "bank": 1000,
-        "characters": 25,
+        "bank": "1000",
+        "characters": "25",
     }
     assert account.details["green_stack_count"] == 2
     assert account.details["green_stack_sample"] == ["Thread", "Crimson String"]
@@ -236,7 +258,7 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert account.details["achievements_completed"] == 2
     assert character.inventory_full is False
     assert character.needs_attention is False
-    assert character.details["money"] == 25
+    assert character.details["money"] == "25"
     assert character.afk_hours == 495.21
     assert character.details["afk_seconds"] == 1782760.29
     assert "raw_afk_value" not in character.details

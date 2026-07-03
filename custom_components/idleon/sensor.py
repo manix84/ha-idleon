@@ -25,6 +25,7 @@ from . import IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
 from .models import IdleonCharacter
+from .utils.number_format import idleon_money_parts, idleon_raw_value
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -121,15 +122,15 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         detail_keys=("class_counts",),
     ),
     IdleonAccountSensorEntityDescription(
-        key="account_total_money",
-        translation_key="account_total_money",
-        value_fn=lambda coordinator: _account_money_value(coordinator, "total_money"),
+        key="account_money",
+        translation_key="account_money",
+        value_fn=lambda coordinator: _account_money_formatted(coordinator),
         detail_keys=("money_breakdown",),
     ),
     IdleonAccountSensorEntityDescription(
-        key="account_raw_money",
-        translation_key="account_raw_money",
-        value_fn=lambda coordinator: _account_money_value(coordinator, "raw_money"),
+        key="account_money_raw",
+        translation_key="account_money_raw",
+        value_fn=lambda coordinator: _account_money_raw(coordinator),
         detail_keys=("money_breakdown",),
     ),
     IdleonAccountSensorEntityDescription(
@@ -549,7 +550,14 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
     IdleonCharacterSensorEntityDescription(
         key="character_money",
         translation_key="character_money",
-        value_fn=lambda character: _detail_value(character, "money", 0),
+        value_fn=lambda character: _character_money_formatted(character),
+        detail_keys=("money",),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_money_raw",
+        translation_key="character_money_raw",
+        value_fn=lambda character: _character_money_raw(character),
+        detail_keys=("money",),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_strength",
@@ -597,7 +605,12 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
 NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
     description.key
     for description in ACCOUNT_SENSOR_DESCRIPTIONS
-    if description.key != "account_last_updated"
+    if description.key
+    not in {
+        "account_last_updated",
+        "account_money",
+        "account_money_raw",
+    }
 )
 NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
     description.key
@@ -608,6 +621,8 @@ NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
         "character_current_map",
         "character_current_activity",
         "character_highest_skill",
+        "character_money",
+        "character_money_raw",
     }
 )
 
@@ -689,6 +704,19 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             }
             return _remove_none_attributes(attributes)
 
+        if self.entity_description.key == "account_money":
+            attributes = _money_attributes(_account_money_raw(self.coordinator))
+            money_breakdown = _money_breakdown_attributes(self.coordinator)
+            if money_breakdown:
+                attributes["money_breakdown"] = money_breakdown
+            return attributes
+
+        if self.entity_description.key == "account_money_raw":
+            money_breakdown = _money_breakdown_attributes(self.coordinator)
+            if money_breakdown:
+                return {"money_breakdown": money_breakdown}
+            return None
+
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
         attributes = {
@@ -750,6 +778,8 @@ class IdleonCharacterSensor(
         character = self._character
         if character is None or not character.details:
             return None
+        if self.entity_description.key == "character_money":
+            return _money_attributes(_character_money_raw(character))
         attributes = _select_detail_attributes(
             character.details,
             self.entity_description.detail_keys,
@@ -931,16 +961,47 @@ def _account_detail_sum(
     return round(total, 2)
 
 
-def _account_money_value(coordinator: IdleonDataUpdateCoordinator, key: str) -> Any:
-    """Return parsed account money using current and compatibility detail keys."""
-    value = coordinator.data.details.get(key)
-    if value is None and key == "total_money":
-        value = coordinator.data.details.get("raw_money")
-    if value is None and key == "raw_money":
-        value = coordinator.data.details.get("total_money")
-    if isinstance(value, int | float):
-        return int(value) if isinstance(value, float) and value.is_integer() else value
-    return 0
+def _account_money_formatted(coordinator: IdleonDataUpdateCoordinator) -> str:
+    """Return formatted account money."""
+    return idleon_money_parts(_account_money_raw(coordinator)).formatted
+
+
+def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
+    """Return exact account money as a raw copper string."""
+    value = coordinator.data.details.get("raw_money")
+    if value is None:
+        value = coordinator.data.details.get("total_money", 0)
+    return idleon_raw_value(value)
+
+
+def _character_money_formatted(character: IdleonCharacter) -> str:
+    """Return formatted character money."""
+    return idleon_money_parts(_character_money_raw(character)).formatted
+
+
+def _character_money_raw(character: IdleonCharacter) -> str:
+    """Return exact character money as a raw copper string."""
+    return idleon_raw_value(character.details.get("money", 0))
+
+
+def _money_attributes(raw_value: str) -> dict[str, str]:
+    """Return standard formatted money attributes."""
+    formatted = idleon_money_parts(raw_value)
+    return {
+        "raw_value": formatted.raw_value,
+        "coin_tier": formatted.coin_tier,
+        "coin_tier_value": formatted.coin_tier_value,
+    }
+
+
+def _money_breakdown_attributes(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> dict[str, str] | None:
+    """Return money breakdown values as exact raw-value strings."""
+    money_breakdown = coordinator.data.details.get("money_breakdown")
+    if not isinstance(money_breakdown, Mapping):
+        return None
+    return {str(key): idleon_raw_value(value) for key, value in money_breakdown.items()}
 
 
 def _account_world_2_killroy_rooms_available(

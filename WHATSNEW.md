@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.22.0
+
+- Add shared Idleon number and coin-tier money formatters that preserve exact raw values.
+- Expose account and character money as formatted display sensors plus raw copper-string sensors.
+- Keep large money parsing integer-safe and cover tier boundaries in tests.
+
 ## 🚀 0.21.0
 
 - Add account sensors for requested World 4, World 5, World 6, and World 7 systems.

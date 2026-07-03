@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
+from ..utils.number_format import idleon_raw_value
 from .exceptions import IdleonInvalidSchema
 from .game_maps import afk_activity_label, class_name_label, map_name_label
 from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
@@ -654,9 +655,8 @@ def _indexed_character_details(
         "afk_target": afk_target,
         "afk_seconds": round(afk_seconds, 2),
     }
-    character_money = _coerce_float(raw_data.get(f"Money_{character_index}"))
-    if character_money is not None:
-        details["money"] = _compact_number(character_money)
+    if f"Money_{character_index}" in raw_data:
+        details["money"] = idleon_raw_value(raw_data.get(f"Money_{character_index}"))
     if raw_afk_value != afk_seconds:
         details["raw_afk_value"] = round(raw_afk_value, 2)
     details.update(_indexed_stat_details(raw_data, character_index))
@@ -840,18 +840,18 @@ def _indexed_account_details(
     """Return compact account-wide attributes for indexed exports."""
     details = _computed_account_details(characters)
 
-    bank_money = _coerce_float(raw_data.get("MoneyBANK")) or 0.0
+    bank_money = int(idleon_raw_value(raw_data.get("MoneyBANK")))
     character_money = sum(
-        _coerce_float(raw_data.get(f"Money_{index}")) or 0.0
+        int(idleon_raw_value(raw_data.get(f"Money_{index}")))
         for index, _character in enumerate(characters)
     )
     raw_money = bank_money + character_money
     if raw_money:
-        details["total_money"] = _compact_number(raw_money)
-        details["raw_money"] = _compact_number(raw_money)
+        details["total_money"] = str(raw_money)
+        details["raw_money"] = str(raw_money)
         details["money_breakdown"] = {
-            "bank": _compact_number(bank_money),
-            "characters": _compact_number(character_money),
+            "bank": str(bank_money),
+            "characters": str(character_money),
         }
 
     green_stacks = _maybe_json(raw_data.get("GreenStacks"))
@@ -1955,9 +1955,9 @@ def _character_details(character_data: Mapping[str, Any]) -> dict[str, Any]:
     """Return compact detailed attributes for flexible character mappings."""
     details = _first_mapping(character_data, ("details", "attributes")) or {}
     parsed_details = dict(details)
-    money = _first_float(character_data, ("money", "coins", "raw_money", "rawMoney"))
+    money = _first_value(character_data, ("money", "coins", "raw_money", "rawMoney"))
     if money is not None:
-        parsed_details["money"] = _compact_number(money)
+        parsed_details["money"] = idleon_raw_value(money)
     inventory = _first_value(character_data, ("inventory", "inventory_order"))
     if isinstance(inventory, list):
         usable_slots = sum(
@@ -1983,15 +1983,15 @@ def _account_details(
     """Return compact account-wide attributes for flexible mappings."""
     details = dict(_first_mapping(account_data, ("details", "attributes")) or {})
     details.update(_computed_account_details(characters))
-    total_money = _first_float(
+    total_money = _first_value(
         account_data,
         ("total_money", "totalMoney", "money", "coins"),
     )
-    raw_money = _first_float(account_data, ("raw_money", "rawMoney"))
+    raw_money = _first_value(account_data, ("raw_money", "rawMoney"))
     if total_money is not None:
-        details["total_money"] = _compact_number(total_money)
+        details["total_money"] = idleon_raw_value(total_money)
     if raw_money is not None:
-        details["raw_money"] = _compact_number(raw_money)
+        details["raw_money"] = idleon_raw_value(raw_money)
     if "total_money" not in details and "raw_money" in details:
         details["total_money"] = details["raw_money"]
     if "raw_money" not in details and "total_money" in details:
