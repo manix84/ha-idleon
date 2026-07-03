@@ -58,6 +58,12 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.gems == 42
     assert account.total_level == 133
     assert account.source_updated_at == datetime(2026, 6, 29, 12, tzinfo=UTC)
+    assert account.details["highest_character_level"] == 123
+    assert account.details["highest_level_character"] == "Wizard One"
+    assert account.details["class_counts"] == {
+        "Elemental Sorcerer": 1,
+        "Squire": 1,
+    }
     assert account.characters[0].character_id == "wizard_1"
     assert account.characters[0].name == "Wizard One"
     assert account.characters[0].level == 123
@@ -106,6 +112,13 @@ def test_parser_accepts_indexed_idleon_export(fixture_path: Path) -> None:
         1782760865.1540005,
         tz=UTC,
     )
+    assert account.details["highest_character_level"] == 1134
+    assert account.details["highest_level_character"] == "Character 1"
+    assert account.details["total_skill_level"] == 423
+    assert account.details["class_counts"] == {
+        "Death Bringer": 1,
+        "Elemental Sorcerer": 1,
+    }
 
     first_character = account.characters[0]
     assert first_character.character_id == "character_0"
@@ -179,6 +192,11 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
             "CurrentMap_0": 325,
             "Lv0_0": [1103],
             "PTimeAway_0": 1782760.29,
+            "MoneyBANK": 1000,
+            "Money_0": 25,
+            "GreenStacks": ["CraftMat1", "CraftMat2"],
+            "Cards1": ["EquipmentHats1", "FoodHealth1"],
+            "AchieveReg": [-1, 0, -1],
             "InventoryOrder_0": [
                 "LockedInvSpace",
                 "FoodHealth1",
@@ -203,6 +221,15 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
 
     character = account.characters[0]
 
+    assert account.details["raw_money"] == 1025
+    assert account.details["money_breakdown"] == {
+        "bank": 1000,
+        "characters": 25,
+    }
+    assert account.details["green_stack_count"] == 2
+    assert account.details["green_stack_sample"] == ["Thread", "Crimson String"]
+    assert account.details["slab_items_obtained"] == 2
+    assert account.details["achievements_completed"] == 2
     assert character.inventory_full is False
     assert character.needs_attention is False
     assert character.afk_hours == 0.5

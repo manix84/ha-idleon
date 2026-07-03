@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.12.4-blue" alt="Version 0.12.4">
+  <img src="https://img.shields.io/badge/version-0.12.5-blue" alt="Version 0.12.5">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -138,6 +138,12 @@ Account sensors:
 - Character count
 - Gems
 - Last updated
+- Highest character level
+- Total skill level
+- Raw money
+- Green stacks
+- Slab items obtained
+- Achievements completed
 
 Character sensors:
 
@@ -146,6 +152,12 @@ Character sensors:
 - Current map
 - Current activity
 - AFK hours
+- Inventory slots used/free
+- Highest skill
+- Total skill level
+- Equipped items
+- Strength, agility, wisdom, and luck sensors are available but disabled by
+  default
 
 Character binary sensors:
 

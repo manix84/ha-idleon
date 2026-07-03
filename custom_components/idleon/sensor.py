@@ -31,6 +31,7 @@ class IdleonAccountSensorEntityDescription(SensorEntityDescription):
     """Description for an account sensor."""
 
     value_fn: Callable[[IdleonDataUpdateCoordinator], Any]
+    detail_keys: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -63,6 +64,64 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda coordinator: (
             coordinator.data.source_updated_at or coordinator.last_successful_update
+        ),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_highest_character_level",
+        translation_key="account_highest_character_level",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "highest_character_level",
+            0,
+        ),
+        detail_keys=("highest_level_character", "class_counts"),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_total_skill_level",
+        translation_key="account_total_skill_level",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "total_skill_level",
+            0,
+        ),
+        detail_keys=("class_counts",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_raw_money",
+        translation_key="account_raw_money",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "raw_money",
+            0,
+        ),
+        detail_keys=("money_breakdown",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_green_stacks",
+        translation_key="account_green_stacks",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "green_stack_count",
+            0,
+        ),
+        detail_keys=("green_stack_sample",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_slab_items_obtained",
+        translation_key="account_slab_items_obtained",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "slab_items_obtained",
+            0,
+        ),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_achievements_completed",
+        translation_key="account_achievements_completed",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "achievements_completed",
+            0,
         ),
     ),
 )
@@ -133,6 +192,40 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         translation_key="character_highest_skill",
         value_fn=lambda character: _highest_skill_name(character),
         detail_keys=("highest_skill", "total_skill_level", "skill_levels", "stats"),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_total_skill_level",
+        translation_key="character_total_skill_level",
+        value_fn=lambda character: _detail_value(
+            character,
+            "total_skill_level",
+            0,
+        ),
+        detail_keys=("skill_levels", "highest_skill"),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_strength",
+        translation_key="character_strength",
+        value_fn=lambda character: _stat_value(character, "strength"),
+        entity_registry_enabled_default=False,
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_agility",
+        translation_key="character_agility",
+        value_fn=lambda character: _stat_value(character, "agility"),
+        entity_registry_enabled_default=False,
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_wisdom",
+        translation_key="character_wisdom",
+        value_fn=lambda character: _stat_value(character, "wisdom"),
+        entity_registry_enabled_default=False,
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_luck",
+        translation_key="character_luck",
+        value_fn=lambda character: _stat_value(character, "luck"),
+        entity_registry_enabled_default=False,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_equipped_items",
@@ -214,21 +307,29 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return account timestamp details where useful."""
-        if self.entity_description.key != "account_last_updated":
+        if self.entity_description.key == "account_last_updated":
+            attributes = {
+                "source_updated_at": (
+                    self.coordinator.data.source_updated_at.isoformat()
+                    if self.coordinator.data.source_updated_at
+                    else None
+                ),
+                "last_successful_update": (
+                    self.coordinator.last_successful_update.isoformat()
+                    if self.coordinator.last_successful_update
+                    else None
+                ),
+            }
+            return _remove_none_attributes(attributes)
+
+        if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
         attributes = {
-            "source_updated_at": (
-                self.coordinator.data.source_updated_at.isoformat()
-                if self.coordinator.data.source_updated_at
-                else None
-            ),
-            "last_successful_update": (
-                self.coordinator.last_successful_update.isoformat()
-                if self.coordinator.last_successful_update
-                else None
-            ),
+            key: self.coordinator.data.details[key]
+            for key in self.entity_description.detail_keys
+            if key in self.coordinator.data.details
         }
-        return _remove_none_attributes(attributes)
+        return attributes or None
 
 
 class IdleonCharacterSensor(
@@ -385,6 +486,26 @@ def _detail_value(
 ) -> Any:
     """Return a single parsed character detail value."""
     return character.details.get(key, default)
+
+
+def _account_detail_value(
+    coordinator: IdleonDataUpdateCoordinator,
+    key: str,
+    default: Any = None,
+) -> Any:
+    """Return a single parsed account detail value."""
+    return coordinator.data.details.get(key, default)
+
+
+def _stat_value(character: IdleonCharacter, key: str) -> int:
+    """Return a single parsed character stat value."""
+    stats = character.details.get("stats")
+    if not isinstance(stats, Mapping):
+        return 0
+    value = stats.get(key)
+    if isinstance(value, int | float):
+        return int(value)
+    return 0
 
 
 def _highest_skill_name(character: IdleonCharacter) -> str:

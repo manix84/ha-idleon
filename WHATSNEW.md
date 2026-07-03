@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.12.5
+
+- Parse compact account-wide summary details from Idleon data.
+- Add account sensors for skill, money, slab, green stack, and achievement summaries.
+- Add character total skill sensors and disabled-by-default primary stat sensors.
+
 ## 🚀 0.12.4
 
 - Add stage-specific Steam and Apple login logging.

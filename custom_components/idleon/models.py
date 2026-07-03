@@ -50,6 +50,7 @@ class IdleonAccount:
     gems: int
     characters: tuple[IdleonCharacter, ...]
     source_updated_at: datetime | None = None
+    details: Mapping[str, Any] = field(default_factory=dict)
 
     @property
     def character_count(self) -> int:

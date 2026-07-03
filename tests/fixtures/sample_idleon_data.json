@@ -4,6 +4,20 @@
     "name": "Sample Idleon Account",
     "gems": 1234,
     "last_updated": "2026-06-29T12:00:00+00:00",
+    "details": {
+      "raw_money": 987654,
+      "money_breakdown": {
+        "bank": 900000,
+        "characters": 87654
+      },
+      "green_stack_count": 3,
+      "green_stack_sample": [
+        "Oak Logs",
+        "Copper Ore"
+      ],
+      "slab_items_obtained": 456,
+      "achievements_completed": 78
+    },
     "characters": [
       {
         "id": "bubo-main",

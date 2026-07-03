@@ -118,9 +118,13 @@ Home Assistant should create:
 - One account device: `Legends of Idleon Account`.
 - Two character devices: `Idleon Character - Bubo Main` and
   `Idleon Character - Miner Alt`.
-- Account sensors for total level, character count, gems, and last updated.
-- Character sensors for level, class, current map, current activity, and AFK
-  hours.
+- Account sensors for total level, character count, gems, last updated, highest
+  character level, total skill level, raw money, green stacks, slab items
+  obtained, and achievements completed.
+- Character sensors for level, class, current map, current activity, AFK hours,
+  inventory slots, highest skill, total skill level, and equipped items.
+- Disabled-by-default character stat sensors for strength, agility, wisdom, and
+  luck.
 - Character binary sensors for inventory full and needs attention.
 
 The sample data should show:

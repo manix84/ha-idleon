@@ -117,6 +117,7 @@ def parse_idleon_account(raw_data: Any) -> IdleonAccount:
                 ("last_updated", "lastUpdated", "updated_at", "updatedAt"),
             )
         ),
+        details=_account_details(account_data, characters),
     )
 
 
@@ -151,6 +152,7 @@ def _parse_indexed_export(raw_data: Mapping[str, Any]) -> IdleonAccount:
         gems=_coerce_int(fields.get("GemsOwned")) or 0,
         characters=characters,
         source_updated_at=source_updated_at,
+        details=_indexed_account_details(fields, characters),
     )
 
 
@@ -606,6 +608,52 @@ def _indexed_loadout_details(
     return details
 
 
+def _indexed_account_details(
+    raw_data: Mapping[str, Any],
+    characters: tuple[IdleonCharacter, ...],
+) -> dict[str, Any]:
+    """Return compact account-wide attributes for indexed exports."""
+    details = _computed_account_details(characters)
+
+    bank_money = _coerce_float(raw_data.get("MoneyBANK")) or 0.0
+    character_money = sum(
+        _coerce_float(raw_data.get(f"Money_{index}")) or 0.0
+        for index, _character in enumerate(characters)
+    )
+    raw_money = bank_money + character_money
+    if raw_money:
+        details["raw_money"] = _compact_number(raw_money)
+        details["money_breakdown"] = {
+            "bank": _compact_number(bank_money),
+            "characters": _compact_number(character_money),
+        }
+
+    green_stacks = _maybe_json(raw_data.get("GreenStacks"))
+    if isinstance(green_stacks, list):
+        details["green_stack_count"] = len(green_stacks)
+        details["green_stack_sample"] = _limited_labels(green_stacks)
+
+    looty_raw = _indexed_looty_raw(raw_data)
+    if isinstance(looty_raw, list):
+        details["slab_items_obtained"] = len(looty_raw)
+
+    achievements = _maybe_json(raw_data.get("AchieveReg"))
+    if isinstance(achievements, list):
+        details["achievements_completed"] = sum(
+            1 for value in achievements if value == -1
+        )
+
+    return _remove_empty_detail_values(details)
+
+
+def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
+    """Return raw slab/looty item list from known export shapes."""
+    cards = _maybe_json(raw_data.get("Cards"))
+    if isinstance(cards, list) and len(cards) > 1:
+        return cards[1]
+    return _maybe_json(raw_data.get("Cards1"))
+
+
 def _equipment_group_labels(
     equipment: list[Any],
     group_index: int,
@@ -785,6 +833,46 @@ def _character_details(character_data: Mapping[str, Any]) -> dict[str, Any]:
     return _remove_empty_detail_values(parsed_details)
 
 
+def _account_details(
+    account_data: Mapping[str, Any],
+    characters: tuple[IdleonCharacter, ...],
+) -> dict[str, Any]:
+    """Return compact account-wide attributes for flexible mappings."""
+    details = dict(_first_mapping(account_data, ("details", "attributes")) or {})
+    details.update(_computed_account_details(characters))
+    return _remove_empty_detail_values(details)
+
+
+def _computed_account_details(
+    characters: tuple[IdleonCharacter, ...],
+) -> dict[str, Any]:
+    """Return account details computed from parsed character models."""
+    details: dict[str, Any] = {}
+    if not characters:
+        return details
+
+    highest_level_character = max(characters, key=lambda character: character.level)
+    details["highest_character_level"] = highest_level_character.level
+    details["highest_level_character"] = highest_level_character.name
+
+    total_skill_level = sum(
+        _coerce_int(character.details.get("total_skill_level")) or 0
+        for character in characters
+    )
+    if total_skill_level:
+        details["total_skill_level"] = total_skill_level
+
+    class_counts: dict[str, int] = {}
+    for character in characters:
+        class_counts[character.character_class] = (
+            class_counts.get(character.character_class, 0) + 1
+        )
+    if class_counts:
+        details["class_counts"] = dict(sorted(class_counts.items()))
+
+    return details
+
+
 def _normalize_characters(value: Any) -> list[tuple[str | None, Mapping[str, Any]]]:
     """Normalize list or mapping character collections."""
     if isinstance(value, Mapping):
@@ -851,6 +939,13 @@ def _coerce_float(value: Any) -> float | None:
         return float(value)
     except TypeError, ValueError:
         return None
+
+
+def _compact_number(value: float) -> int | float:
+    """Return an int when a float has no fractional value."""
+    if value.is_integer():
+        return int(value)
+    return round(value, 2)
 
 
 def _first_bool(data: Mapping[str, Any], keys: tuple[str, ...]) -> bool | None:

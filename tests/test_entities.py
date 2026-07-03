@@ -48,10 +48,60 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_last_updated",
     )
+    highest_level_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_highest_character_level",
+    )
+    total_skill_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_total_skill_level",
+    )
+    raw_money_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_raw_money",
+    )
+    green_stacks_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_green_stacks",
+    )
+    slab_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_slab_items_obtained",
+    )
+    achievements_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_achievements_completed",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
     assert hass.states.get(gems_entity_id).state == "1234"
+    assert hass.states.get(highest_level_entity_id).state == "210"
+    assert hass.states.get(total_skill_entity_id).state == "205"
+    assert hass.states.get(raw_money_entity_id).state == "987654"
+    assert hass.states.get(green_stacks_entity_id).state == "3"
+    assert hass.states.get(slab_entity_id).state == "456"
+    assert hass.states.get(achievements_entity_id).state == "78"
+    highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
+    assert highest_level_attributes["highest_level_character"] == "Bubo Main"
+    assert highest_level_attributes["class_counts"] == {
+        "Bubonic Conjuror": 1,
+        "Squire": 1,
+    }
+    assert hass.states.get(raw_money_entity_id).attributes["money_breakdown"] == {
+        "bank": 900000,
+        "characters": 87654,
+    }
+    assert hass.states.get(green_stacks_entity_id).attributes["green_stack_sample"] == [
+        "Oak Logs",
+        "Copper Ore",
+    ]
     last_updated_state = hass.states.get(last_updated_entity_id)
     assert last_updated_state.state == "2026-06-29T12:00:00+00:00"
     assert (
@@ -109,6 +159,16 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_highest_skill",
     )
+    total_skill_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_total_skill_level",
+    )
+    wisdom_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_wisdom",
+    )
     equipped_items_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -123,6 +183,15 @@ async def test_character_sensors(
     assert hass.states.get(inventory_used_entity_id).state == "2"
     assert hass.states.get(inventory_free_entity_id).state == "1"
     assert hass.states.get(highest_skill_entity_id).state == "Alchemy (95)"
+    assert hass.states.get(total_skill_entity_id).state == "205"
+    assert hass.states.get(wisdom_entity_id) is None
+    wisdom_registry_entry = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_wisdom",
+    )
+    assert wisdom_registry_entry is not None
+    assert entity_registry.async_get(wisdom_registry_entry).disabled
     assert hass.states.get(equipped_items_entity_id).state == "4"
 
     highest_skill_attributes = hass.states.get(highest_skill_entity_id).attributes

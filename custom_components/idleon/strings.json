@@ -91,6 +91,24 @@
       "account_last_updated": {
         "name": "Last updated"
       },
+      "account_highest_character_level": {
+        "name": "Highest character level"
+      },
+      "account_total_skill_level": {
+        "name": "Total skill level"
+      },
+      "account_raw_money": {
+        "name": "Raw money"
+      },
+      "account_green_stacks": {
+        "name": "Green stacks"
+      },
+      "account_slab_items_obtained": {
+        "name": "Slab items obtained"
+      },
+      "account_achievements_completed": {
+        "name": "Achievements completed"
+      },
       "character_level": {
         "name": "Level"
       },
@@ -114,6 +132,21 @@
       },
       "character_highest_skill": {
         "name": "Highest skill"
+      },
+      "character_total_skill_level": {
+        "name": "Total skill level"
+      },
+      "character_strength": {
+        "name": "Strength"
+      },
+      "character_agility": {
+        "name": "Agility"
+      },
+      "character_wisdom": {
+        "name": "Wisdom"
+      },
+      "character_luck": {
+        "name": "Luck"
       },
       "character_equipped_items": {
         "name": "Equipped items"
