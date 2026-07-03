@@ -93,6 +93,7 @@ def test_coin_assets_exist() -> None:
         path = ROOT / f"custom_components/idleon/assets/coins/{coin_name}.png"
         assert path.exists()
         assert path.stat().st_size > 0
+        assert _png_dimensions(path) == (36, 36)
         assert _png_has_transparent_edge_padding(path)
 
 
