@@ -282,6 +282,46 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert character.details["attack_loadout"] == ["90", "91"]
 
 
+def test_parser_normalizes_timestamp_style_afk_time() -> None:
+    """Test live Idleon PTimeAway timestamp values become elapsed AFK seconds."""
+    global_time = 1_782_844_478.309
+    last_claim_time = global_time - (9 * 3600) - (19 * 60) - 4
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "PTimeAway_0": last_claim_time / 1000,
+            "TimeAway": {"GlobalTime": global_time},
+        }
+    )
+
+    character = account.characters[0]
+
+    assert character.afk_hours == 9.32
+    assert character.details["afk_seconds"] == 33544
+    assert character.details["raw_afk_value"] == round(last_claim_time / 1000, 2)
+
+
+def test_parser_keeps_plain_second_afk_time() -> None:
+    """Test small PTimeAway values continue to parse as elapsed seconds."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "PTimeAway_0": 7200,
+            "TimeAway": {"GlobalTime": 1_782_844_478.309},
+        }
+    )
+
+    character = account.characters[0]
+
+    assert character.afk_hours == 2.0
+    assert character.details["afk_seconds"] == 7200
+    assert "raw_afk_value" not in character.details
+
+
 def test_parser_extracts_indexed_account_progress_groups() -> None:
     """Test indexed exports expose grouped account progress details."""
     account_options = [0] * 443

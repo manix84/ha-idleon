@@ -567,7 +567,7 @@ def _parse_indexed_character(
     current_map = raw_data.get(f"CurrentMap_{character_index}")
     afk_target = raw_data.get(f"AFKtarget_{character_index}")
     raw_afk_seconds = _coerce_float(raw_data.get(f"PTimeAway_{character_index}")) or 0.0
-    afk_seconds = _normalized_afk_seconds(raw_afk_seconds)
+    afk_seconds = _normalized_afk_seconds(raw_afk_seconds, raw_data)
     inventory_full = _indexed_inventory_full(raw_data, character_index)
     character_name = _indexed_character_name(character_index, character_names)
     details = _indexed_character_details(
@@ -1967,9 +1967,21 @@ def _inventory_slot_is_locked(value: Any) -> bool:
     return isinstance(value, str) and value.strip().lower() == "lockedinvspace"
 
 
-def _normalized_afk_seconds(value: float) -> float:
+def _normalized_afk_seconds(value: float, raw_data: Mapping[str, Any]) -> float:
     """Return AFK time normalized to seconds from known export units."""
+    global_time = _indexed_global_time(raw_data)
+    timestamp_value = value * 1000
+    if value > 1_000_000 and global_time is not None and global_time >= timestamp_value:
+        return global_time - timestamp_value
     return value
+
+
+def _indexed_global_time(raw_data: Mapping[str, Any]) -> float | None:
+    """Return the indexed export global time value when available."""
+    time_away = _maybe_json(raw_data.get("TimeAway"))
+    if not isinstance(time_away, Mapping):
+        return None
+    return _coerce_float(time_away.get("GlobalTime"))
 
 
 def _parse_indexed_source_updated_at(raw_data: Mapping[str, Any]) -> datetime | None:
