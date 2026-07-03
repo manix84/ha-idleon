@@ -35,22 +35,11 @@ GOOGLE_CLIENT_SECRET = "HzoZF-UKUNfFwBuz4vafwsaR"
 GOOGLE_AUTH_PROVIDER_ID = "google.com"
 GOOGLE_OAUTH_SCOPE = "email profile"
 FIREBASE_AUTH_REQUEST_URI = "http://localhost"
-FIREBASE_AUTH_HANDLER_URI = (
-    f"https://{FIREBASE_PROJECT_ID}.firebaseapp.com/__/auth/handler"
-)
-STEAM_OPENID_RETURN_URL = FIREBASE_AUTH_HANDLER_URI
-STEAM_OPENID_REALM = f"https://{FIREBASE_PROJECT_ID}.firebaseapp.com/"
 STEAM_AUTH_PROVIDER_ID = "steam.com"
-STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login?" + urlencode(
-    {
-        "openid.ns": "https://specs.openid.net/auth/2.0",
-        "openid.mode": "checkid_setup",
-        "openid.return_to": STEAM_OPENID_RETURN_URL,
-        "openid.realm": STEAM_OPENID_REALM,
-        "openid.identity": "https://specs.openid.net/auth/2.0/identifier_select",
-        "openid.claimed_id": "https://specs.openid.net/auth/2.0/identifier_select",
-    }
-)
+STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login"
+STEAM_OPENID_NS = "https://specs.openid.net/auth/2.0"
+STEAM_OPENID_IDENTIFIER_SELECT = f"{STEAM_OPENID_NS}/identifier_select"
+STEAM_CUSTOM_TOKEN_URL = "https://us-central1-idlemmo.cloudfunctions.net/asil"
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,14 +141,30 @@ class IdleonCloudClient:
         response_url: str,
     ) -> IdleonCloudCredentials:
         """Sign in to Firebase using a Steam OpenID response URL."""
+        custom_token = await self.async_get_steam_custom_token(response_url)
+        return await self.async_sign_in_custom_token(custom_token)
+
+    async def async_get_steam_custom_token(self, response_url: str) -> str:
+        """Exchange a Steam OpenID response for an Idleon Firebase custom token."""
+        data = await self._async_post_json(
+            STEAM_CUSTOM_TOKEN_URL,
+            {"data": _steam_custom_token_request(response_url)},
+            auth_error_message="Steam authentication failed",
+        )
+        return _custom_token_from_steam_response(data)
+
+    async def async_sign_in_custom_token(
+        self,
+        custom_token: str,
+    ) -> IdleonCloudCredentials:
+        """Sign in to Firebase using a custom auth token."""
         payload = {
-            "postBody": _steam_openid_post_body(response_url),
-            "requestUri": _steam_openid_request_uri(response_url),
-            "returnIdpCredential": True,
+            "token": custom_token,
             "returnSecureToken": True,
         }
         data = await self._async_post_json(
-            f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithIdp?key={FIREBASE_API_KEY}",
+            f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithCustomToken"
+            f"?key={FIREBASE_API_KEY}",
             payload,
             auth_error_message="Steam authentication failed",
         )
@@ -424,11 +429,22 @@ def _google_device_code_from_response(data: Any) -> IdleonGoogleDeviceCode:
     )
 
 
-def _steam_openid_post_body(response_url: str) -> str:
-    """Return a Firebase signInWithIdp postBody for Steam OpenID."""
-    params = _steam_openid_response_params(response_url)
-    params["providerId"] = STEAM_AUTH_PROVIDER_ID
-    return urlencode(params)
+def steam_openid_login_url(return_to: str, realm: str) -> str:
+    """Return a Steam OpenID login URL for a Home Assistant callback."""
+    return (
+        STEAM_OPENID_LOGIN_URL
+        + "?"
+        + urlencode(
+            {
+                "openid.ns": STEAM_OPENID_NS,
+                "openid.mode": "checkid_setup",
+                "openid.return_to": return_to,
+                "openid.realm": realm,
+                "openid.identity": STEAM_OPENID_IDENTIFIER_SELECT,
+                "openid.claimed_id": STEAM_OPENID_IDENTIFIER_SELECT,
+            }
+        )
+    )
 
 
 def _steam_openid_request_uri(response_url: str) -> str:
@@ -453,6 +469,32 @@ def _steam_openid_response_params(response_url: str) -> dict[str, str]:
     if params.get("openid.mode") != "id_res":
         raise IdleonAuthFailed("Steam OpenID response was not authorized")
     return params
+
+
+def _steam_custom_token_request(response_url: str) -> dict[str, str]:
+    """Return the Idleon cloud function payload for a Steam OpenID response."""
+    params = _steam_openid_response_params(response_url)
+    claimed_id = params.get("openid.claimed_id", "")
+    steam_id = claimed_id.rsplit("/", maxsplit=1)[-1]
+    if not steam_id.isdigit():
+        raise IdleonAuthFailed("Steam OpenID response has no Steam ID")
+    return {
+        "claimedId": steam_id,
+        "nonce": params["openid.response_nonce"],
+        "assocHandle": params["openid.assoc_handle"],
+        "sig": params["openid.sig"],
+        "signed": params["openid.signed"],
+    }
+
+
+def _custom_token_from_steam_response(data: Any) -> str:
+    """Return a Firebase custom token from Idleon's Steam auth response."""
+    if not isinstance(data, dict):
+        raise IdleonAuthFailed("Steam authentication returned invalid data")
+    custom_token = data.get("result")
+    if not isinstance(custom_token, str) or not custom_token:
+        raise IdleonAuthFailed("Steam authentication returned no token")
+    return custom_token
 
 
 def _coerce_int(value: Any, *, default: int) -> int:

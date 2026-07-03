@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.12.0
+
+- Replace the Steam paste-back URL field with a Home Assistant external config-flow step.
+- Add a Steam callback endpoint that resumes the config flow automatically.
+- Exchange Steam OpenID data through Idleon custom-token auth before storing Firebase refresh credentials.
+
 ## 🚀 0.11.0
 
 - Use the Idleon Firebase auth handler for Steam OpenID redirects.

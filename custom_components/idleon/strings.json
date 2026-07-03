@@ -22,9 +22,8 @@
       },
       "steam": {
         "title": "Authorize Steam login",
-        "description": "1. Open this Steam sign-in link:\n\n[{steam_login_url}]({steam_login_url})\n\n2. Finish signing in with the Steam account used for Idleon.\n\n3. After Steam redirects your browser, copy the full final browser address from the address bar.\n\n4. Paste that returned browser URL below, then submit this form.",
+        "description": "Choose a refresh interval, then submit to sign in with Steam. Home Assistant will open Steam and return here automatically after authorization.",
         "data": {
-          "steam_openid_response_url": "Steam returned browser URL",
           "scan_interval": "Scan interval in seconds"
         }
       },
@@ -48,6 +47,7 @@
       "cannot_connect": "Cannot connect to or read the data source.",
       "invalid_json": "The data source did not return valid JSON.",
       "invalid_schema": "The data source JSON does not look like Idleon account data.",
+      "no_url_available": "Home Assistant needs an HTTPS external URL to receive the Steam sign-in callback.",
       "unknown": "Unexpected error"
     },
     "abort": {

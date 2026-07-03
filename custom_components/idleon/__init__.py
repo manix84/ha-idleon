@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -25,6 +26,7 @@ from .const import (
 from .coordinator import IdleonDataUpdateCoordinator
 from .idleon_data import IdleonClient
 from .models import IdleonDataSource
+from .steam_auth import async_register_steam_auth_callback_view
 
 
 @dataclass(slots=True)
@@ -37,6 +39,12 @@ class IdleonRuntimeData:
 
 
 type IdleonConfigEntry = ConfigEntry[IdleonRuntimeData]
+
+
+async def async_setup(hass: HomeAssistant, _config: dict[str, Any]) -> bool:
+    """Set up HA Idleon integration globals."""
+    async_register_steam_auth_callback_view(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: IdleonConfigEntry) -> bool:

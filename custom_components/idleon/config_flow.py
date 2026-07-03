@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from contextlib import suppress
 from logging import getLogger
 from typing import Any
@@ -38,6 +39,7 @@ from .const import (
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    CONF_STEAM_CALLBACK_STATE,
     CONF_STEAM_OPENID_RESPONSE_URL,
     DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
@@ -56,12 +58,17 @@ from .idleon_data import (
     parse_idleon_account,
 )
 from .idleon_data.cloud import (
-    STEAM_OPENID_LOGIN_URL,
     IdleonCloudClient,
     IdleonCloudCredentials,
     IdleonGoogleDeviceCode,
+    steam_openid_login_url,
 )
 from .models import IdleonDataSource
+from .steam_auth import (
+    NoURLAvailableError,
+    async_register_steam_auth_callback_view,
+    steam_callback_url,
+)
 
 _LOGGER = getLogger(__name__)
 
@@ -74,6 +81,10 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
     _auth_provider: str | None = None
     _cloud_base_input: dict[str, Any] | None = None
     _pending_google_input: dict[str, Any] | None = None
+    _pending_steam_input: dict[str, Any] | None = None
+    _steam_openid_response_url: str | None = None
+    _steam_state: str | None = None
+    _steam_auth_failed_reason: str = "auth_failed"
     _google_device_code: IdleonGoogleDeviceCode | None = None
 
     async def async_step_user(
@@ -129,7 +140,103 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Handle Steam OpenID authorization."""
-        return await self._async_step_source_details("steam", user_input)
+        errors: dict[str, str] = {}
+
+        if user_input is not None and CONF_STEAM_OPENID_RESPONSE_URL in user_input:
+            if user_input.get(CONF_STEAM_CALLBACK_STATE) != self._steam_state:
+                self._steam_auth_failed_reason = "auth_failed"
+                return self.async_external_step_done(next_step_id="steam_auth_failed")
+            self._steam_openid_response_url = str(
+                user_input[CONF_STEAM_OPENID_RESPONSE_URL]
+            )
+            return self.async_external_step_done(next_step_id="steam_finish")
+
+        if user_input is not None:
+            try:
+                normalized_input = _normalize_user_input(
+                    self._data_source_type,
+                    user_input,
+                    auth_provider=self._auth_provider,
+                    base_input=self._cloud_base_input,
+                    require_steam_response=False,
+                )
+                self._pending_steam_input = normalized_input
+                self._steam_state = secrets.token_urlsafe(24)
+                async_register_steam_auth_callback_view(self.hass)
+                callback_url = steam_callback_url(
+                    self.hass,
+                    self.flow_id,
+                    self._steam_state,
+                )
+            except NoURLAvailableError:
+                errors["base"] = "no_url_available"
+            except IdleonAuthFailed:
+                errors["base"] = "auth_failed"
+            except Exception:
+                _LOGGER.exception("Unexpected error starting Steam authorization")
+                errors["base"] = "unknown"
+            else:
+                return self.async_external_step(
+                    step_id="steam",
+                    url=steam_openid_login_url(
+                        callback_url,
+                        _steam_openid_realm(callback_url),
+                    ),
+                )
+
+        return self.async_show_form(
+            step_id="steam",
+            data_schema=_source_details_schema(
+                self._data_source_type,
+                auth_provider=self._auth_provider,
+                steam_external=True,
+            ),
+            errors=errors,
+        )
+
+    async def async_step_steam_auth_failed(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Abort after a failed Steam external authorization."""
+        return self.async_abort(reason=self._steam_auth_failed_reason)
+
+    async def async_step_steam_finish(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Create an entry from a completed Steam authorization."""
+        if self._pending_steam_input is None or self._steam_openid_response_url is None:
+            return await self.async_step_user()
+
+        normalized_input = dict(self._pending_steam_input)
+        normalized_input[CONF_STEAM_OPENID_RESPONSE_URL] = (
+            self._steam_openid_response_url
+        )
+        try:
+            normalized_input, data_source = await _async_prepare_source(
+                self.hass,
+                normalized_input,
+            )
+            await _async_validate_source(self.hass, data_source)
+        except IdleonAuthFailed:
+            return self.async_abort(reason="auth_failed")
+        except IdleonCannotConnect:
+            return self.async_abort(reason="cannot_connect")
+        except IdleonInvalidJson:
+            return self.async_abort(reason="invalid_json")
+        except IdleonInvalidSchema:
+            return self.async_abort(reason="invalid_schema")
+        except Exception:
+            _LOGGER.exception("Unexpected error validating Steam authorization")
+            return self.async_abort(reason="unknown")
+
+        await self.async_set_unique_id(_source_unique_id(data_source))
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=_entry_title(data_source),
+            data=normalized_input,
+        )
 
     async def _async_step_source_details(
         self,
@@ -431,6 +538,7 @@ def _source_details_schema(
     defaults: dict[str, Any] | None = None,
     *,
     auth_provider: str | None = None,
+    steam_external: bool = False,
 ) -> vol.Schema:
     """Return the source details schema."""
     defaults = defaults or {}
@@ -454,6 +562,7 @@ def _source_details_schema(
     elif (
         data_source_type == DATA_SOURCE_IDLEON_CLOUD
         and auth_provider == AUTH_PROVIDER_STEAM
+        and not steam_external
     ):
         fields[
             vol.Required(
@@ -524,6 +633,7 @@ def _normalize_user_input(
     *,
     auth_provider: str | None = None,
     base_input: dict[str, Any] | None = None,
+    require_steam_response: bool = True,
 ) -> dict[str, Any]:
     """Validate conditional fields and return normalized entry data."""
     if not data_source_type:
@@ -564,10 +674,11 @@ def _normalize_user_input(
             steam_response_url = str(
                 user_input.get(CONF_STEAM_OPENID_RESPONSE_URL) or ""
             ).strip()
-            if not steam_response_url:
+            if require_steam_response and not steam_response_url:
                 raise IdleonAuthFailed("Steam OpenID response URL is required")
             normalized[CONF_AUTH_PROVIDER] = provider
-            normalized[CONF_STEAM_OPENID_RESPONSE_URL] = steam_response_url
+            if steam_response_url:
+                normalized[CONF_STEAM_OPENID_RESPONSE_URL] = steam_response_url
         elif provider == AUTH_PROVIDER_APPLE:
             raise IdleonAuthFailed(f"{provider.title()} login is not implemented yet")
         else:
@@ -649,9 +760,13 @@ def _google_description_placeholders(
 
 def _source_description_placeholders(auth_provider: str | None) -> dict[str, str]:
     """Return placeholders for source-specific setup instructions."""
-    if auth_provider == AUTH_PROVIDER_STEAM:
-        return {"steam_login_url": STEAM_OPENID_LOGIN_URL}
     return {"steam_login_url": ""}
+
+
+def _steam_openid_realm(callback_url: str) -> str:
+    """Return the OpenID realm for a Home Assistant Steam callback URL."""
+    parts = urlsplit(callback_url)
+    return urlunsplit((parts.scheme, parts.netloc, "/", "", ""))
 
 
 def _source_unique_id(data_source: IdleonDataSource) -> str:

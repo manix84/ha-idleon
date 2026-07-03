@@ -48,11 +48,11 @@ without embedding a browser in the config flow: Home Assistant shows a Google
 user code, then exchanges the completed Google authorization for Firebase
 credentials.
 
-Steam is implemented with a manual OpenID handoff: Home Assistant shows a Steam
-sign-in link, the user signs in through Steam, then copies the final returned
-browser URL back into the config flow. Apple is still more awkward in a Home
-Assistant server context because it requires provider-specific browser handoff
-pages.
+Steam is implemented with a Home Assistant external config-flow step: Home
+Assistant opens Steam, the user signs in, then Steam redirects back to a Home
+Assistant callback endpoint that resumes the flow. Apple is still more awkward
+in a Home Assistant server context because it requires provider-specific browser
+handoff pages.
 
 ## ☁️ Data Shape
 
@@ -93,7 +93,7 @@ Expected fields by provider:
 
 - `email`: email address and password. Implemented.
 - `google`: device-code flow state and verification URL. Implemented.
-- `steam`: Steam redirect URL pasted by the user after signing in. Implemented.
+- `steam`: Steam external step and Home Assistant callback. Implemented.
 - `apple`: Apple handoff state and verification URL.
 
 Stored config must be explicit:

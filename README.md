@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.11.0-blue" alt="Version 0.11.0">
+  <img src="https://img.shields.io/badge/version-0.12.0-blue" alt="Version 0.12.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -71,8 +71,6 @@ Fields:
 - `idleon_email`: required when using the `email` provider
 - `idleon_password`: required during `email` setup and not stored after a
   successful token exchange
-- `steam_openid_response_url`: required during `steam` setup and not stored
-  after a successful token exchange
 - `local_file_path`: required when using `local_file`
 - `scan_interval`: defaults to `300` seconds. The minimum is `300` seconds.
 
@@ -92,10 +90,9 @@ Supported providers:
 - `google`: shows a Google device-code login prompt, exchanges the completed
   Google authorization for Firebase tokens, and stores only the Firebase refresh
   token for future polling.
-- `steam`: shows a Steam OpenID sign-in link. After Steam redirects through the
-  Idleon Firebase auth handler, copy the full final browser URL back into Home
-  Assistant. The returned URL is exchanged for Firebase tokens and is not stored
-  after setup.
+- `steam`: opens Steam as a Home Assistant external setup step. After Steam
+  authorization, Steam redirects back to Home Assistant, which exchanges the
+  returned OpenID data for Firebase tokens and stores only the refresh token.
 - `apple`: visible in the first setup choice but not implemented yet.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
@@ -183,8 +180,8 @@ Third-party data notices are listed in
 ## 🚧 Known Limitations
 
 - Email/password, Google, and Steam are the implemented cloud login providers.
-- Steam setup currently requires copying the final returned browser URL back
-  into Home Assistant.
+- Steam setup requires Home Assistant to have an HTTPS external URL so Steam can
+  redirect back to the config flow.
 - Apple login is not implemented yet.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
@@ -194,8 +191,7 @@ Third-party data notices are listed in
 ## 🗺️ Roadmap
 
 - Expand authenticated cloud-source coverage beyond the initial save data.
-- Improve the Steam setup handoff if Home Assistant can support a cleaner
-  callback flow.
+- Harden Steam callback error handling as more real-world accounts are tested.
 - Add Apple login if it can be supported cleanly in Home Assistant.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
