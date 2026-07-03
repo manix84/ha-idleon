@@ -715,10 +715,12 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
 
     @property
     def entity_picture(self) -> str | None:
-        """Return the current coin tier picture for formatted money."""
-        if self.entity_description.key != "account_money":
-            return None
-        return _money_entity_picture(_account_money_raw(self.coordinator))
+        """Return an entity picture for account sensors with visual assets."""
+        if self.entity_description.key == "account_gems":
+            return f"{STATIC_URL_PATH}/gem.png"
+        if self.entity_description.key == "account_money":
+            return _money_entity_picture(_account_money_raw(self.coordinator))
+        return None
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:

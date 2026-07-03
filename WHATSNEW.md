@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.5
+
+- Add gem sensor entity picture.
+
 ## 🚀 0.23.4
 
 - Add stat sensor entity pictures.

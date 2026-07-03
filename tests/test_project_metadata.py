@@ -93,6 +93,19 @@ def test_coin_assets_exist() -> None:
         assert _png_dimensions(path) == (32, 32)
 
 
+def test_gem_asset_exists_with_padding() -> None:
+    """Test the bundled gem asset keeps transparent visual padding."""
+    source_path = ROOT / "assets/gem.png"
+    served_path = ROOT / "custom_components/idleon/assets/gem.png"
+
+    assert source_path.exists()
+    assert source_path.stat().st_size > 0
+    assert served_path.exists()
+    assert served_path.stat().st_size > 0
+    assert _png_dimensions(source_path) == (72, 72)
+    assert _png_dimensions(served_path) == (88, 88)
+
+
 def test_class_icon_assets_exist() -> None:
     """Test representative class icon assets are bundled with the integration."""
     class_icons = (
