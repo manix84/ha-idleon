@@ -43,7 +43,6 @@ CHARACTER_BINARY_SENSOR_DESCRIPTIONS = (
             "inventory_sample",
             "inventory_bag_count",
             "inventory_bags",
-            "max_carry_capacity",
         ),
     ),
     IdleonCharacterBinarySensorEntityDescription(

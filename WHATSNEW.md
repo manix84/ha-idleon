@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.0
+
+- Add character storage capacity sensors.
+
 ## 🚀 0.22.4
 
 - Add transparent padding around bundled money coin icons so they render cleanly in Home Assistant entity rows.

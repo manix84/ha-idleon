@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -30,6 +31,8 @@ from .utils.number_format import (
     idleon_number_parts,
     idleon_raw_value,
 )
+
+ASSETS_PATH = Path(__file__).with_name("assets")
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -638,18 +641,32 @@ async def async_setup_entry(
 ) -> None:
     """Set up Idleon sensors for a config entry."""
     coordinator = entry.runtime_data.coordinator
-    added_character_ids: set[str] = set()
+    added_character_sensor_ids: set[str] = set()
+    added_storage_sensor_ids: set[tuple[str, str]] = set()
 
     def _new_character_entities() -> list[SensorEntity]:
         entities: list[SensorEntity] = []
         for character in coordinator.data.characters:
-            if character.character_id in added_character_ids:
-                continue
-            added_character_ids.add(character.character_id)
-            entities.extend(
-                IdleonCharacterSensor(entry, coordinator, character, description)
-                for description in CHARACTER_SENSOR_DESCRIPTIONS
-            )
+            if character.character_id not in added_character_sensor_ids:
+                added_character_sensor_ids.add(character.character_id)
+                entities.extend(
+                    IdleonCharacterSensor(entry, coordinator, character, description)
+                    for description in CHARACTER_SENSOR_DESCRIPTIONS
+                )
+
+            for storage_type in _character_storage_capacities(character):
+                sensor_id = (character.character_id, storage_type)
+                if sensor_id in added_storage_sensor_ids:
+                    continue
+                added_storage_sensor_ids.add(sensor_id)
+                entities.append(
+                    IdleonCharacterStorageCapacitySensor(
+                        entry,
+                        coordinator,
+                        character,
+                        storage_type,
+                    )
+                )
         return entities
 
     def _add_new_character_entities() -> None:
@@ -818,6 +835,91 @@ class IdleonCharacterSensor(
         )
 
 
+class IdleonCharacterStorageCapacitySensor(
+    CoordinatorEntity[IdleonDataUpdateCoordinator],
+    SensorEntity,
+):
+    """Character storage pouch capacity sensor."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        entry: ConfigEntry[IdleonRuntimeData],
+        coordinator: IdleonDataUpdateCoordinator,
+        character: IdleonCharacter,
+        storage_type: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._character_id = character.character_id
+        self._storage_type = storage_type
+        self._attr_name = f"{storage_type} storage capacity"
+        self._attr_unique_id = (
+            f"{entry.entry_id}_{_slugify(character.character_id)}_"
+            f"character_storage_capacity_{_slugify(storage_type)}"
+        )
+        self._attr_device_info = _character_device_info(entry, character)
+
+    @property
+    def available(self) -> bool:
+        """Return whether the entity is available."""
+        return super().available and self._storage_capacity is not None
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the current maximum storage capacity."""
+        details = self._storage_capacity
+        if not details:
+            return None
+        value = details.get("maximum_capacity")
+        return value if isinstance(value, int) else None
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Return the largest acquired pouch picture."""
+        details = self._storage_capacity
+        if not details:
+            return None
+        asset_name = details.get("largest_pouch_asset")
+        if not isinstance(asset_name, str) or not asset_name:
+            return None
+        if not (ASSETS_PATH / asset_name).is_file():
+            return None
+        return f"{STATIC_URL_PATH}/{asset_name}"
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return capacity and pouch metadata."""
+        details = self._storage_capacity
+        if not details:
+            return None
+        return _normalize_attribute_value(details) or None
+
+    @property
+    def _character(self) -> IdleonCharacter | None:
+        """Return the current character model."""
+        return next(
+            (
+                character
+                for character in self.coordinator.data.characters
+                if character.character_id == self._character_id
+            ),
+            None,
+        )
+
+    @property
+    def _storage_capacity(self) -> Mapping[str, Any] | None:
+        """Return the current storage capacity details."""
+        character = self._character
+        if character is None:
+            return None
+        storage_capacities = _character_storage_capacities(character)
+        details = storage_capacities.get(self._storage_type)
+        return details if isinstance(details, Mapping) else None
+
+
 def _account_device_info(entry: ConfigEntry[IdleonRuntimeData]) -> DeviceInfo:
     """Return account device information."""
     return DeviceInfo(
@@ -904,6 +1006,14 @@ def _detail_value(
 ) -> Any:
     """Return a single parsed character detail value."""
     return character.details.get(key, default)
+
+
+def _character_storage_capacities(
+    character: IdleonCharacter,
+) -> Mapping[str, Any]:
+    """Return parsed storage capacity details for a character."""
+    value = character.details.get("storage_capacities")
+    return value if isinstance(value, Mapping) else {}
 
 
 def _account_detail_value(

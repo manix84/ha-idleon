@@ -30,6 +30,9 @@ MAX_CARRY_CAPACITY_IGNORED_KEYS = {"fillerz"}
 MAX_CARRY_CAPACITY_LABELS = {
     "bCraft": "Materials",
 }
+MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES = {
+    "Materials": "bCraft",
+}
 FALLBACK_WEBSITE_LABELS = {
     "invBags": {
         "InvBag1": "Inventory Bag A",
@@ -664,6 +667,7 @@ def _indexed_character_details(
     details.update(_indexed_inventory_details(raw_data, character_index))
     details.update(_indexed_inventory_bag_details(raw_data, character_index))
     details.update(_indexed_max_carry_capacity_details(raw_data, character_index))
+    details.update(_indexed_storage_capacity_details(raw_data, character_index))
     details.update(_indexed_loadout_details(raw_data, character_index))
     return _remove_empty_detail_values(details)
 
@@ -783,13 +787,10 @@ def _indexed_max_carry_capacity_details(
         return {}
 
     normalized_capacity = {
-        _max_carry_capacity_label(key): value
+        _max_carry_capacity_label(key): coerced_value
         for key, value in max_carry_capacity.items()
-        if (
-            isinstance(key, str)
-            and key not in MAX_CARRY_CAPACITY_IGNORED_KEYS
-            and _coerce_int(value) is not None
-        )
+        if (coerced_value := _coerce_int(value)) is not None
+        if (isinstance(key, str) and key not in MAX_CARRY_CAPACITY_IGNORED_KEYS)
     }
     if not normalized_capacity:
         return {}
@@ -799,9 +800,93 @@ def _indexed_max_carry_capacity_details(
     }
 
 
+def _indexed_storage_capacity_details(
+    raw_data: Mapping[str, Any],
+    character_index: int,
+) -> dict[str, Any]:
+    """Return structured per-storage carry capacity details."""
+    max_carry_capacity = _maybe_json(raw_data.get(f"MaxCarryCap_{character_index}"))
+    if not isinstance(max_carry_capacity, Mapping):
+        return {}
+
+    carry_bags = _website_data_mapping("carryBags")
+    storage_capacities: dict[str, Any] = {}
+    for raw_key, raw_value in max_carry_capacity.items():
+        if not isinstance(raw_key, str) or raw_key in MAX_CARRY_CAPACITY_IGNORED_KEYS:
+            continue
+        maximum_capacity = _coerce_int(raw_value)
+        if maximum_capacity is None:
+            continue
+
+        label = _max_carry_capacity_label(raw_key)
+        largest_pouch = _largest_carry_bag(carry_bags, raw_key, maximum_capacity)
+        base_capacity = maximum_capacity
+        largest_pouch_label = "Unknown"
+        largest_pouch_asset = None
+        if largest_pouch:
+            bag_capacity, display_name = largest_pouch
+            base_capacity = bag_capacity
+            largest_pouch_label = _clean_display_text(display_name)
+            largest_pouch_asset = _carry_bag_asset_filename(display_name)
+
+        details = {
+            "storage_type": label,
+            "raw_storage_type": raw_key,
+            "base_capacity": base_capacity,
+            "capacity_per_slot": base_capacity,
+            "maximum_capacity": maximum_capacity,
+            "largest_pouch": largest_pouch_label,
+            "largest_pouch_asset": largest_pouch_asset,
+        }
+        storage_capacities[label] = _remove_empty_detail_values(details)
+
+    if not storage_capacities:
+        return {}
+    return {"storage_capacities": storage_capacities}
+
+
 def _max_carry_capacity_label(key: str) -> str:
     """Return a Home Assistant friendly carry capacity category label."""
     return MAX_CARRY_CAPACITY_LABELS.get(key, key)
+
+
+def _largest_carry_bag(
+    carry_bags: Mapping[str, Any],
+    raw_key: str,
+    maximum_capacity: int,
+) -> tuple[int, str] | None:
+    """Return the largest known carry bag that fits the current max capacity."""
+    category_key = MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES.get(raw_key, raw_key)
+    category = carry_bags.get(category_key)
+    if not isinstance(category, Mapping):
+        return None
+
+    selected: tuple[int, str] | None = None
+    for bag in category.values():
+        if not isinstance(bag, Mapping):
+            continue
+        capacity = _coerce_int(bag.get("capacity"))
+        display_name = bag.get("displayName")
+        if capacity is None or not isinstance(display_name, str):
+            continue
+        if capacity <= maximum_capacity and (
+            selected is None or capacity > selected[0]
+        ):
+            selected = (capacity, display_name)
+    return selected
+
+
+def _carry_bag_asset_filename(display_name: str) -> str:
+    """Return the static asset filename for a carry bag display name."""
+    parts = [part.lower() for part in re.split(r"[_\s]+", display_name.strip()) if part]
+    if len(parts) < 3 or parts[-1] != "pouch":
+        return f"{'_'.join(parts)}.png"
+
+    storage_type = parts[-2]
+    prefix = "_".join(parts[:-2])
+    if not prefix:
+        return f"{storage_type}_pouch.png"
+    return f"{storage_type}_pouch_{prefix}.png"
 
 
 def _indexed_loadout_details(

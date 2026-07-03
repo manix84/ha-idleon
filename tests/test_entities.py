@@ -599,6 +599,16 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_money_raw",
     )
+    bug_storage_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_storage_capacity_bugs",
+    )
+    material_storage_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_storage_capacity_materials",
+    )
     wisdom_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -634,6 +644,8 @@ async def test_character_sensors(
     assert hass.states.get(money_entity_id).attributes["formatted_number"] == "12.34K"
     assert hass.states.get(money_entity_id).attributes["number_suffix"] == "K"
     assert hass.states.get(money_entity_id).attributes["number_mantissa"] == "12.34"
+    assert hass.states.get(bug_storage_entity_id).state == "1250"
+    assert hass.states.get(material_storage_entity_id).state == "100"
     assert hass.states.get(wisdom_entity_id) is None
     wisdom_registry_entry = entity_registry.async_get_entity_id(
         "sensor",
@@ -652,6 +664,15 @@ async def test_character_sensors(
     assert highest_skill_attributes["total_skill_level"] == 205
     assert highest_skill_attributes["skill_levels"]["Mining"] == 62
     assert highest_skill_attributes["stats"]["wisdom"] == 320
+
+    bug_storage_attributes = hass.states.get(bug_storage_entity_id).attributes
+    assert bug_storage_attributes["base_capacity"] == 1000
+    assert bug_storage_attributes["capacity_per_slot"] == 1000
+    assert bug_storage_attributes["maximum_capacity"] == 1250
+    assert bug_storage_attributes["largest_pouch"] == "Big Bug Pouch"
+    assert (
+        bug_storage_attributes["entity_picture"] == "/idleon_static/bug_pouch_big.png"
+    )
 
     equipped_items_attributes = hass.states.get(equipped_items_entity_id).attributes
     assert equipped_items_attributes["equipped_items"] == [

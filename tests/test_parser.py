@@ -656,7 +656,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "CurrentMap_0": 325,
             "Lv0_0": [1103],
             "MaxCarryCap_0": {
-                "Mining": 10,
+                "Mining": 250,
                 "fillerz": 10,
                 "bCraft": 100,
                 "Foods": "25",
@@ -666,9 +666,38 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
     )
 
     assert account.characters[0].details["max_carry_capacity"] == {
-        "Mining": 10,
+        "Mining": 250,
         "Materials": 100,
-        "Foods": "25",
+        "Foods": 25,
+    }
+    assert account.characters[0].details["storage_capacities"] == {
+        "Mining": {
+            "storage_type": "Mining",
+            "raw_storage_type": "Mining",
+            "base_capacity": 250,
+            "capacity_per_slot": 250,
+            "maximum_capacity": 250,
+            "largest_pouch": "Average Mining Pouch",
+            "largest_pouch_asset": "mining_pouch_average.png",
+        },
+        "Materials": {
+            "storage_type": "Materials",
+            "raw_storage_type": "bCraft",
+            "base_capacity": 100,
+            "capacity_per_slot": 100,
+            "maximum_capacity": 100,
+            "largest_pouch": "Small Material Pouch",
+            "largest_pouch_asset": "material_pouch_small.png",
+        },
+        "Foods": {
+            "storage_type": "Foods",
+            "raw_storage_type": "Foods",
+            "base_capacity": 25,
+            "capacity_per_slot": 25,
+            "maximum_capacity": 25,
+            "largest_pouch": "Miniscule Food Pouch",
+            "largest_pouch_asset": "food_pouch_miniscule.png",
+        },
     }
 
 
@@ -707,7 +736,7 @@ def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:
     ]
     assert first_character.details["max_carry_capacity"] == {
         "Copper": 250,
-        "OakTree": "500",
+        "OakTree": 500,
     }
 
     second_character = account.characters[1]

@@ -454,7 +454,27 @@
           "attack_loadout": [
             "Power Strike",
             "Book of the Wise"
-          ]
+          ],
+          "storage_capacities": {
+            "Bugs": {
+              "storage_type": "Bugs",
+              "raw_storage_type": "Bugs",
+              "base_capacity": 1000,
+              "capacity_per_slot": 1000,
+              "maximum_capacity": 1250,
+              "largest_pouch": "Big Bug Pouch",
+              "largest_pouch_asset": "bug_pouch_big.png"
+            },
+            "Materials": {
+              "storage_type": "Materials",
+              "raw_storage_type": "bCraft",
+              "base_capacity": 100,
+              "capacity_per_slot": 100,
+              "maximum_capacity": 100,
+              "largest_pouch": "Small Material Pouch",
+              "largest_pouch_asset": "material_pouch_small.png"
+            }
+          }
         }
       },
       {
