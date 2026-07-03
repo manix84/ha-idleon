@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.22.4
+
+- Add transparent padding around bundled money coin icons so they render cleanly in Home Assistant entity rows.
+- Cover the expected padded coin asset dimensions in metadata tests.
+
 ## 🚀 0.22.3
 
 - Bundle Idleon coin tier PNGs with the integration and serve them from a local static path.

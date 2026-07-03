@@ -90,6 +90,7 @@ def test_coin_assets_exist() -> None:
         path = ROOT / f"custom_components/idleon/assets/coin_{coin_name}.png"
         assert path.exists()
         assert path.stat().st_size > 0
+        assert _png_dimensions(path) == (32, 32)
 
 
 def test_served_brand_assets_are_transparent_pngs() -> None:
@@ -162,3 +163,11 @@ def _png_color_type(path: Path) -> int:
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
     assert data[12:16] == b"IHDR"
     return data[25]
+
+
+def _png_dimensions(path: Path) -> tuple[int, int]:
+    """Return PNG dimensions from the IHDR chunk."""
+    data = path.read_bytes()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert data[12:16] == b"IHDR"
+    return int.from_bytes(data[16:20]), int.from_bytes(data[20:24])
