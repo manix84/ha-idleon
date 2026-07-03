@@ -1132,7 +1132,7 @@ def _money_entity_picture(raw_value: str) -> str:
     """Return the image URL for the current money coin tier."""
     formatted_money = idleon_money_parts(raw_value)
     coin_slug = formatted_money.coin_tier.lower().replace(" ", "_")
-    return f"{STATIC_URL_PATH}/coin_{coin_slug}.png"
+    return f"{STATIC_URL_PATH}/coins/{coin_slug}.png"
 
 
 def _money_breakdown_attributes(

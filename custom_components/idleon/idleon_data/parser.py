@@ -880,13 +880,13 @@ def _carry_bag_asset_filename(display_name: str) -> str:
     """Return the static asset filename for a carry bag display name."""
     parts = [part.lower() for part in re.split(r"[_\s]+", display_name.strip()) if part]
     if len(parts) < 3 or parts[-1] != "pouch":
-        return f"{'_'.join(parts)}.png"
+        return f"pouches/{'_'.join(parts)}.png"
 
     storage_type = parts[-2]
     prefix = "_".join(parts[:-2])
     if not prefix:
-        return f"{storage_type}_pouch.png"
-    return f"{storage_type}_pouch_{prefix}.png"
+        return f"pouches/{storage_type}.png"
+    return f"pouches/{storage_type}_{prefix}.png"
 
 
 def _indexed_loadout_details(

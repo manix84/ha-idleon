@@ -87,7 +87,7 @@ def test_coin_assets_exist() -> None:
     }
 
     for coin_name in coin_names:
-        path = ROOT / f"custom_components/idleon/assets/coin_{coin_name}.png"
+        path = ROOT / f"custom_components/idleon/assets/coins/{coin_name}.png"
         assert path.exists()
         assert path.stat().st_size > 0
         assert _png_dimensions(path) == (32, 32)

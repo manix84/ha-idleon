@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.1
+
+- Reorganize bundled Idleon assets.
+
 ## 🚀 0.23.0
 
 - Add character storage capacity sensors.
