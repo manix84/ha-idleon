@@ -671,7 +671,7 @@ async def test_character_sensors(
     assert bug_storage_attributes["maximum_capacity"] == 1250
     assert bug_storage_attributes["largest_pouch"] == "Big Bug Pouch"
     assert (
-        bug_storage_attributes["entity_picture"] == "/idleon_static/pouches/bug_big.png"
+        bug_storage_attributes["entity_picture"] == "/idleon_static/pouches/bug/big.png"
     )
 
     equipped_items_attributes = hass.states.get(equipped_items_entity_id).attributes

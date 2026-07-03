@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.23.2
+
+- Nest pouch assets by type.
+
 ## 🚀 0.23.1
 
 - Reorganize bundled Idleon assets.

@@ -463,7 +463,7 @@
               "capacity_per_slot": 1000,
               "maximum_capacity": 1250,
               "largest_pouch": "Big Bug Pouch",
-              "largest_pouch_asset": "pouches/bug_big.png"
+              "largest_pouch_asset": "pouches/bug/big.png"
             },
             "Materials": {
               "storage_type": "Materials",
@@ -472,7 +472,7 @@
               "capacity_per_slot": 100,
               "maximum_capacity": 100,
               "largest_pouch": "Small Material Pouch",
-              "largest_pouch_asset": "pouches/material_small.png"
+              "largest_pouch_asset": "pouches/material/small.png"
             }
           }
         }

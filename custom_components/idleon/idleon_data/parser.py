@@ -886,7 +886,7 @@ def _carry_bag_asset_filename(display_name: str) -> str:
     prefix = "_".join(parts[:-2])
     if not prefix:
         return f"pouches/{storage_type}.png"
-    return f"pouches/{storage_type}_{prefix}.png"
+    return f"pouches/{storage_type}/{prefix}.png"
 
 
 def _indexed_loadout_details(

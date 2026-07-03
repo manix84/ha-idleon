@@ -678,7 +678,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 250,
             "maximum_capacity": 250,
             "largest_pouch": "Average Mining Pouch",
-            "largest_pouch_asset": "pouches/mining_average.png",
+            "largest_pouch_asset": "pouches/mining/average.png",
         },
         "Materials": {
             "storage_type": "Materials",
@@ -687,7 +687,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 100,
             "maximum_capacity": 100,
             "largest_pouch": "Small Material Pouch",
-            "largest_pouch_asset": "pouches/material_small.png",
+            "largest_pouch_asset": "pouches/material/small.png",
         },
         "Foods": {
             "storage_type": "Foods",
@@ -696,7 +696,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 25,
             "maximum_capacity": 25,
             "largest_pouch": "Miniscule Food Pouch",
-            "largest_pouch_asset": "pouches/food_miniscule.png",
+            "largest_pouch_asset": "pouches/food/miniscule.png",
         },
     }
 
