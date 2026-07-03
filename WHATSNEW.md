@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.12.6
+
+- Treat indexed PTimeAway values as seconds so long AFK durations do not collapse to 0.5h.
+
 ## 🚀 0.12.5
 
 - Parse compact account-wide summary details from Idleon data.

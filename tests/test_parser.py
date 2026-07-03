@@ -185,7 +185,7 @@ def test_parser_labels_indexed_characters_from_cog_order() -> None:
 
 
 def test_parser_normalizes_real_indexed_detail_values() -> None:
-    """Test real indexed exports normalize AFK time and locked inventory slots."""
+    """Test real indexed exports preserve AFK seconds and locked inventory slots."""
     account = parse_idleon_account(
         {
             "CharacterClass_0": 14,
@@ -232,9 +232,9 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert account.details["achievements_completed"] == 2
     assert character.inventory_full is False
     assert character.needs_attention is False
-    assert character.afk_hours == 0.5
-    assert character.details["afk_seconds"] == 1782.76
-    assert character.details["raw_afk_value"] == 1782760.29
+    assert character.afk_hours == 495.21
+    assert character.details["afk_seconds"] == 1782760.29
+    assert "raw_afk_value" not in character.details
     assert character.details["inventory_slots_total"] == 5
     assert character.details["inventory_slots_usable"] == 3
     assert character.details["inventory_slots_used"] == 2

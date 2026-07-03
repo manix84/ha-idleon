@@ -740,8 +740,6 @@ def _inventory_slot_is_locked(value: Any) -> bool:
 
 def _normalized_afk_seconds(value: float) -> float:
     """Return AFK time normalized to seconds from known export units."""
-    if value > 604800:
-        return value / 1000
     return value
 
 
