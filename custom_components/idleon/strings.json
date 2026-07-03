@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Legends of Idleon",
-        "description": "Choose how HA Idleon should read account data. Google and email are the primary login options. Apple and Steam are experimental.",
+        "description": "Choose how Home Assistant should connect to your read-only Idleon account data. Google and email are the primary login options. Apple and Steam are experimental.",
         "data": {
           "data_source_type": "Login or data source"
         }
       },
       "source": {
-        "title": "Idleon data source",
-        "description": "Configure and validate the selected read-only data source. Local file paths must be paths on the Home Assistant server, for example /config/idleon/real_data.json.",
+        "title": "Idleon login details",
+        "description": "Enter the details needed for the selected Idleon connection. Credentials are used only to complete setup; Home Assistant stores the resulting refresh token for future read-only polling.",
         "data": {
           "idleon_email": "Idleon email address",
           "idleon_password": "Idleon password",

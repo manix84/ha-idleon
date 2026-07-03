@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.13.0
+
+- Add a top-level quick start and screenshots for HACS users.
+- Replace stale data-source setup copy with provider-neutral login guidance.
+
 ## 🚀 0.12.6
 
 - Treat indexed PTimeAway values as seconds so long AFK durations do not collapse to 0.5h.

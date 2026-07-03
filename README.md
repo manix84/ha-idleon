@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.12.6-blue" alt="Version 0.12.6">
+  <img src="https://img.shields.io/badge/version-0.13.0-blue" alt="Version 0.13.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -24,6 +24,34 @@ Lavaflame2, or any Idleon service provider.
 
 The project icon is generated from Idleon artwork for recognizability, but this
 project remains unofficial and community-maintained.
+
+## 🚀 Quick Start
+
+After installing through HACS or manually copying the integration, restart Home
+Assistant and add **Legends of Idleon** from **Settings -> Devices & services**.
+
+1. Choose a login provider. Google and email are the primary options; Steam and
+   Apple are experimental while more account types are tested.
+2. Complete the provider login flow. The integration stores a Firebase refresh
+   token so Home Assistant can poll your read-only Idleon cloud save.
+3. Choose the refresh interval. The default is `300` seconds.
+4. Open the created **Legends of Idleon Account** device to see account-wide
+   sensors and connected character devices.
+5. Open each **Idleon Character <number> - <name>** device for level, class,
+   map, activity, AFK time, inventory, equipment, skill, and attention sensors.
+
+The integration is designed for normal Home Assistant usage: add the entities
+you care about to dashboards, use diagnostics from the device page when
+debugging, and keep noisy/detail-heavy values as attributes instead of hundreds
+of separate default entities.
+
+### 📸 What You Should See
+
+![Integration devices list](examples/screenshots/integration-devices.png)
+
+![Account device sensors](examples/screenshots/account-device.png)
+
+![Character device sensors](examples/screenshots/character-device.png)
 
 ## ✨ What It Does
 
