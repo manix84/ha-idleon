@@ -8,7 +8,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "idleon"
 NAME = "Legends of Idleon"
-VERSION = "0.9.3"
+VERSION = "0.10.0"
 
 PLATFORMS = (Platform.SENSOR, Platform.BINARY_SENSOR)
 
@@ -19,6 +19,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_AUTH_PROVIDER = "auth_provider"
 CONF_IDLEON_EMAIL = "idleon_email"
 CONF_IDLEON_PASSWORD = "idleon_password"
+CONF_STEAM_OPENID_RESPONSE_URL = "steam_openid_response_url"
 CONF_IDLEON_USER_ID = "idleon_user_id"
 CONF_IDLEON_REFRESH_TOKEN = "idleon_refresh_token"
 

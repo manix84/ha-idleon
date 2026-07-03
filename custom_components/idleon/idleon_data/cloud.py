@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 from aiohttp import ClientError, ClientResponseError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from ..const import AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE
+from ..const import AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE, AUTH_PROVIDER_STEAM
 from ..models import IdleonDataSource
 from .exceptions import (
     IdleonAuthFailed,
@@ -35,6 +35,18 @@ GOOGLE_CLIENT_SECRET = "HzoZF-UKUNfFwBuz4vafwsaR"
 GOOGLE_AUTH_PROVIDER_ID = "google.com"
 GOOGLE_OAUTH_SCOPE = "email profile"
 FIREBASE_AUTH_REQUEST_URI = "http://localhost"
+STEAM_OPENID_RETURN_URL = "http://localhost/"
+STEAM_AUTH_PROVIDER_ID = "steam.com"
+STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login?" + urlencode(
+    {
+        "openid.ns": "http://specs.openid.net/auth/2.0",
+        "openid.mode": "checkid_setup",
+        "openid.return_to": STEAM_OPENID_RETURN_URL,
+        "openid.realm": STEAM_OPENID_RETURN_URL,
+        "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
+        "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,6 +143,24 @@ class IdleonCloudClient:
         )
         return _credentials_from_auth_response(data)
 
+    async def async_sign_in_steam_openid_response(
+        self,
+        response_url: str,
+    ) -> IdleonCloudCredentials:
+        """Sign in to Firebase using a Steam OpenID response URL."""
+        payload = {
+            "postBody": _steam_openid_post_body(response_url),
+            "requestUri": _steam_openid_request_uri(response_url),
+            "returnIdpCredential": True,
+            "returnSecureToken": True,
+        }
+        data = await self._async_post_json(
+            f"{IDENTITY_TOOLKIT_BASE}/accounts:signInWithIdp?key={FIREBASE_API_KEY}",
+            payload,
+            auth_error_message="Steam authentication failed",
+        )
+        return _credentials_from_auth_response(data)
+
     async def async_refresh_credentials(
         self,
         refresh_token: str,
@@ -178,6 +208,13 @@ class IdleonCloudClient:
             and data_source.idleon_password
         ):
             return await self.async_sign_in_google_id_token(data_source.idleon_password)
+        if (
+            data_source.auth_provider == AUTH_PROVIDER_STEAM
+            and data_source.steam_openid_response_url
+        ):
+            return await self.async_sign_in_steam_openid_response(
+                data_source.steam_openid_response_url
+            )
         if data_source.idleon_refresh_token:
             return await self.async_refresh_credentials(
                 data_source.idleon_refresh_token
@@ -381,6 +418,37 @@ def _google_device_code_from_response(data: Any) -> IdleonGoogleDeviceCode:
         expires_in=expires_in,
         interval=interval,
     )
+
+
+def _steam_openid_post_body(response_url: str) -> str:
+    """Return a Firebase signInWithIdp postBody for Steam OpenID."""
+    params = _steam_openid_response_params(response_url)
+    params["providerId"] = STEAM_AUTH_PROVIDER_ID
+    return urlencode(params)
+
+
+def _steam_openid_request_uri(response_url: str) -> str:
+    """Return the request URI Firebase should validate for Steam OpenID."""
+    params = _steam_openid_response_params(response_url)
+    return params.get("openid.return_to") or FIREBASE_AUTH_REQUEST_URI
+
+
+def _steam_openid_response_params(response_url: str) -> dict[str, str]:
+    """Return validated Steam OpenID response parameters."""
+    parsed = urlsplit(response_url)
+    params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    required_params = (
+        "openid.claimed_id",
+        "openid.identity",
+        "openid.mode",
+        "openid.sig",
+        "openid.signed",
+    )
+    if not params or not all(params.get(key) for key in required_params):
+        raise IdleonAuthFailed("Steam OpenID response URL is incomplete")
+    if params.get("openid.mode") != "id_res":
+        raise IdleonAuthFailed("Steam OpenID response was not authorized")
+    return params
 
 
 def _coerce_int(value: Any, *, default: int) -> int:

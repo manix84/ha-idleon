@@ -18,6 +18,7 @@ from .const import (
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    CONF_STEAM_OPENID_RESPONSE_URL,
     DEFAULT_SCAN_INTERVAL,
     PLATFORMS,
 )
@@ -79,6 +80,7 @@ def _data_source_from_entry(entry: ConfigEntry) -> IdleonDataSource:
         auth_provider=data.get(CONF_AUTH_PROVIDER),
         idleon_email=data.get(CONF_IDLEON_EMAIL),
         idleon_password=data.get(CONF_IDLEON_PASSWORD),
+        steam_openid_response_url=data.get(CONF_STEAM_OPENID_RESPONSE_URL),
         idleon_user_id=data.get(CONF_IDLEON_USER_ID),
         idleon_refresh_token=data.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),

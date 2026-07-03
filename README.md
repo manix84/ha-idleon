@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.9.3-blue" alt="Version 0.9.3">
+  <img src="https://img.shields.io/badge/version-0.10.0-blue" alt="Version 0.10.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -30,10 +30,11 @@ project remains unofficial and community-maintained.
 HA Idleon reads a JSON representation of your Idleon account data and creates
 Home Assistant devices and entities for basic account and character status.
 
-🔒 The integration is read-only. The cloud setup uses either Idleon
-email/password or Google device authorization once to store a Firebase refresh
-token for future polling. Users should not paste private session tokens. Raw
-Idleon account data may contain sensitive game/account details.
+🔒 The integration is read-only. The cloud setup uses Idleon email/password,
+Google device authorization, or Steam OpenID authorization once to store a
+Firebase refresh token for future polling. Users should not paste private
+session tokens. Raw Idleon account data may contain sensitive game/account
+details.
 
 The intended primary setup is an authenticated Idleon cloud data source, using
 the same style of login users already use for Idleon. The current `local_file`
@@ -70,6 +71,8 @@ Fields:
 - `idleon_email`: required when using the `email` provider
 - `idleon_password`: required during `email` setup and not stored after a
   successful token exchange
+- `steam_openid_response_url`: required during `steam` setup and not stored
+  after a successful token exchange
 - `local_file_path`: required when using `local_file`
 - `scan_interval`: defaults to `300` seconds. The minimum is `300` seconds.
 
@@ -89,8 +92,10 @@ Supported providers:
 - `google`: shows a Google device-code login prompt, exchanges the completed
   Google authorization for Firebase tokens, and stores only the Firebase refresh
   token for future polling.
-- `apple` and `steam`: visible in the first setup choice but not implemented
-  yet.
+- `steam`: shows a Steam OpenID sign-in link. After Steam redirects to
+  `localhost`, copy the full returned browser URL back into Home Assistant. The
+  returned URL is exchanged for Firebase tokens and is not stored after setup.
+- `apple`: visible in the first setup choice but not implemented yet.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
 and future provider plan.
@@ -176,8 +181,10 @@ Third-party data notices are listed in
 
 ## 🚧 Known Limitations
 
-- Email/password and Google are the implemented cloud login providers.
-- Steam and Apple login providers are not implemented yet.
+- Email/password, Google, and Steam are the implemented cloud login providers.
+- Steam setup currently requires copying the returned localhost URL from the
+  browser address bar back into Home Assistant.
+- Apple login is not implemented yet.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.
 - Newly discovered characters are added after a successful refresh, but removed
@@ -186,7 +193,9 @@ Third-party data notices are listed in
 ## 🗺️ Roadmap
 
 - Expand authenticated cloud-source coverage beyond the initial save data.
-- Add Steam and Apple login if they can be supported cleanly in Home Assistant.
+- Improve the Steam setup handoff if Home Assistant can support a cleaner
+  callback flow.
+- Add Apple login if it can be supported cleanly in Home Assistant.
 - Expand typed models without creating noisy default entities.
 - Add more account and character metrics disabled by default where appropriate.
 - Improve repair messages for invalid or stale data sources.

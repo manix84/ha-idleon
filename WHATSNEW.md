@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.10.0
+
+- Add Steam OpenID callback exchange for Idleon cloud setup.
+- Store only Firebase refresh credentials after Steam validation.
+
 ## 🚀 0.9.3
 
 - Add packaged fallback labels for core item and inventory bag IDs used by tests.

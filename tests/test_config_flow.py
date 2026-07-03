@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Self
+from urllib.parse import parse_qs
 
 from aiohttp import ClientError, ClientResponseError
 from homeassistant import config_entries
@@ -14,6 +15,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.idleon.const import (
     AUTH_PROVIDER_EMAIL,
     AUTH_PROVIDER_GOOGLE,
+    AUTH_PROVIDER_STEAM,
     CONF_AUTH_PROVIDER,
     CONF_DATA_SOURCE_TYPE,
     CONF_IDLEON_EMAIL,
@@ -23,6 +25,7 @@ from custom_components.idleon.const import (
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    CONF_STEAM_OPENID_RESPONSE_URL,
     DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
     DATA_SOURCE_REMOTE_URL,
@@ -107,16 +110,16 @@ class _FakeCloudSession:
 
     def __init__(self, responses: list[_FakeJsonResponse]) -> None:
         self._responses = responses
-        self.requests: list[tuple[str, str]] = []
+        self.requests: list[tuple[str, str, dict[str, object]]] = []
 
-    def post(self, url: str, **_kwargs: object) -> _FakeJsonResponse:
+    def post(self, url: str, **kwargs: object) -> _FakeJsonResponse:
         """Return the next fake POST response."""
-        self.requests.append(("POST", url))
+        self.requests.append(("POST", url, kwargs))
         return self._responses.pop(0)
 
-    def get(self, url: str, **_kwargs: object) -> _FakeJsonResponse:
+    def get(self, url: str, **kwargs: object) -> _FakeJsonResponse:
         """Return the next fake GET response."""
-        self.requests.append(("GET", url))
+        self.requests.append(("GET", url, kwargs))
         return self._responses.pop(0)
 
 
@@ -136,6 +139,23 @@ def _cloud_firestore_document() -> dict[str, Any]:
             "GemsOwned": {"integerValue": "123"},
         }
     }
+
+
+def _steam_openid_response_url() -> str:
+    """Return a synthetic Steam OpenID response URL."""
+    return (
+        "http://localhost/?"
+        "openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&"
+        "openid.mode=id_res&"
+        "openid.op_endpoint=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Flogin&"
+        "openid.claimed_id=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Fid%2F123&"
+        "openid.identity=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Fid%2F123&"
+        "openid.return_to=http%3A%2F%2Flocalhost%2F&"
+        "openid.response_nonce=nonce&"
+        "openid.assoc_handle=assoc&"
+        "openid.signed=signed%2Cfields&"
+        "openid.sig=signature"
+    )
 
 
 async def test_config_flow_success_local_file(
@@ -448,6 +468,107 @@ async def test_config_flow_success_idleon_cloud_google(
     assert CONF_IDLEON_PASSWORD not in result["data"]
     assert "device/code" in fake_session.requests[0][1]
     assert "accounts:signInWithIdp" in fake_session.requests[2][1]
+
+
+async def test_config_flow_success_idleon_cloud_steam(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test creating an entry from Idleon Cloud Steam OpenID auth."""
+    fake_session = _FakeCloudSession(
+        [
+            _FakeJsonResponse(
+                {
+                    "idToken": "firebase-id-token",
+                    "refreshToken": "firebase-refresh-token",
+                    "localId": "uid-steam",
+                }
+            ),
+            _FakeJsonResponse(
+                {
+                    "id_token": "refresh-id-token",
+                    "refresh_token": "stored-refresh-token",
+                    "user_id": "uid-steam",
+                }
+            ),
+            _FakeJsonResponse(["Manix84"]),
+            _FakeJsonResponse(_cloud_firestore_document()),
+        ]
+    )
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_STEAM,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "steam"
+    assert (
+        "steamcommunity.com/openid/login"
+        in result["description_placeholders"]["steam_login_url"]
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_STEAM_OPENID_RESPONSE_URL: _steam_openid_response_url(),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Idleon Cloud"
+    assert result["data"][CONF_DATA_SOURCE_TYPE] == DATA_SOURCE_IDLEON_CLOUD
+    assert result["data"][CONF_AUTH_PROVIDER] == AUTH_PROVIDER_STEAM
+    assert result["data"][CONF_IDLEON_USER_ID] == "uid-steam"
+    assert result["data"][CONF_IDLEON_REFRESH_TOKEN] == "firebase-refresh-token"
+    assert CONF_STEAM_OPENID_RESPONSE_URL not in result["data"]
+    assert "accounts:signInWithIdp" in fake_session.requests[0][1]
+    post_payload = fake_session.requests[0][2]["json"]
+    assert isinstance(post_payload, dict)
+    post_body = post_payload["postBody"]
+    assert isinstance(post_body, str)
+    assert parse_qs(post_body)["providerId"] == ["steam.com"]
+    assert parse_qs(post_body)["openid.mode"] == ["id_res"]
+
+
+async def test_config_flow_idleon_cloud_steam_auth_failure(
+    hass: HomeAssistant,
+    monkeypatch,
+) -> None:
+    """Test invalid Steam OpenID response URL returns a clean error."""
+    fake_session = _FakeCloudSession([])
+    monkeypatch.setattr(
+        "custom_components.idleon.idleon_data.cloud.async_get_clientsession",
+        lambda _hass: fake_session,
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+        data={
+            CONF_DATA_SOURCE_TYPE: AUTH_PROVIDER_STEAM,
+        },
+    )
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_STEAM_OPENID_RESPONSE_URL: "https://example.com/not-steam",
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "auth_failed"}
+    assert fake_session.requests == []
 
 
 async def test_config_flow_idleon_cloud_google_pending(

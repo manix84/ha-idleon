@@ -18,6 +18,7 @@ class IdleonDataSource:
     auth_provider: str | None = None
     idleon_email: str | None = None
     idleon_password: str | None = None
+    steam_openid_response_url: str | None = None
     idleon_user_id: str | None = None
     idleon_refresh_token: str | None = None
     scan_interval: int = 300

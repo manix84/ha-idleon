@@ -38,6 +38,7 @@ from .const import (
     CONF_LOCAL_FILE_PATH,
     CONF_REMOTE_URL,
     CONF_SCAN_INTERVAL,
+    CONF_STEAM_OPENID_RESPONSE_URL,
     DATA_SOURCE_IDLEON_CLOUD,
     DATA_SOURCE_LOCAL_FILE,
     DATA_SOURCE_REMOTE_URL,
@@ -55,6 +56,7 @@ from .idleon_data import (
     parse_idleon_account,
 )
 from .idleon_data.cloud import (
+    STEAM_OPENID_LOGIN_URL,
     IdleonCloudClient,
     IdleonCloudCredentials,
     IdleonGoogleDeviceCode,
@@ -86,6 +88,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             self._auth_provider = _auth_provider_from_source_type(
                 user_input[CONF_DATA_SOURCE_TYPE]
             )
+            if self._auth_provider == AUTH_PROVIDER_STEAM:
+                return await self.async_step_steam()
             return await self.async_step_source()
 
         return self.async_show_form(
@@ -104,6 +108,8 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
             if self._auth_provider == AUTH_PROVIDER_GOOGLE:
                 self._pending_google_input = self._cloud_base_input
                 return await self.async_step_google()
+            if self._auth_provider == AUTH_PROVIDER_STEAM:
+                return await self.async_step_steam()
             return await self.async_step_source()
 
         return self.async_show_form(
@@ -116,6 +122,21 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Handle source details and validation."""
+        return await self._async_step_source_details("source", user_input)
+
+    async def async_step_steam(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle Steam OpenID authorization."""
+        return await self._async_step_source_details("steam", user_input)
+
+    async def _async_step_source_details(
+        self,
+        step_id: str,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Handle source details and validation for a source-like step."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -154,10 +175,13 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_show_form(
-            step_id="source",
+            step_id=step_id,
             data_schema=_source_details_schema(
                 self._data_source_type,
                 auth_provider=self._auth_provider,
+            ),
+            description_placeholders=_source_description_placeholders(
+                self._auth_provider
             ),
             errors=errors,
         )
@@ -278,19 +302,27 @@ async def _async_prepare_source(
 
     if data_source.auth_provider == AUTH_PROVIDER_GOOGLE:
         raise IdleonAuthFailed("Google authorization is required")
-    if data_source.auth_provider != AUTH_PROVIDER_EMAIL:
-        raise IdleonAuthFailed("Only Idleon email/password login is supported")
-    if not data_source.idleon_email:
-        raise IdleonAuthFailed("Idleon email is required")
-    if not data_source.idleon_password:
-        if data_source.idleon_refresh_token:
-            return user_input, data_source
-        raise IdleonAuthFailed("Idleon password is required")
-
-    credentials = await IdleonCloudClient(hass).async_sign_in_email_password(
-        data_source.idleon_email,
-        data_source.idleon_password,
-    )
+    if data_source.auth_provider == AUTH_PROVIDER_EMAIL:
+        if not data_source.idleon_email:
+            raise IdleonAuthFailed("Idleon email is required")
+        if not data_source.idleon_password:
+            if data_source.idleon_refresh_token:
+                return user_input, data_source
+            raise IdleonAuthFailed("Idleon password is required")
+        credentials = await IdleonCloudClient(hass).async_sign_in_email_password(
+            data_source.idleon_email,
+            data_source.idleon_password,
+        )
+    elif data_source.auth_provider == AUTH_PROVIDER_STEAM:
+        if not data_source.steam_openid_response_url:
+            if data_source.idleon_refresh_token:
+                return user_input, data_source
+            raise IdleonAuthFailed("Steam OpenID response URL is required")
+        credentials = await IdleonCloudClient(hass).async_sign_in_steam_openid_response(
+            data_source.steam_openid_response_url
+        )
+    else:
+        raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     prepared = _entry_data_from_cloud_credentials(user_input, credentials)
     return prepared, _data_source_from_input(prepared)
 
@@ -315,6 +347,7 @@ def _entry_data_from_cloud_credentials(
     """Return storable cloud source data without the one-time password."""
     prepared = dict(user_input)
     prepared.pop(CONF_IDLEON_PASSWORD, None)
+    prepared.pop(CONF_STEAM_OPENID_RESPONSE_URL, None)
     prepared[CONF_IDLEON_USER_ID] = credentials.user_id
     prepared[CONF_IDLEON_REFRESH_TOKEN] = credentials.refresh_token
     if credentials.email:
@@ -418,6 +451,16 @@ def _source_details_schema(
         fields[vol.Required(CONF_IDLEON_PASSWORD)] = TextSelector(
             TextSelectorConfig(type=TextSelectorType.PASSWORD)
         )
+    elif (
+        data_source_type == DATA_SOURCE_IDLEON_CLOUD
+        and auth_provider == AUTH_PROVIDER_STEAM
+    ):
+        fields[
+            vol.Required(
+                CONF_STEAM_OPENID_RESPONSE_URL,
+                default=defaults.get(CONF_STEAM_OPENID_RESPONSE_URL, ""),
+            )
+        ] = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
     elif data_source_type == DATA_SOURCE_IDLEON_CLOUD:
         pass
     elif data_source_type == DATA_SOURCE_REMOTE_URL:
@@ -517,7 +560,15 @@ def _normalize_user_input(
             normalized[CONF_IDLEON_PASSWORD] = idleon_password
         elif provider == AUTH_PROVIDER_GOOGLE:
             normalized[CONF_AUTH_PROVIDER] = provider
-        elif provider in {AUTH_PROVIDER_APPLE, AUTH_PROVIDER_STEAM}:
+        elif provider == AUTH_PROVIDER_STEAM:
+            steam_response_url = str(
+                user_input.get(CONF_STEAM_OPENID_RESPONSE_URL) or ""
+            ).strip()
+            if not steam_response_url:
+                raise IdleonAuthFailed("Steam OpenID response URL is required")
+            normalized[CONF_AUTH_PROVIDER] = provider
+            normalized[CONF_STEAM_OPENID_RESPONSE_URL] = steam_response_url
+        elif provider == AUTH_PROVIDER_APPLE:
             raise IdleonAuthFailed(f"{provider.title()} login is not implemented yet")
         else:
             raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
@@ -530,7 +581,11 @@ def _normalize_user_input(
 def _normalize_cloud_base_input(user_input: dict[str, Any]) -> dict[str, Any]:
     """Return normalized cloud source/provider data."""
     auth_provider = str(user_input.get(CONF_AUTH_PROVIDER) or "").strip()
-    if auth_provider not in {AUTH_PROVIDER_EMAIL, AUTH_PROVIDER_GOOGLE}:
+    if auth_provider not in {
+        AUTH_PROVIDER_EMAIL,
+        AUTH_PROVIDER_GOOGLE,
+        AUTH_PROVIDER_STEAM,
+    }:
         raise IdleonAuthFailed("Unsupported Idleon cloud login provider")
     return {
         CONF_DATA_SOURCE_TYPE: DATA_SOURCE_IDLEON_CLOUD,
@@ -555,6 +610,7 @@ def _data_source_from_input(user_input: dict[str, Any]) -> IdleonDataSource:
         auth_provider=user_input.get(CONF_AUTH_PROVIDER),
         idleon_email=user_input.get(CONF_IDLEON_EMAIL),
         idleon_password=user_input.get(CONF_IDLEON_PASSWORD),
+        steam_openid_response_url=user_input.get(CONF_STEAM_OPENID_RESPONSE_URL),
         idleon_user_id=user_input.get(CONF_IDLEON_USER_ID),
         idleon_refresh_token=user_input.get(CONF_IDLEON_REFRESH_TOKEN),
         scan_interval=user_input[CONF_SCAN_INTERVAL],
@@ -589,6 +645,13 @@ def _google_description_placeholders(
         "user_code": device_code.user_code,
         "expires_in": str(device_code.expires_in),
     }
+
+
+def _source_description_placeholders(auth_provider: str | None) -> dict[str, str]:
+    """Return placeholders for source-specific setup instructions."""
+    if auth_provider == AUTH_PROVIDER_STEAM:
+        return {"steam_login_url": STEAM_OPENID_LOGIN_URL}
+    return {"steam_login_url": ""}
 
 
 def _source_unique_id(data_source: IdleonDataSource) -> str:

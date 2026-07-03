@@ -42,14 +42,17 @@ Provider order:
 3. Steam OpenID handoff
 4. Apple sign-in
 
-Email/password and Google device flow are implemented. Email/password is a
-direct Firebase auth exchange. Google device flow works without embedding a
-browser in the config flow: Home Assistant shows a Google user code, then
-exchanges the completed Google authorization for Firebase credentials.
+Email/password, Google device flow, and Steam OpenID handoff are implemented.
+Email/password is a direct Firebase auth exchange. Google device flow works
+without embedding a browser in the config flow: Home Assistant shows a Google
+user code, then exchanges the completed Google authorization for Firebase
+credentials.
 
-Steam and Apple are more awkward in a Home Assistant server context because
-they require browser redirects or provider-specific handoff pages. They should
-be implemented after the base authenticated source is stable.
+Steam is implemented with a manual OpenID handoff: Home Assistant shows a Steam
+sign-in link, the user signs in through Steam, then copies the returned
+localhost URL back into the config flow. Apple is still more awkward in a Home
+Assistant server context because it requires provider-specific browser handoff
+pages.
 
 ## ☁️ Data Shape
 
@@ -90,7 +93,7 @@ Expected fields by provider:
 
 - `email`: email address and password. Implemented.
 - `google`: device-code flow state and verification URL. Implemented.
-- `steam`: Steam redirect URL pasted by the user after signing in.
+- `steam`: Steam redirect URL pasted by the user after signing in. Implemented.
 - `apple`: Apple handoff state and verification URL.
 
 Stored config must be explicit:
@@ -171,6 +174,6 @@ Do not implement:
 4. Add repair/config-flow errors for auth failures. Config-flow errors are
    implemented; repairs are still pending.
 5. Add Google device flow. Done.
-6. Decide whether Steam and Apple are viable inside HA without external helper
-   services.
-7. Move `local_file` and `remote_url` under advanced/development wording.
+6. Add Steam OpenID handoff. Done.
+7. Decide whether Apple is viable inside HA without external helper services.
+8. Move `local_file` and `remote_url` under advanced/development wording.
