@@ -26,9 +26,27 @@ def test_format_idleon_number_suffixes() -> None:
     assert format_idleon_number(4_820_000) == "4.82M"
     assert format_idleon_number(913_000_000_000) == "913B"
     assert format_idleon_number(7_410_000_000_000) == "7.41T"
-    assert format_idleon_number(52_700_000_000_000_000) == "52.7Qa"
-    assert format_idleon_number(91_200_000_000_000_000_000) == "91.2Qi"
-    assert format_idleon_number(4_180_000_000_000_000_000_000) == "4.18Sx"
+    assert format_idleon_number(52_700_000_000_000_000) == "52.7Q"
+    assert format_idleon_number(91_200_000_000_000_000_000) == "91.2QQ"
+    assert format_idleon_number(4_180_000_000_000_000_000_000) == "4.18QQQ"
+
+
+def test_format_idleon_number_extended_suffix_boundaries() -> None:
+    """Test Idleon number suffixes continue through E38."""
+    assert format_idleon_number(10**15) == "1Q"
+    assert format_idleon_number(10**16) == "10Q"
+    assert format_idleon_number(10**18) == "1QQ"
+    assert format_idleon_number(10**20) == "100QQ"
+    assert format_idleon_number(10**22) == "10QQQ"
+    assert format_idleon_number(10**24) == "1E24"
+    assert format_idleon_number(10**26) == "1E26"
+    assert format_idleon_number(10**28) == "1E28"
+    assert format_idleon_number(10**30) == "1E30"
+    assert format_idleon_number(10**32) == "1E32"
+    assert format_idleon_number(10**34) == "1E34"
+    assert format_idleon_number(10**36) == "1E36"
+    assert format_idleon_number(10**38) == "1E38"
+    assert format_idleon_number(125 * 10**38) == "125E38"
 
 
 def test_format_idleon_number_large_values_preserve_raw_value() -> None:
@@ -36,9 +54,9 @@ def test_format_idleon_number_large_values_preserve_raw_value() -> None:
     raw_value = "125730617448470844548605638835437568"
     formatted = idleon_number_parts(raw_value)
 
-    assert formatted.formatted == "12.57QQQ"
+    assert formatted.formatted == "12.57E34"
     assert formatted.raw_value == raw_value
-    assert formatted.suffix == "QQQ"
+    assert formatted.suffix == "E34"
     assert formatted.mantissa == "12.57"
 
 
