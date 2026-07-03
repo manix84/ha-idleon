@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.22.2
+
+- Use Idleon large-number suffix formatting as the visible state for account and character money sensors.
+- Preserve coin-tier money formatting as attributes for dashboards and inspection.
+
 ## 🚀 0.22.1
 
 - Add generic Idleon suffix formatting attributes to formatted money sensors.

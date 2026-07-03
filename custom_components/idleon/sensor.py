@@ -966,8 +966,8 @@ def _account_detail_sum(
 
 
 def _account_money_formatted(coordinator: IdleonDataUpdateCoordinator) -> str:
-    """Return formatted account money."""
-    return idleon_money_parts(_account_money_raw(coordinator)).formatted
+    """Return account money with Idleon-style number suffixes."""
+    return idleon_number_parts(_account_money_raw(coordinator)).formatted
 
 
 def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
@@ -979,8 +979,8 @@ def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
 
 
 def _character_money_formatted(character: IdleonCharacter) -> str:
-    """Return formatted character money."""
-    return idleon_money_parts(_character_money_raw(character)).formatted
+    """Return character money with Idleon-style number suffixes."""
+    return idleon_number_parts(_character_money_raw(character)).formatted
 
 
 def _character_money_raw(character: IdleonCharacter) -> str:
@@ -994,6 +994,7 @@ def _money_attributes(raw_value: str) -> dict[str, str]:
     formatted_number = idleon_number_parts(raw_value)
     return {
         "raw_value": formatted_money.raw_value,
+        "coin_tier_formatted": formatted_money.formatted,
         "coin_tier": formatted_money.coin_tier,
         "coin_tier_value": formatted_money.coin_tier_value,
         "formatted_number": formatted_number.formatted,

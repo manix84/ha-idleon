@@ -260,7 +260,7 @@ async def test_account_sensors(
     assert hass.states.get(gems_entity_id).state == "1234"
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(total_money_entity_id).state == "98.77 Gold"
+    assert hass.states.get(total_money_entity_id).state == "987.65K"
     assert hass.states.get(raw_money_entity_id).state == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert hass.states.get(slab_entity_id).state == "456"
@@ -348,6 +348,10 @@ async def test_account_sensors(
         "characters": "87654",
     }
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
+    assert (
+        hass.states.get(total_money_entity_id).attributes["coin_tier_formatted"]
+        == "98.77 Gold"
+    )
     assert hass.states.get(total_money_entity_id).attributes["coin_tier"] == "Gold"
     assert (
         hass.states.get(total_money_entity_id).attributes["formatted_number"]
@@ -611,9 +615,13 @@ async def test_character_sensors(
     assert hass.states.get(inventory_free_entity_id).state == "1"
     assert hass.states.get(highest_skill_entity_id).state == "Alchemy (95)"
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(money_entity_id).state == "1.23 Gold"
+    assert hass.states.get(money_entity_id).state == "12.34K"
     assert hass.states.get(money_raw_entity_id).state == "12345"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
+    assert (
+        hass.states.get(money_entity_id).attributes["coin_tier_formatted"]
+        == "1.23 Gold"
+    )
     assert hass.states.get(money_entity_id).attributes["coin_tier"] == "Gold"
     assert hass.states.get(money_entity_id).attributes["formatted_number"] == "12.34K"
     assert hass.states.get(money_entity_id).attributes["number_suffix"] == "K"

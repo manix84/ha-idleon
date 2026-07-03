@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.22.1-blue" alt="Version 0.22.1">
+  <img src="https://img.shields.io/badge/version-0.22.2-blue" alt="Version 0.22.2">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -173,7 +173,7 @@ Account sensors:
 - Gems
 - Highest character level
 - Total skill level
-- Money, formatted with Idleon's coin tiers
+- Money, formatted with Idleon's large-number suffixes
 - Money raw, preserving the exact copper value as a string
 - Green stacks
 - Slab items obtained
@@ -252,7 +252,7 @@ Character sensors:
 - Inventory slots used/free
 - Highest skill
 - Total skill level
-- Money, formatted with Idleon's coin tiers
+- Money, formatted with Idleon's large-number suffixes
 - Money raw, preserving the exact copper value as a string
 - Equipped items
 - Strength, agility, wisdom, and luck sensors are available but disabled by
@@ -282,13 +282,14 @@ paired `_raw` sensor or `raw_value` attribute so precision is never lost.
 
 Money sensors follow this pattern:
 
-- `money`: formatted display value, such as `12.34 Gold`
+- `money`: formatted display value, such as `987.65K`
 - `money_raw`: exact copper value as a string
 
-Formatted money sensors expose `raw_value`, `coin_tier`, `coin_tier_value`,
-`formatted_number`, `number_suffix`, and `number_mantissa` attributes.
-Formatted money is intentionally not a numeric Home Assistant state because
-large Idleon values can exceed JavaScript-safe integer limits.
+Formatted money sensors expose `raw_value`, `coin_tier_formatted`,
+`coin_tier`, `coin_tier_value`, `formatted_number`, `number_suffix`, and
+`number_mantissa` attributes. Formatted money is intentionally not a numeric
+Home Assistant state because large Idleon values can exceed JavaScript-safe
+integer limits.
 
 ## 🔐 Privacy And Security
 
