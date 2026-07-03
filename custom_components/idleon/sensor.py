@@ -88,6 +88,12 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         detail_keys=("class_counts",),
     ),
     IdleonAccountSensorEntityDescription(
+        key="account_total_money",
+        translation_key="account_total_money",
+        value_fn=lambda coordinator: _account_total_money(coordinator),
+        detail_keys=("money_breakdown",),
+    ),
+    IdleonAccountSensorEntityDescription(
         key="account_raw_money",
         translation_key="account_raw_money",
         value_fn=lambda coordinator: _account_detail_value(
@@ -96,6 +102,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             0,
         ),
         detail_keys=("money_breakdown",),
+        entity_registry_enabled_default=False,
     ),
     IdleonAccountSensorEntityDescription(
         key="account_green_stacks",
@@ -203,6 +210,11 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
             0,
         ),
         detail_keys=("skill_levels", "highest_skill"),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_money",
+        translation_key="character_money",
+        value_fn=lambda character: _detail_value(character, "money", 0),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_strength",
@@ -496,6 +508,14 @@ def _account_detail_value(
 ) -> Any:
     """Return a single parsed account detail value."""
     return coordinator.data.details.get(key, default)
+
+
+def _account_total_money(coordinator: IdleonDataUpdateCoordinator) -> Any:
+    """Return parsed account money using current and compatibility detail keys."""
+    return coordinator.data.details.get(
+        "total_money",
+        coordinator.data.details.get("raw_money", 0),
+    )
 
 
 def _stat_value(character: IdleonCharacter, key: str) -> int:

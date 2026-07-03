@@ -222,6 +222,7 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     character = account.characters[0]
 
     assert account.details["raw_money"] == 1025
+    assert account.details["total_money"] == 1025
     assert account.details["money_breakdown"] == {
         "bank": 1000,
         "characters": 25,
@@ -232,6 +233,7 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     assert account.details["achievements_completed"] == 2
     assert character.inventory_full is False
     assert character.needs_attention is False
+    assert character.details["money"] == 25
     assert character.afk_hours == 495.21
     assert character.details["afk_seconds"] == 1782760.29
     assert "raw_afk_value" not in character.details

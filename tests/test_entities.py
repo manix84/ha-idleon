@@ -59,11 +59,17 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_total_skill_level",
     )
+    total_money_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_total_money",
+    )
     raw_money_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
         f"{entry.entry_id}_account_raw_money",
     )
+    raw_money_entity = entity_registry.async_get(raw_money_entity_id)
     green_stacks_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -85,7 +91,9 @@ async def test_account_sensors(
     assert hass.states.get(gems_entity_id).state == "1234"
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(raw_money_entity_id).state == "987654"
+    assert hass.states.get(total_money_entity_id).state == "987654"
+    assert raw_money_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(raw_money_entity_id) is None
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert hass.states.get(slab_entity_id).state == "456"
     assert hass.states.get(achievements_entity_id).state == "78"
@@ -95,7 +103,7 @@ async def test_account_sensors(
         "Bubonic Conjuror": 1,
         "Squire": 1,
     }
-    assert hass.states.get(raw_money_entity_id).attributes["money_breakdown"] == {
+    assert hass.states.get(total_money_entity_id).attributes["money_breakdown"] == {
         "bank": 900000,
         "characters": 87654,
     }
@@ -160,6 +168,11 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_total_skill_level",
     )
+    money_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_money",
+    )
     wisdom_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -180,6 +193,7 @@ async def test_character_sensors(
     assert hass.states.get(inventory_free_entity_id).state == "1"
     assert hass.states.get(highest_skill_entity_id).state == "Alchemy (95)"
     assert hass.states.get(total_skill_entity_id).state == "205"
+    assert hass.states.get(money_entity_id).state == "12345"
     assert hass.states.get(wisdom_entity_id) is None
     wisdom_registry_entry = entity_registry.async_get_entity_id(
         "sensor",

@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.15.0
+
+- Add Total money to the account device.
+- Add Money to each character device from parsed character details.
+- Keep Raw money as a disabled compatibility sensor for new installs.
+
 ## 🚀 0.14.0
 
 - Add an explicit account last_updated timestamp to diagnostics.

@@ -432,6 +432,9 @@ def _indexed_character_details(
         "afk_target": afk_target,
         "afk_seconds": round(afk_seconds, 2),
     }
+    character_money = _coerce_float(raw_data.get(f"Money_{character_index}"))
+    if character_money is not None:
+        details["money"] = _compact_number(character_money)
     if raw_afk_value != afk_seconds:
         details["raw_afk_value"] = round(raw_afk_value, 2)
     details.update(_indexed_stat_details(raw_data, character_index))
@@ -622,6 +625,7 @@ def _indexed_account_details(
     )
     raw_money = bank_money + character_money
     if raw_money:
+        details["total_money"] = _compact_number(raw_money)
         details["raw_money"] = _compact_number(raw_money)
         details["money_breakdown"] = {
             "bank": _compact_number(bank_money),
@@ -813,6 +817,9 @@ def _character_details(character_data: Mapping[str, Any]) -> dict[str, Any]:
     """Return compact detailed attributes for flexible character mappings."""
     details = _first_mapping(character_data, ("details", "attributes")) or {}
     parsed_details = dict(details)
+    money = _first_float(character_data, ("money", "coins", "raw_money", "rawMoney"))
+    if money is not None:
+        parsed_details["money"] = _compact_number(money)
     inventory = _first_value(character_data, ("inventory", "inventory_order"))
     if isinstance(inventory, list):
         usable_slots = sum(
@@ -838,6 +845,8 @@ def _account_details(
     """Return compact account-wide attributes for flexible mappings."""
     details = dict(_first_mapping(account_data, ("details", "attributes")) or {})
     details.update(_computed_account_details(characters))
+    if "total_money" not in details and "raw_money" in details:
+        details["total_money"] = details["raw_money"]
     return _remove_empty_detail_values(details)
 
 

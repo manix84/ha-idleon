@@ -6,6 +6,7 @@
     "last_updated": "2026-06-29T12:00:00+00:00",
     "details": {
       "raw_money": 987654,
+      "total_money": 987654,
       "money_breakdown": {
         "bank": 900000,
         "characters": 87654
@@ -53,6 +54,7 @@
             "wisdom": 320,
             "luck": 90
           },
+          "money": 12345,
           "equipped_item_count": 4,
           "equipped_items": [
             "Farmer Brim",
@@ -82,7 +84,8 @@
         "current_activity": "Mining",
         "afk_hours": 3.25,
         "inventory_full": false,
-        "needs_attention": false
+        "needs_attention": false,
+        "money": 765
       }
     ]
   }

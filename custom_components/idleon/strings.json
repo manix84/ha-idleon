@@ -97,6 +97,9 @@
       "account_total_skill_level": {
         "name": "Total skill level"
       },
+      "account_total_money": {
+        "name": "Total money"
+      },
       "account_raw_money": {
         "name": "Raw money"
       },
@@ -135,6 +138,9 @@
       },
       "character_total_skill_level": {
         "name": "Total skill level"
+      },
+      "character_money": {
+        "name": "Money"
       },
       "character_strength": {
         "name": "Strength"
