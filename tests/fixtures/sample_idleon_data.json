@@ -238,6 +238,59 @@
       "world_2_killroy": {
         "rooms_available": 3,
         "schedule": "Unavailable until server variables are present"
+      },
+      "world_3_printer": {
+        "sample_count": 6,
+        "total_printed": 275000
+      },
+      "world_3_refinery": {
+        "refined_salt_total": 1084541,
+        "sections": 3,
+        "salt_count": 6
+      },
+      "world_3_atom_collider": {
+        "atoms_created": 42,
+        "upgrades_unlocked": 5
+      },
+      "world_3_equinox": {
+        "dreams_completed": 7,
+        "upgrades_unlocked": 4
+      },
+      "world_3_buildings": {
+        "towers_unlocked": 9,
+        "highest_level": 45
+      },
+      "world_3_death_note": {
+        "total_kills": 123456789,
+        "eclipse_skulls": 4
+      },
+      "world_3_worship": {
+        "totems_unlocked": 8,
+        "total_charge": 1234
+      },
+      "world_3_prayers": {
+        "owned": 6,
+        "unlocked": 9
+      },
+      "world_3_traps": {
+        "placed": 11,
+        "critters_ready": 5
+      },
+      "world_3_salt_lick": {
+        "upgrades": 12,
+        "total_level": 34
+      },
+      "world_3_construction": {
+        "building_levels": 567,
+        "cogs_placed": 42
+      },
+      "world_3_armor_smithy": {
+        "sets_completed": 3,
+        "server_gems_received": 123
+      },
+      "world_3_hat_rack": {
+        "eligible_hats": 8,
+        "bonus": 12
       }
     },
     "characters": [

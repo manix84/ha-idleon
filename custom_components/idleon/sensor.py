@@ -306,6 +306,125 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
         detail_keys=("world_2_killroy",),
     ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_printer",
+        translation_key="account_world_3_printer",
+        value_fn=lambda coordinator: _account_detail_value_from_mapping(
+            coordinator,
+            "world_3_printer",
+            "total_printed",
+        ),
+        detail_keys=("world_3_printer",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_refinery",
+        translation_key="account_world_3_refinery",
+        value_fn=lambda coordinator: _account_detail_value_from_mapping(
+            coordinator,
+            "world_3_refinery",
+            "refined_salt_total",
+        ),
+        detail_keys=("world_3_refinery",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_atom_collider",
+        translation_key="account_world_3_atom_collider",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_atom_collider",
+        ),
+        detail_keys=("world_3_atom_collider",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_equinox",
+        translation_key="account_world_3_equinox",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_equinox",
+        ),
+        detail_keys=("world_3_equinox",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_buildings",
+        translation_key="account_world_3_buildings",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_buildings",
+        ),
+        detail_keys=("world_3_buildings",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_death_note",
+        translation_key="account_world_3_death_note",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_death_note",
+        ),
+        detail_keys=("world_3_death_note",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_worship",
+        translation_key="account_world_3_worship",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_worship",
+        ),
+        detail_keys=("world_3_worship",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_prayers",
+        translation_key="account_world_3_prayers",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_prayers",
+        ),
+        detail_keys=("world_3_prayers",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_traps",
+        translation_key="account_world_3_traps",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_traps",
+        ),
+        detail_keys=("world_3_traps",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_salt_lick",
+        translation_key="account_world_3_salt_lick",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_salt_lick",
+        ),
+        detail_keys=("world_3_salt_lick",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_construction",
+        translation_key="account_world_3_construction",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_construction",
+        ),
+        detail_keys=("world_3_construction",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_armor_smithy",
+        translation_key="account_world_3_armor_smithy",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_armor_smithy",
+        ),
+        detail_keys=("world_3_armor_smithy",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_3_hat_rack",
+        translation_key="account_world_3_hat_rack",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_3_hat_rack",
+        ),
+        detail_keys=("world_3_hat_rack",),
+    ),
 )
 
 CHARACTER_SENSOR_DESCRIPTIONS = (
@@ -732,6 +851,19 @@ def _account_detail_nested_count(
         else:
             total += 1
     return total
+
+
+def _account_detail_value_from_mapping(
+    coordinator: IdleonDataUpdateCoordinator,
+    detail_key: str,
+    value_key: str,
+    default: Any = 0,
+) -> Any:
+    """Return a single value from a grouped account detail."""
+    value = coordinator.data.details.get(detail_key)
+    if not isinstance(value, Mapping):
+        return default
+    return value.get(value_key, default)
 
 
 def _account_detail_sum(

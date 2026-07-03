@@ -229,6 +229,30 @@ TASK_WORLD_LABELS = (
     "World 5",
     "World 6",
 )
+WORLD_3_SYSTEM_RAW_FIELDS: Mapping[str, tuple[str, ...]] = {
+    "world_3_atom_collider": ("Atoms", "Divinity"),
+    "world_3_equinox": ("Dream", "WeeklyBoss"),
+    "world_3_buildings": ("Tower", "TowerInfo", "TotemInfo"),
+    "world_3_death_note": ("Ninja",),
+    "world_3_worship": ("TotemInfo", "worship"),
+    "world_3_prayers": ("PrayOwned", "PrayersUnlocked"),
+    "world_3_traps": ("PldTraps",),
+    "world_3_salt_lick": ("SaltLick",),
+    "world_3_construction": (
+        "CogM",
+        "CogMap",
+        "CogO",
+        "CogOrder",
+        "FlagP",
+        "FlagU",
+        "FlagUnlock",
+        "FlagsPlaced",
+        "Tower",
+        "TowerInfo",
+    ),
+    "world_3_armor_smithy": ("ServerGemsReceived",),
+    "world_3_hat_rack": ("Spelunk",),
+}
 
 
 def parse_idleon_account(raw_data: Any) -> IdleonAccount:
@@ -914,6 +938,9 @@ def _indexed_account_progress_details(
     killroy = _indexed_killroy(raw_data)
     if killroy:
         details["world_2_killroy"] = killroy
+
+    world_3_details = _indexed_world_3_details(raw_data)
+    details.update(world_3_details)
 
     return details
 
@@ -1659,6 +1686,78 @@ def _indexed_killroy(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _indexed_world_3_details(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return compact World 3 account system summaries."""
+    details: dict[str, Any] = {}
+
+    printer = _indexed_world_3_printer(raw_data)
+    if printer:
+        details["world_3_printer"] = printer
+
+    refinery = _indexed_world_3_refinery(raw_data)
+    if refinery:
+        details["world_3_refinery"] = refinery
+
+    for detail_key, raw_keys in WORLD_3_SYSTEM_RAW_FIELDS.items():
+        if detail_key in details:
+            continue
+        summary = _raw_system_presence_summary(raw_data, raw_keys)
+        if summary:
+            details[detail_key] = summary
+
+    return details
+
+
+def _indexed_world_3_printer(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 3 3D printer summary details."""
+    printer = _maybe_json(raw_data.get("Print")) or _maybe_json(raw_data.get("Printer"))
+    if not isinstance(printer, list):
+        return {}
+
+    numeric_values = [
+        value
+        for raw_value in printer
+        if not (isinstance(raw_value, str) and not _looks_numeric(raw_value))
+        and (value := _coerce_float(raw_value)) is not None
+    ]
+    details: dict[str, Any] = {
+        "sample_count": len([value for value in numeric_values if value > 0]),
+        "total_printed": _compact_number(sum(numeric_values)),
+    }
+
+    printer_extra = _maybe_json(raw_data.get("PrinterXtra"))
+    if isinstance(printer_extra, list):
+        details["extra_count"] = len(
+            [value for value in printer_extra if value not in (None, 0, "", [], {})]
+        )
+
+    return details
+
+
+def _indexed_world_3_refinery(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 3 refinery summary details."""
+    refinery = _maybe_json(raw_data.get("Refinery"))
+    if not isinstance(refinery, list):
+        return {}
+
+    details: dict[str, Any] = {
+        "refined_salt_total": _compact_number(_refined_salt_total(raw_data)),
+        "sections": len([section for section in refinery if section not in ([], {})]),
+    }
+
+    salts = _list_value(refinery, 2)
+    if isinstance(salts, Mapping):
+        details["salt_count"] = len(
+            [value for value in salts.values() if value not in (None, 0, "", [], {})]
+        )
+    elif isinstance(salts, list):
+        details["salt_count"] = len(
+            [value for value in salts if value not in (None, 0, "", [], {})]
+        )
+
+    return details
+
+
 def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
     """Return raw slab/looty item list from known export shapes."""
     cards = _maybe_json(raw_data.get("Cards"))
@@ -1908,6 +2007,34 @@ def _account_details(
             "world_2_killroy",
             ("world_2_killroy", "world2Killroy", "killroy", "Killroy", "KillRoy"),
         ),
+        ("world_3_printer", ("world_3_printer", "world3Printer", "printer")),
+        ("world_3_refinery", ("world_3_refinery", "world3Refinery", "refinery")),
+        (
+            "world_3_atom_collider",
+            ("world_3_atom_collider", "world3AtomCollider", "atom_collider", "atoms"),
+        ),
+        ("world_3_equinox", ("world_3_equinox", "world3Equinox", "equinox")),
+        ("world_3_buildings", ("world_3_buildings", "world3Buildings", "buildings")),
+        (
+            "world_3_death_note",
+            ("world_3_death_note", "world3DeathNote", "death_note", "deathNote"),
+        ),
+        ("world_3_worship", ("world_3_worship", "world3Worship", "worship")),
+        ("world_3_prayers", ("world_3_prayers", "world3Prayers", "prayers")),
+        ("world_3_traps", ("world_3_traps", "world3Traps", "traps")),
+        (
+            "world_3_salt_lick",
+            ("world_3_salt_lick", "world3SaltLick", "salt_lick", "saltLick"),
+        ),
+        (
+            "world_3_construction",
+            ("world_3_construction", "world3Construction", "construction"),
+        ),
+        (
+            "world_3_armor_smithy",
+            ("world_3_armor_smithy", "world3ArmorSmithy", "armor_smithy"),
+        ),
+        ("world_3_hat_rack", ("world_3_hat_rack", "world3HatRack", "hat_rack")),
         (
             "world_summaries",
             (

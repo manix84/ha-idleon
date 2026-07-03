@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.19.1-blue" alt="Version 0.19.1">
+  <img src="https://img.shields.io/badge/version-0.20.0-blue" alt="Version 0.20.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -198,6 +198,19 @@ Account sensors:
 - World 2 sigils
 - World 2 vote ballots
 - World 2 Killroy
+- World 3 printer
+- World 3 refinery
+- World 3 atom collider
+- World 3 equinox
+- World 3 buildings
+- World 3 death note
+- World 3 worship
+- World 3 prayers
+- World 3 traps
+- World 3 salt lick
+- World 3 construction
+- World 3 armor smithy
+- World 3 hat rack
 - Last updated is available but disabled by default because diagnostics now
   exposes the same timestamp for troubleshooting
 - Raw money

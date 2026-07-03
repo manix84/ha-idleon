@@ -326,6 +326,24 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
             },
             "Refinery": [[], [], [100, 200, 300]],
             "Print": [0, "Fish1", 100, "Tree1", 200],
+            "PrinterXtra": [1, 0, 2],
+            "Atoms": [0, 1, 2],
+            "Dream": [1, 0, 2],
+            "WeeklyBoss": {"current": 1},
+            "Tower": [1, 2],
+            "TowerInfo": [{"level": 1}],
+            "TotemInfo": [1, 0, 2],
+            "Ninja": [0, 5, 10],
+            "worship": [1, 2],
+            "PrayOwned": [1, 0, 1],
+            "PrayersUnlocked": [1, 1],
+            "PldTraps": [{"trap": 1}, 0],
+            "SaltLick": [1, 2, 0],
+            "CogM": [1, 0, 2],
+            "CogMap": {"a": 1, "b": 0},
+            "FlagP": [1],
+            "ServerGemsReceived": [1, 2],
+            "Spelunk": [0, 1, 2],
             "CYDeliveryBoxComplete": 2357,
             "AchieveReg": [-1, 0, 25, -1],
             "SteamAchieve": [-1, 100, 0],
@@ -447,6 +465,44 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
         account.details["world_2_vote_ballots"]["Bonus Ballot"]["selected_index"] == 1
     )
     assert account.details["world_2_killroy"]["rooms_available"] == 2
+    assert account.details["world_3_printer"] == {
+        "sample_count": 2,
+        "total_printed": 300,
+        "extra_count": 2,
+    }
+    assert account.details["world_3_refinery"] == {
+        "refined_salt_total": 600,
+        "sections": 1,
+        "salt_count": 3,
+    }
+    assert account.details["world_3_atom_collider"] == {
+        "Atoms": 2,
+        "Divinity": 1,
+    }
+    assert account.details["world_3_equinox"] == {
+        "Dream": 2,
+        "WeeklyBoss": 1,
+    }
+    assert account.details["world_3_buildings"] == {
+        "Tower": 2,
+        "TowerInfo": 1,
+        "TotemInfo": 2,
+    }
+    assert account.details["world_3_death_note"] == {"Ninja": 2}
+    assert account.details["world_3_worship"] == {
+        "TotemInfo": 2,
+        "worship": 2,
+    }
+    assert account.details["world_3_prayers"] == {
+        "PrayOwned": 2,
+        "PrayersUnlocked": 2,
+    }
+    assert account.details["world_3_traps"] == {"PldTraps": 1}
+    assert account.details["world_3_salt_lick"] == {"SaltLick": 2}
+    assert account.details["world_3_construction"]["CogM"] == 2
+    assert account.details["world_3_construction"]["CogMap"] == 1
+    assert account.details["world_3_armor_smithy"] == {"ServerGemsReceived": 2}
+    assert account.details["world_3_hat_rack"] == {"Spelunk": 2}
 
 
 def test_parser_uses_packaged_item_label_fallbacks(

@@ -1,5 +1,11 @@
 # 📰 What's New
 
+## 🚀 0.20.0
+
+- Add account sensors for World 3 printer, refinery, atom collider, equinox, buildings, death note, worship, prayers, traps, salt lick, construction, armor smithy, and hat rack.
+- Parse compact World 3 summaries from known raw Idleon fields and clean-data aliases.
+- Cover the new World 3 entities and parser details in tests and documentation.
+
 ## 🚀 0.19.1
 
 - Rename Killroy to World 2 Killroy and use rooms available as the sensor value.

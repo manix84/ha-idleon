@@ -172,6 +172,45 @@
       "account_world_2_killroy": {
         "name": "World 2 Killroy"
       },
+      "account_world_3_printer": {
+        "name": "World 3 printer"
+      },
+      "account_world_3_refinery": {
+        "name": "World 3 refinery"
+      },
+      "account_world_3_atom_collider": {
+        "name": "World 3 atom collider"
+      },
+      "account_world_3_equinox": {
+        "name": "World 3 equinox"
+      },
+      "account_world_3_buildings": {
+        "name": "World 3 buildings"
+      },
+      "account_world_3_death_note": {
+        "name": "World 3 death note"
+      },
+      "account_world_3_worship": {
+        "name": "World 3 worship"
+      },
+      "account_world_3_prayers": {
+        "name": "World 3 prayers"
+      },
+      "account_world_3_traps": {
+        "name": "World 3 traps"
+      },
+      "account_world_3_salt_lick": {
+        "name": "World 3 salt lick"
+      },
+      "account_world_3_construction": {
+        "name": "World 3 construction"
+      },
+      "account_world_3_armor_smithy": {
+        "name": "World 3 armor smithy"
+      },
+      "account_world_3_hat_rack": {
+        "name": "World 3 hat rack"
+      },
       "character_level": {
         "name": "Level"
       },

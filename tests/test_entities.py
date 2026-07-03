@@ -185,6 +185,71 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_world_2_killroy",
     )
+    world_3_printer_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_printer",
+    )
+    world_3_refinery_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_refinery",
+    )
+    world_3_atom_collider_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_atom_collider",
+    )
+    world_3_equinox_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_equinox",
+    )
+    world_3_buildings_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_buildings",
+    )
+    world_3_death_note_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_death_note",
+    )
+    world_3_worship_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_worship",
+    )
+    world_3_prayers_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_prayers",
+    )
+    world_3_traps_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_traps",
+    )
+    world_3_salt_lick_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_salt_lick",
+    )
+    world_3_construction_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_construction",
+    )
+    world_3_armor_smithy_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_armor_smithy",
+    )
+    world_3_hat_rack_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_3_hat_rack",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
@@ -220,6 +285,19 @@ async def test_account_sensors(
     assert hass.states.get(world_2_sigils_entity_id).state == "1"
     assert hass.states.get(world_2_vote_ballots_entity_id).state == "1"
     assert hass.states.get(killroy_entity_id).state == "3"
+    assert hass.states.get(world_3_printer_entity_id).state == "275000"
+    assert hass.states.get(world_3_refinery_entity_id).state == "1084541"
+    assert hass.states.get(world_3_atom_collider_entity_id).state == "2"
+    assert hass.states.get(world_3_equinox_entity_id).state == "2"
+    assert hass.states.get(world_3_buildings_entity_id).state == "2"
+    assert hass.states.get(world_3_death_note_entity_id).state == "2"
+    assert hass.states.get(world_3_worship_entity_id).state == "2"
+    assert hass.states.get(world_3_prayers_entity_id).state == "2"
+    assert hass.states.get(world_3_traps_entity_id).state == "2"
+    assert hass.states.get(world_3_salt_lick_entity_id).state == "2"
+    assert hass.states.get(world_3_construction_entity_id).state == "2"
+    assert hass.states.get(world_3_armor_smithy_entity_id).state == "2"
+    assert hass.states.get(world_3_hat_rack_entity_id).state == "2"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -358,6 +436,36 @@ async def test_account_sensors(
             "rooms_available"
         ]
         == 3
+    )
+    assert (
+        hass.states.get(world_3_printer_entity_id).attributes["world_3_printer"][
+            "sample_count"
+        ]
+        == 6
+    )
+    assert (
+        hass.states.get(world_3_refinery_entity_id).attributes["world_3_refinery"][
+            "salt_count"
+        ]
+        == 6
+    )
+    assert (
+        hass.states.get(world_3_death_note_entity_id).attributes["world_3_death_note"][
+            "total_kills"
+        ]
+        == 123456789
+    )
+    assert (
+        hass.states.get(world_3_construction_entity_id).attributes[
+            "world_3_construction"
+        ]["cogs_placed"]
+        == 42
+    )
+    assert (
+        hass.states.get(world_3_hat_rack_entity_id).attributes["world_3_hat_rack"][
+            "eligible_hats"
+        ]
+        == 8
     )
     assert last_updated_entity.entity_category is EntityCategory.DIAGNOSTIC
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
