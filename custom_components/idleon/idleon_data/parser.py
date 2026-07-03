@@ -181,6 +181,38 @@ STAMP_WEBSITE_CATEGORY_KEYS = {
     1: "skills",
     2: "misc",
 }
+CAULDRON_LABELS = {
+    0: "Power",
+    1: "Quicc",
+    2: "High-IQ",
+    3: "Kazam",
+}
+CAULDRON_WEBSITE_KEYS = {
+    0: "power",
+    1: "quicc",
+    2: "high-iq",
+    3: "kazam",
+}
+CAULDRON_BOOST_LABELS = {
+    0: "Speed",
+    1: "Luck",
+    2: "Cost",
+    3: "Extra",
+}
+LIQUID_LABELS = {
+    0: "Water Drops",
+    1: "Liquid N2",
+    2: "Trench H2O",
+    3: "Toxic Mercury",
+}
+SIGIL_UNLOCK_STATES = {
+    -1: "Locked",
+    0: "Unlocking",
+    1: "Unlocked",
+    2: "Jade",
+    3: "Ethereal",
+    4: "Eclectic",
+}
 COMPANION_PET_CATEGORIES = (
     "Legacy Pets",
     "Fallen Spirits",
@@ -859,6 +891,30 @@ def _indexed_account_progress_details(
     if world_summaries:
         details["world_summaries"] = world_summaries
 
+    world_2_cauldron = _indexed_world_2_cauldron(raw_data)
+    if world_2_cauldron:
+        details["world_2_cauldron"] = world_2_cauldron
+
+    world_2_vials = _indexed_world_2_vials(raw_data)
+    if world_2_vials:
+        details["world_2_vials"] = world_2_vials
+
+    world_2_bubbles = _indexed_world_2_bubbles(raw_data)
+    if world_2_bubbles:
+        details["world_2_bubbles"] = world_2_bubbles
+
+    world_2_sigils = _indexed_world_2_sigils(raw_data)
+    if world_2_sigils:
+        details["world_2_sigils"] = world_2_sigils
+
+    world_2_vote_ballots = _indexed_world_2_vote_ballots(raw_data)
+    if world_2_vote_ballots:
+        details["world_2_vote_ballots"] = world_2_vote_ballots
+
+    killroy = _indexed_killroy(raw_data)
+    if killroy:
+        details["killroy"] = killroy
+
     return details
 
 
@@ -1425,6 +1481,184 @@ def _indexed_world_summaries(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     return summaries
 
 
+def _indexed_world_2_cauldron(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 2 cauldron upgrade and liquid summaries."""
+    cauldron: dict[str, Any] = {}
+    levels = _maybe_json(raw_data.get("CauldUpgLVs"))
+    xp_values = _maybe_json(raw_data.get("CauldUpgXPs"))
+    if isinstance(levels, list):
+        cauldron["upgrades"] = _cauldron_upgrade_summary(levels, xp_values)
+
+    alchemy = _alchemy_rows(raw_data)
+    liquids = _list_value(alchemy, 6) if isinstance(alchemy, list) else None
+    if isinstance(liquids, list):
+        cauldron["liquids"] = {
+            LIQUID_LABELS.get(index, f"Liquid {index + 1}"): _compact_number(value)
+            for index, raw_value in enumerate(liquids)
+            if (value := _coerce_float(raw_value)) is not None
+        }
+
+    p2w = _maybe_json(raw_data.get("CauldronP2W"))
+    if isinstance(p2w, list):
+        cauldron["pay_to_win"] = _cauldron_p2w_summary(p2w)
+
+    return cauldron
+
+
+def _indexed_world_2_vials(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return unlocked World 2 vials."""
+    alchemy = _alchemy_rows(raw_data)
+    vial_levels = _list_value(alchemy, 4) if isinstance(alchemy, list) else None
+    if not isinstance(vial_levels, Mapping):
+        return {}
+
+    vials = _website_data_mapping("vials")
+    parsed: dict[str, Any] = {}
+    for key, raw_level in vial_levels.items():
+        if key == "length":
+            continue
+        level = _coerce_int(raw_level) or 0
+        if level <= 0:
+            continue
+        vial = vials.get(str(key))
+        name = f"Vial {int(key) + 1}" if str(key).isdigit() else f"Vial {key}"
+        effect = ""
+        material = ""
+        if isinstance(vial, Mapping):
+            name = _clean_display_text(str(vial.get("name") or name))
+            effect = _clean_display_text(str(vial.get("desc") or ""))
+            material = _clean_display_text(str(vial.get("mainItem") or ""))
+        parsed[name] = {
+            "level": level,
+            "maximum_level": 13,
+            "effect": effect,
+            "material": material,
+        }
+    return parsed
+
+
+def _indexed_world_2_bubbles(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return nonzero World 2 alchemy bubbles grouped by cauldron."""
+    alchemy = _alchemy_rows(raw_data)
+    if not isinstance(alchemy, list):
+        return {}
+
+    cauldrons = _website_data_mapping("cauldrons")
+    parsed: dict[str, Any] = {}
+    for cauldron_index in range(4):
+        bubble_levels = _list_value(alchemy, cauldron_index)
+        if not isinstance(bubble_levels, Mapping):
+            continue
+        website_key = CAULDRON_WEBSITE_KEYS[cauldron_index]
+        website_bubbles = cauldrons.get(website_key)
+        cauldron_bubbles: dict[str, Any] = {}
+        for key, raw_level in bubble_levels.items():
+            if key == "length":
+                continue
+            level = _coerce_int(raw_level) or 0
+            if level <= 0:
+                continue
+            bubble = (
+                _list_value(website_bubbles, _coerce_int(key) or 0)
+                if isinstance(website_bubbles, list)
+                else None
+            )
+            name = f"Bubble {int(key) + 1}" if str(key).isdigit() else f"Bubble {key}"
+            description = ""
+            if isinstance(bubble, Mapping):
+                name = _clean_display_text(str(bubble.get("bubbleName") or name))
+                description = _clean_display_text(str(bubble.get("desc") or ""))
+            cauldron_bubbles[name] = {
+                "level": level,
+                "description": description,
+            }
+        if cauldron_bubbles:
+            parsed[CAULDRON_LABELS[cauldron_index]] = cauldron_bubbles
+    return parsed
+
+
+def _indexed_world_2_sigils(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 2 sigil progress and unlock state."""
+    p2w = _maybe_json(raw_data.get("CauldronP2W"))
+    sigil_values = _list_value(p2w, 4) if isinstance(p2w, list) else None
+    if not isinstance(sigil_values, list):
+        return {}
+
+    sigils = _website_data_list("sigils")
+    parsed: dict[str, Any] = {}
+    for index in range(0, len(sigil_values), 2):
+        progress = _coerce_float(_list_value(sigil_values, index)) or 0
+        raw_state = _coerce_int(_list_value(sigil_values, index + 1))
+        sigil_index = index // 2
+        sigil = _list_value(sigils, sigil_index)
+        name = f"Sigil {sigil_index + 1}"
+        effect = ""
+        if isinstance(sigil, Mapping):
+            name = _clean_display_text(str(sigil.get("name") or name))
+            effect = _clean_display_text(str(sigil.get("effect") or ""))
+        if raw_state is None and progress == 0:
+            continue
+        parsed[name] = {
+            "state": SIGIL_UNLOCK_STATES.get(raw_state or 0, str(raw_state)),
+            "progress": _compact_number(progress),
+            "effect": effect,
+        }
+    return parsed
+
+
+def _indexed_world_2_vote_ballots(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return World 2 vote ballot data when server variables are present."""
+    server_vars = _maybe_json(raw_data.get("serverVars")) or _maybe_json(
+        raw_data.get("ServerVars")
+    )
+    if not isinstance(server_vars, Mapping):
+        explicit = _first_mapping(
+            raw_data,
+            ("vote_ballots", "voteBallots", "voteBallot", "ballots"),
+        )
+        return dict(explicit) if explicit else {}
+
+    ballots: dict[str, Any] = {}
+    vote_categories = _maybe_json(server_vars.get("voteCategories"))
+    vote_percent = _maybe_json(server_vars.get("votePercent"))
+    if isinstance(vote_categories, list):
+        ballots["Bonus Ballot"] = _vote_ballot_summary(
+            vote_categories,
+            vote_percent if isinstance(vote_percent, list) else [],
+        )
+
+    merit_categories = _maybe_json(server_vars.get("voteCat2"))
+    merit_percent = _maybe_json(server_vars.get("votePercent2"))
+    if isinstance(merit_categories, list):
+        ballots["Multi-Meritocracy"] = _vote_ballot_summary(
+            merit_categories,
+            merit_percent if isinstance(merit_percent, list) else [],
+        )
+    return ballots
+
+
+def _indexed_killroy(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return Killroy details when raw or cleaned data is available."""
+    explicit = _first_mapping(
+        raw_data,
+        ("killroy", "Killroy", "KillRoy", "killroy_data", "killroyData"),
+    )
+    if explicit:
+        return dict(explicit)
+
+    account_options = _maybe_json(raw_data.get("accountOptions")) or _maybe_json(
+        raw_data.get("OptLacc")
+    )
+    if not isinstance(account_options, list):
+        return {}
+
+    rooms = 3 if _coerce_int(_list_value(account_options, 227)) == 1 else 2
+    return {
+        "rooms_available": rooms,
+        "schedule": "Unavailable until server variables are present",
+    }
+
+
 def _indexed_looty_raw(raw_data: Mapping[str, Any]) -> Any:
     """Return raw slab/looty item list from known export shapes."""
     cards = _maybe_json(raw_data.get("Cards"))
@@ -1648,6 +1882,18 @@ def _account_details(
         ("world_1_anvil", ("world_1_anvil", "world1Anvil", "anvil", "forge")),
         ("world_1_bribes", ("world_1_bribes", "world1Bribes", "bribes")),
         ("world_1_stamps", ("world_1_stamps", "world1Stamps", "stamps")),
+        (
+            "world_2_cauldron",
+            ("world_2_cauldron", "world2Cauldron", "cauldron"),
+        ),
+        ("world_2_vials", ("world_2_vials", "world2Vials", "vials")),
+        ("world_2_bubbles", ("world_2_bubbles", "world2Bubbles", "bubbles")),
+        ("world_2_sigils", ("world_2_sigils", "world2Sigils", "sigils")),
+        (
+            "world_2_vote_ballots",
+            ("world_2_vote_ballots", "world2VoteBallots", "vote_ballots"),
+        ),
+        ("killroy", ("killroy", "Killroy", "KillRoy")),
         (
             "world_summaries",
             (
@@ -1941,6 +2187,116 @@ def _stamp_coin_cost(level: int, stamp: Mapping[str, Any]) -> float:
     ratio = level / (level + 5 * req_level) if level + 5 * req_level else 0
     adjusted_pow_base = max(1.05, pow_base - ratio * 0.25)
     return base_cost * pow(adjusted_pow_base, level * (10 / req_level))
+
+
+def _alchemy_rows(raw_data: Mapping[str, Any]) -> list[Any]:
+    """Return alchemy rows from raw CauldronInfo."""
+    cauldron_info = _maybe_json(raw_data.get("CauldronInfo"))
+    if isinstance(cauldron_info, list):
+        return cauldron_info
+    return []
+
+
+def _cauldron_upgrade_summary(
+    levels: list[Any],
+    xp_values: Any,
+) -> dict[str, Any]:
+    """Return cauldron boost upgrade levels grouped by cauldron."""
+    upgrades: dict[str, Any] = {}
+    for cauldron_index, cauldron_label in CAULDRON_LABELS.items():
+        start = cauldron_index * 4
+        boosts: dict[str, Any] = {}
+        for boost_offset, boost_label in CAULDRON_BOOST_LABELS.items():
+            index = start + boost_offset
+            level = _coerce_int(_list_value(levels, index))
+            if level is None:
+                continue
+            progress = (
+                _coerce_float(_list_value(xp_values, index))
+                if isinstance(xp_values, list)
+                else None
+            )
+            boost: dict[str, Any] = {"level": level}
+            if progress is not None:
+                boost["progress"] = _compact_number(progress)
+            boosts[boost_label] = boost
+        if boosts:
+            upgrades[cauldron_label] = boosts
+    return upgrades
+
+
+def _cauldron_p2w_summary(p2w: list[Any]) -> dict[str, Any]:
+    """Return compact cauldron pay-to-win levels."""
+    summary: dict[str, Any] = {}
+    cauldron_levels = _list_value(p2w, 0)
+    if isinstance(cauldron_levels, list):
+        summary["cauldrons"] = _chunked_upgrade_levels(
+            cauldron_levels,
+            ("Speed", "New bubble", "Boost requirement"),
+            CAULDRON_LABELS,
+        )
+
+    liquid_levels = _list_value(p2w, 1)
+    if isinstance(liquid_levels, list):
+        summary["liquids"] = _chunked_upgrade_levels(
+            liquid_levels,
+            ("Regen", "Capacity"),
+            LIQUID_LABELS,
+        )
+
+    vial_levels = _list_value(p2w, 2)
+    if isinstance(vial_levels, list):
+        summary["vials"] = {
+            "Attempts": _coerce_int(_list_value(vial_levels, 0)) or 0,
+            "RNG": _coerce_int(_list_value(vial_levels, 1)) or 0,
+        }
+    attempts = _list_value(p2w, 5)
+    if isinstance(attempts, list):
+        summary["vial_attempts"] = {
+            "current": _coerce_int(_list_value(attempts, 0)) or 0,
+            "maximum": _coerce_int(_list_value(attempts, 1)) or 0,
+        }
+    return summary
+
+
+def _chunked_upgrade_levels(
+    values: list[Any],
+    labels: tuple[str, ...],
+    group_labels: Mapping[int, str],
+) -> dict[str, Any]:
+    """Return grouped upgrade levels from a flat list."""
+    grouped: dict[str, Any] = {}
+    width = len(labels)
+    for index in range(0, len(values), width):
+        group_index = index // width
+        group: dict[str, int] = {}
+        for offset, label in enumerate(labels):
+            level = _coerce_int(_list_value(values, index + offset))
+            if level is not None:
+                group[label] = level
+        if group:
+            grouped[group_labels.get(group_index, f"Group {group_index + 1}")] = group
+    return grouped
+
+
+def _vote_ballot_summary(
+    categories: list[Any],
+    percentages: list[Any],
+) -> dict[str, Any]:
+    """Return selected and active vote ballot indexes."""
+    selected = _coerce_int(_list_value(categories, 0))
+    active = categories[1:]
+    return {
+        "selected_index": selected,
+        "active_indexes": [
+            index for value in active if (index := _coerce_int(value)) is not None
+        ],
+        "percentages": [
+            _compact_number(value)
+            for raw_value in percentages
+            if (value := _coerce_float(raw_value)) is not None
+        ],
+    }
 
 
 def _raw_system_presence_summary(

@@ -299,7 +299,28 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
             "CauldronInfo": [
                 {"0": 1000, "1": 10, "2": 20, "length": 3},
                 {"0": 1000, "1": 30, "length": 2},
+                {"length": 0},
+                {"length": 0},
+                {"0": 2, "1": 3, "length": 2},
+                [],
+                [12, 5],
             ],
+            "CauldUpgLVs": [1, 2, 3, 4, 5, 6, 7, 8],
+            "CauldUpgXPs": [10, 20, 30, 40, 50, 60, 70, 80],
+            "CauldronP2W": [
+                [1, 2, 3, 4, 5, 6],
+                [7, 8, 9, 10],
+                [11, 12],
+                [13, 14],
+                [100, 3, 50, 1],
+                [2, 18],
+            ],
+            "serverVars": {
+                "voteCategories": [1, 1, 3, 5],
+                "votePercent": [42, 35, 23],
+                "voteCat2": [2, 2, 4],
+                "votePercent2": [60, 40],
+            },
             "Refinery": [[], [], [100, 200, 300]],
             "Print": [0, "Fish1", 100, "Tree1", 200],
             "CYDeliveryBoxComplete": 2357,
@@ -408,6 +429,21 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
     assert account.details["world_summaries"]["World 2"]["Alchemy bubble levels"] == 60
     assert account.details["world_summaries"]["World 4"]["Cooking"] == 2
     assert account.details["world_summaries"]["World 7"]["Holes"] == 1
+    assert account.details["world_2_cauldron"]["upgrades"]["Power"]["Speed"] == {
+        "level": 1,
+        "progress": 10,
+    }
+    assert account.details["world_2_cauldron"]["liquids"]["Water Drops"] == 12
+    assert account.details["world_2_cauldron"]["pay_to_win"]["vials"] == {
+        "Attempts": 11,
+        "RNG": 12,
+    }
+    assert account.details["world_2_vials"]["COPPER CORONA"]["level"] == 2
+    assert account.details["world_2_sigils"]["BIG MUSCLE"]["state"] == "Ethereal"
+    assert (
+        account.details["world_2_vote_ballots"]["Bonus Ballot"]["selected_index"] == 1
+    )
+    assert account.details["killroy"]["rooms_available"] == 2
 
 
 def test_parser_uses_packaged_item_label_fallbacks(

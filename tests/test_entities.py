@@ -7,6 +7,7 @@ from pathlib import Path
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity import EntityCategory
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.idleon.const import (
@@ -160,9 +161,43 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_world_summaries",
     )
+    world_2_cauldron_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_2_cauldron",
+    )
+    world_2_vials_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_2_vials",
+    )
+    world_2_bubbles_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_2_bubbles",
+    )
+    world_2_sigils_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_2_sigils",
+    )
+    world_2_vote_ballots_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_world_2_vote_ballots",
+    )
+    killroy_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_killroy",
+    )
 
     assert hass.states.get(total_level_entity_id).state == "365"
     assert hass.states.get(character_count_entity_id).state == "2"
+    assert (
+        hass.states.get(character_count_entity_id).attributes["state_class"]
+        == "measurement"
+    )
     assert hass.states.get(gems_entity_id).state == "1234"
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"
@@ -187,6 +222,12 @@ async def test_account_sensors(
     assert hass.states.get(world_1_bribes_entity_id).state == "2"
     assert hass.states.get(world_1_stamps_entity_id).state == "1"
     assert hass.states.get(world_summaries_entity_id).state == "4"
+    assert hass.states.get(world_2_cauldron_entity_id).state == "2"
+    assert hass.states.get(world_2_vials_entity_id).state == "1"
+    assert hass.states.get(world_2_bubbles_entity_id).state == "1"
+    assert hass.states.get(world_2_sigils_entity_id).state == "1"
+    assert hass.states.get(world_2_vote_ballots_entity_id).state == "1"
+    assert hass.states.get(killroy_entity_id).state == "2"
     highest_level_attributes = hass.states.get(highest_level_entity_id).attributes
     assert highest_level_attributes["highest_level_character"] == "Bubo Main"
     assert highest_level_attributes["class_counts"] == {
@@ -290,6 +331,40 @@ async def test_account_sensors(
         ]["Refined salts"]
         == 1084541
     )
+    assert (
+        hass.states.get(world_2_cauldron_entity_id).attributes["world_2_cauldron"][
+            "upgrades"
+        ]["Power"]["Speed"]["level"]
+        == 131
+    )
+    assert (
+        hass.states.get(world_2_vials_entity_id).attributes["world_2_vials"][
+            "Copper Corona"
+        ]["level"]
+        == 13
+    )
+    assert (
+        hass.states.get(world_2_bubbles_entity_id).attributes["world_2_bubbles"][
+            "Power"
+        ]["Roid Ragin"]["level"]
+        == 250
+    )
+    assert (
+        hass.states.get(world_2_sigils_entity_id).attributes["world_2_sigils"][
+            "Big Muscle"
+        ]["state"]
+        == "Ethereal"
+    )
+    assert (
+        hass.states.get(world_2_vote_ballots_entity_id).attributes[
+            "world_2_vote_ballots"
+        ]["Bonus Ballot"]["selected_index"]
+        == 1
+    )
+    assert (
+        hass.states.get(killroy_entity_id).attributes["killroy"]["rooms_available"] == 3
+    )
+    assert last_updated_entity.entity_category is EntityCategory.DIAGNOSTIC
     assert last_updated_entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     assert hass.states.get(last_updated_entity_id) is None
 

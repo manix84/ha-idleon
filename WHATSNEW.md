@@ -1,5 +1,12 @@
 # 📰 What's New
 
+## 🚀 0.19.0
+
+- Add World 2 account sensors for cauldron, vials, bubbles, sigils, vote ballots, and Killroy.
+- Parse raw alchemy and ballot fields into structured account attributes.
+- Mark numeric sensors with measurement state class so Home Assistant can graph them.
+- Keep Last Updated as a disabled diagnostic sensor.
+
 ## 🚀 0.18.0
 
 - Add account sensors for World 1 anvil, bribes, stamps, and broader world summaries.

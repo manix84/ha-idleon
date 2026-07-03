@@ -157,6 +157,24 @@
       "account_world_summaries": {
         "name": "World summaries"
       },
+      "account_world_2_cauldron": {
+        "name": "World 2 cauldron"
+      },
+      "account_world_2_vials": {
+        "name": "World 2 vials"
+      },
+      "account_world_2_bubbles": {
+        "name": "World 2 bubbles"
+      },
+      "account_world_2_sigils": {
+        "name": "World 2 sigils"
+      },
+      "account_world_2_vote_ballots": {
+        "name": "World 2 vote ballots"
+      },
+      "account_killroy": {
+        "name": "Killroy"
+      },
       "character_level": {
         "name": "Level"
       },

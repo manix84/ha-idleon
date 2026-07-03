@@ -12,11 +12,12 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -65,6 +66,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         value_fn=lambda coordinator: (
             coordinator.data.source_updated_at or coordinator.last_successful_update
         ),
+        entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
     ),
     IdleonAccountSensorEntityDescription(
@@ -261,6 +263,57 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
         detail_keys=("world_summaries",),
     ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_2_cauldron",
+        translation_key="account_world_2_cauldron",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_2_cauldron",
+        ),
+        detail_keys=("world_2_cauldron",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_2_vials",
+        translation_key="account_world_2_vials",
+        value_fn=lambda coordinator: _account_detail_count(
+            coordinator,
+            "world_2_vials",
+        ),
+        detail_keys=("world_2_vials",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_2_bubbles",
+        translation_key="account_world_2_bubbles",
+        value_fn=lambda coordinator: _account_detail_nested_count(
+            coordinator,
+            "world_2_bubbles",
+        ),
+        detail_keys=("world_2_bubbles",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_2_sigils",
+        translation_key="account_world_2_sigils",
+        value_fn=lambda coordinator: _account_detail_count(
+            coordinator,
+            "world_2_sigils",
+        ),
+        detail_keys=("world_2_sigils",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_world_2_vote_ballots",
+        translation_key="account_world_2_vote_ballots",
+        value_fn=lambda coordinator: _account_detail_count(
+            coordinator,
+            "world_2_vote_ballots",
+        ),
+        detail_keys=("world_2_vote_ballots",),
+    ),
+    IdleonAccountSensorEntityDescription(
+        key="account_killroy",
+        translation_key="account_killroy",
+        value_fn=lambda coordinator: _account_detail_count(coordinator, "killroy"),
+        detail_keys=("killroy",),
+    ),
 )
 
 CHARACTER_SENSOR_DESCRIPTIONS = (
@@ -388,6 +441,23 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
     ),
 )
 
+NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
+    description.key
+    for description in ACCOUNT_SENSOR_DESCRIPTIONS
+    if description.key != "account_last_updated"
+)
+NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
+    description.key
+    for description in CHARACTER_SENSOR_DESCRIPTIONS
+    if description.key
+    not in {
+        "character_class",
+        "character_current_map",
+        "character_current_activity",
+        "character_highest_skill",
+    }
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -440,6 +510,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_device_info = _account_device_info(entry)
+        if description.key in NUMERIC_ACCOUNT_SENSOR_KEYS:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> Any:
@@ -498,6 +570,8 @@ class IdleonCharacterSensor(
             f"{entry.entry_id}_{_slugify(character.character_id)}_{description.key}"
         )
         self._attr_device_info = _character_device_info(entry, character)
+        if description.key in NUMERIC_CHARACTER_SENSOR_KEYS:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def available(self) -> bool:
