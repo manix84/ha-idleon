@@ -678,6 +678,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 250,
             "maximum_capacity": 250,
             "largest_pouch": "Average Mining Pouch",
+            "largest_pouch_capacity": 250,
             "largest_pouch_asset": "pouches/mining/average.png",
         },
         "Materials": {
@@ -687,6 +688,7 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 100,
             "maximum_capacity": 100,
             "largest_pouch": "Small Material Pouch",
+            "largest_pouch_capacity": 100,
             "largest_pouch_asset": "pouches/material/small.png",
         },
         "Foods": {
@@ -696,9 +698,78 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
             "capacity_per_slot": 25,
             "maximum_capacity": 25,
             "largest_pouch": "Miniscule Food Pouch",
+            "largest_pouch_capacity": 25,
             "largest_pouch_asset": "pouches/food/miniscule.png",
         },
     }
+
+
+def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
+    """Test carry capacity details resolve the correct pouch type and tier."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "MaxCarryCap_0": {
+                "Bugs": 2000,
+                "Chopping": 25000,
+                "Critters": 5000,
+                "Fishing": 50,
+                "Foods": 35000,
+                "Mining": 25,
+                "Souls": 10000,
+                "bCraft": 500,
+            },
+        }
+    )
+
+    storage_capacities = account.characters[0].details["storage_capacities"]
+
+    assert storage_capacities["Bugs"]["largest_pouch"] == "Large Bug Pouch"
+    assert storage_capacities["Bugs"]["largest_pouch_capacity"] == 2000
+    assert storage_capacities["Bugs"]["largest_pouch_asset"] == (
+        "pouches/bug/large.png"
+    )
+    assert storage_capacities["Chopping"]["largest_pouch"] == (
+        "Gargantuan Chopping Pouch"
+    )
+    assert storage_capacities["Chopping"]["largest_pouch_capacity"] == 25000
+    assert storage_capacities["Chopping"]["largest_pouch_asset"] == (
+        "pouches/chopping/gargantuan.png"
+    )
+    assert storage_capacities["Critters"]["largest_pouch"] == "Massive Critter Pouch"
+    assert storage_capacities["Critters"]["largest_pouch_capacity"] == 5000
+    assert storage_capacities["Critters"]["largest_pouch_asset"] == (
+        "pouches/critter/massive.png"
+    )
+    assert storage_capacities["Fishing"]["largest_pouch"] == "Cramped Fish Pouch"
+    assert storage_capacities["Fishing"]["largest_pouch_capacity"] == 50
+    assert storage_capacities["Fishing"]["largest_pouch_asset"] == (
+        "pouches/fish/cramped.png"
+    )
+    assert storage_capacities["Foods"]["largest_pouch"] == "Enormous Food Pouch"
+    assert storage_capacities["Foods"]["largest_pouch_capacity"] == 35000
+    assert storage_capacities["Foods"]["largest_pouch_asset"] == (
+        "pouches/food/enormous.png"
+    )
+    assert storage_capacities["Mining"]["largest_pouch"] == "Miniature Mining Pouch"
+    assert storage_capacities["Mining"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Mining"]["largest_pouch_asset"] == (
+        "pouches/mining/miniature.png"
+    )
+    assert storage_capacities["Souls"]["largest_pouch"] == "Volumetric Soul Pouch"
+    assert storage_capacities["Souls"]["largest_pouch_capacity"] == 10000
+    assert storage_capacities["Souls"]["largest_pouch_asset"] == (
+        "pouches/soul/volumetric.png"
+    )
+    assert storage_capacities["Materials"]["largest_pouch"] == (
+        "Sizable Materials Pouch"
+    )
+    assert storage_capacities["Materials"]["largest_pouch_capacity"] == 500
+    assert storage_capacities["Materials"]["largest_pouch_asset"] == (
+        "pouches/materials/sizable.png"
+    )
 
 
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:

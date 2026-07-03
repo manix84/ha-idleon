@@ -678,8 +678,16 @@ async def test_character_sensors(
     assert bug_storage_attributes["capacity_per_slot"] == 1000
     assert bug_storage_attributes["maximum_capacity"] == 1250
     assert bug_storage_attributes["largest_pouch"] == "Big Bug Pouch"
+    assert bug_storage_attributes["largest_pouch_capacity"] == 1000
     assert (
         bug_storage_attributes["entity_picture"] == "/idleon_static/pouches/bug/big.png"
+    )
+
+    material_storage_attributes = hass.states.get(material_storage_entity_id).attributes
+    assert material_storage_attributes["largest_pouch"] == "Small Material Pouch"
+    assert material_storage_attributes["largest_pouch_capacity"] == 100
+    assert material_storage_attributes["entity_picture"] == (
+        "/idleon_static/pouches/material/small.png"
     )
 
     equipped_items_attributes = hass.states.get(equipped_items_entity_id).attributes

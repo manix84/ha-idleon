@@ -838,6 +838,8 @@ def _indexed_storage_capacity_details(
             "largest_pouch": largest_pouch_label,
             "largest_pouch_asset": largest_pouch_asset,
         }
+        if largest_pouch:
+            details["largest_pouch_capacity"] = base_capacity
         storage_capacities[label] = _remove_empty_detail_values(details)
 
     if not storage_capacities:
