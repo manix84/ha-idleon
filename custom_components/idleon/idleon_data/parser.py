@@ -33,6 +33,14 @@ MAX_CARRY_CAPACITY_LABELS = {
 MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES = {
     "Materials": "bCraft",
 }
+EMPTY_POUCH_CAPACITY_LIMIT = 50
+EMPTY_POUCH_ASSET = "pouches/none.png"
+POUCH_STORAGE_TYPE_ALIASES = {
+    "choppin": "chopping",
+    "critta": "critter",
+    "materials": "material",
+    "matty": "material",
+}
 FALLBACK_WEBSITE_LABELS = {
     "invBags": {
         "InvBag1": "Inventory Bag A",
@@ -819,15 +827,25 @@ def _indexed_storage_capacity_details(
             continue
 
         label = _max_carry_capacity_label(raw_key)
-        largest_pouch = _largest_carry_bag(carry_bags, raw_key, maximum_capacity)
         base_capacity = maximum_capacity
         largest_pouch_label = "Unknown"
         largest_pouch_asset = None
+        largest_pouch_capacity: int | None = None
+        largest_pouch = None
+        if maximum_capacity < EMPTY_POUCH_CAPACITY_LIMIT:
+            base_capacity = 0
+            largest_pouch_label = "Empty Pouch"
+            largest_pouch_asset = EMPTY_POUCH_ASSET
+            largest_pouch_capacity = 0
+        else:
+            largest_pouch = _largest_carry_bag(carry_bags, raw_key, maximum_capacity)
+
         if largest_pouch:
             bag_capacity, display_name = largest_pouch
             base_capacity = bag_capacity
             largest_pouch_label = _clean_display_text(display_name)
             largest_pouch_asset = _carry_bag_asset_filename(display_name)
+            largest_pouch_capacity = base_capacity
 
         details = {
             "storage_type": label,
@@ -838,8 +856,8 @@ def _indexed_storage_capacity_details(
             "largest_pouch": largest_pouch_label,
             "largest_pouch_asset": largest_pouch_asset,
         }
-        if largest_pouch:
-            details["largest_pouch_capacity"] = base_capacity
+        if largest_pouch_capacity is not None:
+            details["largest_pouch_capacity"] = largest_pouch_capacity
         storage_capacities[label] = _remove_empty_detail_values(details)
 
     if not storage_capacities:
@@ -885,7 +903,10 @@ def _carry_bag_asset_filename(display_name: str) -> str:
         return f"pouches/{'_'.join(parts)}.png"
 
     storage_type = parts[-2]
+    storage_type = POUCH_STORAGE_TYPE_ALIASES.get(storage_type, storage_type)
     prefix = "_".join(parts[:-2])
+    if storage_type == "material" and prefix in {"miniature", "miniscule"}:
+        prefix = "mini"
     if not prefix:
         return f"pouches/{storage_type}.png"
     return f"pouches/{storage_type}/{prefix}.png"
