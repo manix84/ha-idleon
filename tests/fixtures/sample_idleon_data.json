@@ -235,7 +235,7 @@
           "percentages": [42, 35, 23]
         }
       },
-      "killroy": {
+      "world_2_killroy": {
         "rooms_available": 3,
         "schedule": "Unavailable until server variables are present"
       }

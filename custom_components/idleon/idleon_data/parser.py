@@ -913,7 +913,7 @@ def _indexed_account_progress_details(
 
     killroy = _indexed_killroy(raw_data)
     if killroy:
-        details["killroy"] = killroy
+        details["world_2_killroy"] = killroy
 
     return details
 
@@ -1854,8 +1854,19 @@ def _account_details(
     """Return compact account-wide attributes for flexible mappings."""
     details = dict(_first_mapping(account_data, ("details", "attributes")) or {})
     details.update(_computed_account_details(characters))
+    total_money = _first_float(
+        account_data,
+        ("total_money", "totalMoney", "money", "coins"),
+    )
+    raw_money = _first_float(account_data, ("raw_money", "rawMoney"))
+    if total_money is not None:
+        details["total_money"] = _compact_number(total_money)
+    if raw_money is not None:
+        details["raw_money"] = _compact_number(raw_money)
     if "total_money" not in details and "raw_money" in details:
         details["total_money"] = details["raw_money"]
+    if "raw_money" not in details and "total_money" in details:
+        details["raw_money"] = details["total_money"]
     for detail_key, aliases in (
         ("currencies", ("currencies", "currency")),
         ("shrine_levels", ("shrine_levels", "shrineLevels", "shrines")),
@@ -1893,7 +1904,10 @@ def _account_details(
             "world_2_vote_ballots",
             ("world_2_vote_ballots", "world2VoteBallots", "vote_ballots"),
         ),
-        ("killroy", ("killroy", "Killroy", "KillRoy")),
+        (
+            "world_2_killroy",
+            ("world_2_killroy", "world2Killroy", "killroy", "Killroy", "KillRoy"),
+        ),
         (
             "world_summaries",
             (
@@ -2609,10 +2623,25 @@ def _clean_display_text(value: str) -> str:
 def _remove_empty_detail_values(details: Mapping[str, Any]) -> dict[str, Any]:
     """Drop empty detail values so entity attributes stay compact."""
     return {
-        str(key): value
+        str(key): _compact_detail_value(value)
         for key, value in details.items()
         if value not in (None, "", [], {})
     }
+
+
+def _compact_detail_value(value: Any) -> Any:
+    """Recursively compact whole-number floats in parsed detail values."""
+    if isinstance(value, float):
+        return _compact_number(value)
+    if isinstance(value, Mapping):
+        return {
+            str(key): _compact_detail_value(item)
+            for key, item in value.items()
+            if item not in (None, "", [], {})
+        }
+    if isinstance(value, list):
+        return [_compact_detail_value(item) for item in value]
+    return value
 
 
 def _parse_json_string(value: str) -> Any:

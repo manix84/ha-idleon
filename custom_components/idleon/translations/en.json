@@ -133,9 +133,6 @@
       "account_pets": {
         "name": "Pets"
       },
-      "account_achievements_by_world": {
-        "name": "Achievements by world"
-      },
       "account_task_levels": {
         "name": "Task levels"
       },
@@ -172,8 +169,8 @@
       "account_world_2_vote_ballots": {
         "name": "World 2 vote ballots"
       },
-      "account_killroy": {
-        "name": "Killroy"
+      "account_world_2_killroy": {
+        "name": "World 2 Killroy"
       },
       "character_level": {
         "name": "Level"

@@ -92,19 +92,14 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_total_money",
         translation_key="account_total_money",
-        value_fn=lambda coordinator: _account_total_money(coordinator),
+        value_fn=lambda coordinator: _account_money_value(coordinator, "total_money"),
         detail_keys=("money_breakdown",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_raw_money",
         translation_key="account_raw_money",
-        value_fn=lambda coordinator: _account_detail_value(
-            coordinator,
-            "raw_money",
-            0,
-        ),
+        value_fn=lambda coordinator: _account_money_value(coordinator, "raw_money"),
         detail_keys=("money_breakdown",),
-        entity_registry_enabled_default=False,
     ),
     IdleonAccountSensorEntityDescription(
         key="account_green_stacks",
@@ -133,6 +128,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             "achievements_completed",
             0,
         ),
+        detail_keys=("achievement_status",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_currencies",
@@ -193,12 +189,6 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             "pets",
         ),
         detail_keys=("pets",),
-    ),
-    IdleonAccountSensorEntityDescription(
-        key="account_achievements_by_world",
-        translation_key="account_achievements_by_world",
-        value_fn=lambda coordinator: _account_achievement_total(coordinator),
-        detail_keys=("achievement_status",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_task_levels",
@@ -309,10 +299,12 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         detail_keys=("world_2_vote_ballots",),
     ),
     IdleonAccountSensorEntityDescription(
-        key="account_killroy",
-        translation_key="account_killroy",
-        value_fn=lambda coordinator: _account_detail_count(coordinator, "killroy"),
-        detail_keys=("killroy",),
+        key="account_world_2_killroy",
+        translation_key="account_world_2_killroy",
+        value_fn=lambda coordinator: _account_world_2_killroy_rooms_available(
+            coordinator
+        ),
+        detail_keys=("world_2_killroy",),
     ),
 )
 
@@ -539,11 +531,11 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
         attributes = {
-            key: self.coordinator.data.details[key]
+            key: _normalize_attribute_value(self.coordinator.data.details[key])
             for key in self.entity_description.detail_keys
             if key in self.coordinator.data.details
         }
-        return attributes or None
+        return _normalize_attribute_value(attributes) or None
 
 
 class IdleonCharacterSensor(
@@ -601,7 +593,7 @@ class IdleonCharacterSensor(
             character.details,
             self.entity_description.detail_keys,
         )
-        return attributes or None
+        return _normalize_attribute_value(attributes) or None
 
     @property
     def _character(self) -> IdleonCharacter | None:
@@ -742,22 +734,6 @@ def _account_detail_nested_count(
     return total
 
 
-def _account_achievement_total(coordinator: IdleonDataUpdateCoordinator) -> int:
-    """Return the total achieved achievements from grouped status details."""
-    value = coordinator.data.details.get("achievement_status")
-    if not isinstance(value, Mapping):
-        return int(coordinator.data.details.get("achievements_completed", 0) or 0)
-
-    total = 0
-    for detail_value in value.values():
-        if not isinstance(detail_value, Mapping):
-            continue
-        achieved = detail_value.get("achieved")
-        if isinstance(achieved, int | float):
-            total += int(achieved)
-    return total
-
-
 def _account_detail_sum(
     coordinator: IdleonDataUpdateCoordinator,
     key: str,
@@ -781,12 +757,29 @@ def _account_detail_sum(
     return round(total, 2)
 
 
-def _account_total_money(coordinator: IdleonDataUpdateCoordinator) -> Any:
+def _account_money_value(coordinator: IdleonDataUpdateCoordinator, key: str) -> Any:
     """Return parsed account money using current and compatibility detail keys."""
-    return coordinator.data.details.get(
-        "total_money",
-        coordinator.data.details.get("raw_money", 0),
-    )
+    value = coordinator.data.details.get(key)
+    if value is None and key == "total_money":
+        value = coordinator.data.details.get("raw_money")
+    if value is None and key == "raw_money":
+        value = coordinator.data.details.get("total_money")
+    if isinstance(value, int | float):
+        return int(value) if isinstance(value, float) and value.is_integer() else value
+    return 0
+
+
+def _account_world_2_killroy_rooms_available(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int:
+    """Return parsed Killroy room count for the World 2 Killroy sensor state."""
+    value = coordinator.data.details.get("world_2_killroy")
+    if not isinstance(value, Mapping):
+        return 0
+    rooms_available = value.get("rooms_available")
+    if isinstance(rooms_available, int | float):
+        return int(rooms_available)
+    return 0
 
 
 def _stat_value(character: IdleonCharacter, key: str) -> int:
@@ -809,3 +802,14 @@ def _highest_skill_name(character: IdleonCharacter) -> str:
         if name and level is not None:
             return f"{name} ({level})"
     return "Unknown"
+
+
+def _normalize_attribute_value(value: Any) -> Any:
+    """Return Home Assistant friendly attributes with integral floats compacted."""
+    if isinstance(value, float):
+        return int(value) if value.is_integer() else value
+    if isinstance(value, Mapping):
+        return {key: _normalize_attribute_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_attribute_value(item) for item in value]
+    return value

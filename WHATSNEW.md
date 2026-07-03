@@ -1,5 +1,12 @@
 # 📰 What's New
 
+## 🚀 0.19.1
+
+- Rename Killroy to World 2 Killroy and use rooms available as the sensor value.
+- Fold achievement world details into Achievements completed instead of exposing a duplicate sensor.
+- Enable Raw money and harden account money parsing for flexible exports.
+- Compact whole-number float attributes before exposing them to Home Assistant.
+
 ## 🚀 0.19.0
 
 - Add World 2 account sensors for cauldron, vials, bubbles, sigils, vote ballots, and Killroy.
