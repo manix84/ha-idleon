@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.11.0
+
+- Use the Idleon Firebase auth handler for Steam OpenID redirects.
+- Update Steam setup instructions to copy the final returned browser URL.
+
 ## 🚀 0.10.1
 
 - Run the release workflow when code is pushed to main.

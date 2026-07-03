@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Home%20Assistant-2026.6.4-41BDF5" alt="Home Assistant 2026.6.4">
   <img src="https://img.shields.io/badge/HACS-custom-orange" alt="HACS custom repository">
-  <img src="https://img.shields.io/badge/version-0.10.1-blue" alt="Version 0.10.1">
+  <img src="https://img.shields.io/badge/version-0.11.0-blue" alt="Version 0.11.0">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
   <br />
   <a href="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml"><img src="https://github.com/manix84/ha-idleon/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
@@ -92,9 +92,10 @@ Supported providers:
 - `google`: shows a Google device-code login prompt, exchanges the completed
   Google authorization for Firebase tokens, and stores only the Firebase refresh
   token for future polling.
-- `steam`: shows a Steam OpenID sign-in link. After Steam redirects to
-  `localhost`, copy the full returned browser URL back into Home Assistant. The
-  returned URL is exchanged for Firebase tokens and is not stored after setup.
+- `steam`: shows a Steam OpenID sign-in link. After Steam redirects through the
+  Idleon Firebase auth handler, copy the full final browser URL back into Home
+  Assistant. The returned URL is exchanged for Firebase tokens and is not stored
+  after setup.
 - `apple`: visible in the first setup choice but not implemented yet.
 
 See [docs/auth-data-source.md](docs/auth-data-source.md) for the design notes
@@ -182,8 +183,8 @@ Third-party data notices are listed in
 ## 🚧 Known Limitations
 
 - Email/password, Google, and Steam are the implemented cloud login providers.
-- Steam setup currently requires copying the returned localhost URL from the
-  browser address bar back into Home Assistant.
+- Steam setup currently requires copying the final returned browser URL back
+  into Home Assistant.
 - Apple login is not implemented yet.
 - The parser is flexible but may still need updates for new data domains.
 - No write actions, services, automations, or cloud storage are included.

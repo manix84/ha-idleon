@@ -22,7 +22,7 @@
       },
       "steam": {
         "title": "Authorize Steam login",
-        "description": "1. Open this Steam sign-in link:\n\n[{steam_login_url}]({steam_login_url})\n\n2. Finish signing in with the Steam account used for Idleon.\n\n3. Steam will redirect your browser to a localhost page that may not load. Copy the full browser address from the address bar.\n\n4. Paste that returned browser URL below, then submit this form.",
+        "description": "1. Open this Steam sign-in link:\n\n[{steam_login_url}]({steam_login_url})\n\n2. Finish signing in with the Steam account used for Idleon.\n\n3. After Steam redirects your browser, copy the full final browser address from the address bar.\n\n4. Paste that returned browser URL below, then submit this form.",
         "data": {
           "steam_openid_response_url": "Steam returned browser URL",
           "scan_interval": "Scan interval in seconds"

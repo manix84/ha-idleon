@@ -49,8 +49,8 @@ user code, then exchanges the completed Google authorization for Firebase
 credentials.
 
 Steam is implemented with a manual OpenID handoff: Home Assistant shows a Steam
-sign-in link, the user signs in through Steam, then copies the returned
-localhost URL back into the config flow. Apple is still more awkward in a Home
+sign-in link, the user signs in through Steam, then copies the final returned
+browser URL back into the config flow. Apple is still more awkward in a Home
 Assistant server context because it requires provider-specific browser handoff
 pages.
 

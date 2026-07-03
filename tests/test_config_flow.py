@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Self
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 from aiohttp import ClientError, ClientResponseError
 from homeassistant import config_entries
@@ -144,13 +144,13 @@ def _cloud_firestore_document() -> dict[str, Any]:
 def _steam_openid_response_url() -> str:
     """Return a synthetic Steam OpenID response URL."""
     return (
-        "http://localhost/?"
-        "openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&"
+        "https://idlemmo.firebaseapp.com/__/auth/handler?"
+        "openid.ns=https%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&"
         "openid.mode=id_res&"
         "openid.op_endpoint=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Flogin&"
         "openid.claimed_id=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Fid%2F123&"
         "openid.identity=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Fid%2F123&"
-        "openid.return_to=http%3A%2F%2Flocalhost%2F&"
+        "openid.return_to=https%3A%2F%2Fidlemmo.firebaseapp.com%2F__%2Fauth%2Fhandler&"
         "openid.response_nonce=nonce&"
         "openid.assoc_handle=assoc&"
         "openid.signed=signed%2Cfields&"
@@ -510,10 +510,14 @@ async def test_config_flow_success_idleon_cloud_steam(
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "steam"
-    assert (
-        "steamcommunity.com/openid/login"
-        in result["description_placeholders"]["steam_login_url"]
-    )
+    steam_login_url = result["description_placeholders"]["steam_login_url"]
+    assert "steamcommunity.com/openid/login" in steam_login_url
+    steam_login_params = parse_qs(urlsplit(steam_login_url).query)
+    assert steam_login_params["openid.ns"] == ["https://specs.openid.net/auth/2.0"]
+    assert steam_login_params["openid.return_to"] == [
+        "https://idlemmo.firebaseapp.com/__/auth/handler"
+    ]
+    assert steam_login_params["openid.realm"] == ["https://idlemmo.firebaseapp.com/"]
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
@@ -533,6 +537,9 @@ async def test_config_flow_success_idleon_cloud_steam(
     assert "accounts:signInWithIdp" in fake_session.requests[0][1]
     post_payload = fake_session.requests[0][2]["json"]
     assert isinstance(post_payload, dict)
+    assert (
+        post_payload["requestUri"] == "https://idlemmo.firebaseapp.com/__/auth/handler"
+    )
     post_body = post_payload["postBody"]
     assert isinstance(post_body, str)
     assert parse_qs(post_body)["providerId"] == ["steam.com"]

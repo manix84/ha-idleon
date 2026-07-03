@@ -35,16 +35,20 @@ GOOGLE_CLIENT_SECRET = "HzoZF-UKUNfFwBuz4vafwsaR"
 GOOGLE_AUTH_PROVIDER_ID = "google.com"
 GOOGLE_OAUTH_SCOPE = "email profile"
 FIREBASE_AUTH_REQUEST_URI = "http://localhost"
-STEAM_OPENID_RETURN_URL = "http://localhost/"
+FIREBASE_AUTH_HANDLER_URI = (
+    f"https://{FIREBASE_PROJECT_ID}.firebaseapp.com/__/auth/handler"
+)
+STEAM_OPENID_RETURN_URL = FIREBASE_AUTH_HANDLER_URI
+STEAM_OPENID_REALM = f"https://{FIREBASE_PROJECT_ID}.firebaseapp.com/"
 STEAM_AUTH_PROVIDER_ID = "steam.com"
 STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login?" + urlencode(
     {
-        "openid.ns": "http://specs.openid.net/auth/2.0",
+        "openid.ns": "https://specs.openid.net/auth/2.0",
         "openid.mode": "checkid_setup",
         "openid.return_to": STEAM_OPENID_RETURN_URL,
-        "openid.realm": STEAM_OPENID_RETURN_URL,
-        "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
-        "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
+        "openid.realm": STEAM_OPENID_REALM,
+        "openid.identity": "https://specs.openid.net/auth/2.0/identifier_select",
+        "openid.claimed_id": "https://specs.openid.net/auth/2.0/identifier_select",
     }
 )
 
