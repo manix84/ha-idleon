@@ -47,11 +47,17 @@ of separate default entities.
 
 ### 📸 What You Should See
 
-![Integration devices list](examples/screenshots/integration-devices.png)
-
-![Account device sensors](examples/screenshots/account-device.png)
-
-![Character device sensors](examples/screenshots/character-device.png)
+<p>
+  <a href="docs/screenshots/integration-devices.png">
+    <img src="docs/screenshots/integration-devices.png" alt="Integration devices list" width="260">
+  </a>
+  <a href="docs/screenshots/account-device.png">
+    <img src="docs/screenshots/account-device.png" alt="Account device sensors" width="260">
+  </a>
+  <a href="docs/screenshots/character-device.png">
+    <img src="docs/screenshots/character-device.png" alt="Character device sensors" width="260">
+  </a>
+</p>
 
 ## ✨ What It Does
 
@@ -59,10 +65,10 @@ HA Idleon reads a JSON representation of your Idleon account data and creates
 Home Assistant devices and entities for basic account and character status.
 
 🔒 The integration is read-only. The cloud setup uses Idleon email/password,
-Google device authorization, or Steam OpenID authorization once to store a
-Firebase refresh token for future polling. Users should not paste private
-session tokens. Raw Idleon account data may contain sensitive game/account
-details.
+Google device authorization, or an experimental Steam/Apple authorization flow
+once to store a Firebase refresh token for future polling. Users should not
+paste private session tokens. Raw Idleon account data may contain sensitive
+game/account details.
 
 The intended primary setup is an authenticated Idleon cloud data source, using
 the same style of login users already use for Idleon. The current `local_file`

@@ -213,6 +213,7 @@ Do not implement:
 4. Add repair/config-flow errors for auth failures. Config-flow errors are
    implemented; repairs are still pending.
 5. Add Google device flow. Done.
-6. Add Steam OpenID handoff. Done.
-7. Add Apple sign-in through Idleon's Apple auth handoff. Done.
+6. Add Steam OpenID handoff. Implemented, experimental.
+7. Add Apple sign-in through Idleon's Apple auth handoff. Implemented,
+   experimental.
 8. Move `local_file` and `remote_url` under advanced/development wording.
