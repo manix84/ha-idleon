@@ -2,74 +2,104 @@
 
 ## 🚀 0.9.1
 
-- Patch release placeholder. Update before release.
+- Renamed the Home Assistant and HACS display name to `Legends of Idleon`.
+- Kept the integration domain unchanged as `idleon`, so existing config entries
+  and entities continue to use the same technical integration ID.
 
 ## 🚀 0.9.0
 
-- Minor release placeholder. Update before release.
+- Added character summary sensors for inventory slots used, inventory slots
+  free, highest skill, and equipped item count.
+- Added compact character attributes for primary stats, skill levels, highest
+  skill, equipped items, equipped tools, equipped food, and attack loadout.
+- Expanded parser coverage for indexed Idleon exports so entities can consume
+  normalized model details instead of raw JSON paths.
 
 ## 🚀 0.8.2
 
-- Patch release placeholder. Update before release.
+- Added a GitHub release workflow that builds and publishes a HACS-compatible
+  release zip.
+- Added release archive validation to ensure the zip contains the
+  `custom_components/idleon` layout, HACS metadata, README, LICENSE, and brand
+  icon assets.
+- Added a Release status badge to the README.
 
 ## 🚀 0.8.1
 
-- Patch release placeholder. Update before release.
+- Switched the Home Assistant/HACS source icon to the compact official Idleon
+  vial icon asset.
+- Updated metadata tests to track the current official source icon.
 
 ## 🚀 0.8.0
 
-- Minor release placeholder. Update before release.
+- Changed the default refresh interval to five minutes.
+- Kept the refresh cadence aligned with Home Assistant's minimum polling
+  interval while avoiding excessive cloud polling.
 
 ## 🚀 0.7.0
 
-- Minor release placeholder. Update before release.
+- Simplified config-entry options so existing services only expose the refresh
+  interval.
+- Moved data-source selection out of options, matching the intended direction
+  toward authenticated Idleon cloud sources.
 
 ## 🚀 0.6.4
 
-- Patch release placeholder. Update before release.
+- Replaced the Home Assistant brand assets with the official Idleon source icon.
+- Kept the documentation project icon separate from the Home Assistant-served
+  icon assets.
 
 ## 🚀 0.6.3
 
-- Patch release placeholder. Update before release.
+- Updated brand assets to use transparent-background images.
+- Preserved Home Assistant and HACS icon/logo paths for local and custom
+  repository installs.
 
 ## 🚀 0.6.2
 
-- Patch release placeholder. Update before release.
+- Added integration-local brand assets under `custom_components/idleon/brand`.
+- Ensured the HACS release archive includes the integration brand icon.
 
 ## 🚀 0.6.1
 
-- Patch release placeholder. Update before release.
+- Added 2x icon and logo assets for Home Assistant and HACS.
+- Expanded metadata checks around served brand image files.
 
 ## 🚀 0.6.0
 
-- Minor release placeholder. Update before release.
+- Flattened setup so users choose directly between `google`, `apple`, `email`,
+  `steam`, and `local_file`.
+- Removed the intermediate `idleon_cloud` source label from the user-facing
+  setup path.
 
 ## 🚀 0.5.0
 
-- Split `idleon_cloud` login provider selection onto its own setup page.
-- Improved Google authorization instructions with a clearer login link and
+- Split cloud login provider selection onto its own setup page.
+- Improved Google authorization instructions with a clearer login link and a
   prominent device code.
+- Added support for Google verification URLs that can prefill the device code
+  when Google supports it.
 
 ## 🚀 0.4.0
 
-- Added Google device-code authorization for `idleon_cloud`, so Google-based
-  Idleon accounts can be linked without pasting session tokens.
+- Added Google device-code authorization for Idleon cloud data.
+- Allowed Google-based Idleon accounts to be linked without pasting private
+  session tokens.
 
 ## 🚀 0.3.0
 
-- Fixed indexed character device names so `Character 1 - Manix84` is displayed
-  as `Idleon Character 1 - Manix84` instead of repeating the character prefix.
+- Fixed indexed character device names so `Character 1 - Manix84` displays as
+  `Idleon Character 1 - Manix84` instead of repeating the character prefix.
 
 ## 🚀 0.2.0
 
+- Added the local Git hook installer and smart version-bump workflow fixes.
 - Promoted the integration version for the first authenticated cloud-source
   setup flow.
-- Added a helper script for installing local Git hooks so automatic version
-  bumps are not silently skipped.
 
 ## 🚀 0.1.18
 
-- Added the first authenticated `idleon_cloud` data source using Idleon
+- Added the first authenticated Idleon cloud data source using Idleon
   email/password sign-in, stored refresh-token polling, and Firebase cloud-save
   reads.
 - Documented the authenticated Idleon cloud data source and clarified that
@@ -79,77 +109,105 @@
 - Added duplicate-source protection when changing data sources through options.
 - Added the parsed source/export timestamp to diagnostics.
 - Added newly discovered character entities after successful data refreshes.
-- Cleaned inventory carry capacity attributes by hiding placeholder categories
+- Cleaned inventory carry capacity attributes by hiding filler categories
   and showing material capacity with a readable label.
 - Improved HA share deployment tooling for local Home Assistant testing.
 
 ## 🚀 0.1.17
 
-- Patch release placeholder. Update before release.
+- Normalized class labels in the clean reference/debug output so known class IDs
+  render as names instead of raw numbers.
 
 ## 🚀 0.1.16
 
-- Patch release placeholder. Update before release.
+- Made the debug parser output visibly refresh when parser code or example data
+  changes.
+- Added a debug renderer version marker so stale HTML output is obvious.
 
 ## 🚀 0.1.15
 
-- Patch release placeholder. Update before release.
+- Added an IdleonToolbox-derived parser registry for parser metadata.
+- Captured parser IDs, referenced raw fields, websiteData dependencies, and
+  exported function names for future mapping work.
 
 ## 🚀 0.1.14
 
-- Patch release placeholder. Update before release.
+- Connected split websiteData reference files to parser label lookups.
+- Used websiteData-backed labels for classes, maps, monsters, inventory bags,
+  and item samples where available.
 
 ## 🚀 0.1.13
 
-- Patch release placeholder. Update before release.
+- Simplified repeated websiteData type declarations so generated type files are
+  easier to read and maintain.
 
 ## 🚀 0.1.12
 
-- Patch release placeholder. Update before release.
+- Improved generated Python type stubs for split websiteData files.
+- Made the reference data more useful from Python tooling and parser scripts.
 
 ## 🚀 0.1.11
 
-- Patch release placeholder. Update before release.
+- Generated Python `.pyi` type stubs for websiteData reference files.
+- Added Python-friendly type mapping alongside the split TypeScript reference
+  data.
 
 ## 🚀 0.1.10
 
-- Patch release placeholder. Update before release.
+- Connected split websiteData files back to their TypeScript definition files.
+- Preserved the relationship between each top-level websiteData part and its
+  generated type metadata.
 
 ## 🚀 0.1.9
 
-- Patch release placeholder. Update before release.
+- Split the large websiteData reference file into one JSON file per top-level
+  element.
+- Added a manifest for the split reference data.
 
 ## 🚀 0.1.8
 
-- Patch release placeholder. Update before release.
+- Added a watchable debug HTML task for parsed Idleon data.
+- Made parser/debug iteration quicker while working from real account captures.
 
 ## 🚀 0.1.7
 
-- Patch release placeholder. Update before release.
+- Added VS Code tasks backed by `just` recipes for common development commands.
+- Added reusable commands for running Home Assistant, validation, tests, lint,
+  formatting, type checks, builds, and releases.
 
 ## 🚀 0.1.6
 
-- Patch release placeholder. Update before release.
+- Added Makefile task shortcuts for common local development commands.
+- Improved command discoverability before the `justfile` workflow was added.
 
 ## 🚀 0.1.5
 
-- Patch release placeholder. Update before release.
+- Added debug comparison between raw parsed output and the clean reference data.
+- Made it easier to spot parser gaps against real Idleon captures.
 
 ## 🚀 0.1.4
 
-- Patch release placeholder. Update before release.
+- Added a parsed-data debug HTML renderer.
+- Included parsed account, character, and reference sections without exposing
+  huge raw JSON blobs in Home Assistant entities.
 
 ## 🚀 0.1.3
 
-- Patch release placeholder. Update before release.
+- Added readable Idleon map and AFK activity labels.
+- Improved parser output for indexed exports by mapping known map/activity IDs
+  to display text.
 
 ## 🚀 0.1.2
 
-- Patch release placeholder. Update before release.
+- Added support for wrapped Idleon export data from the local downloader flow.
+- Parsed `saveData`, `charNameData`, and source update timestamps from wrapped
+  exports.
 
 ## 🚀 0.1.1
 
-- Patch release placeholder. Update before release.
+- Added the smart version bump hook.
+- Wired version updates across `pyproject.toml`, `manifest.json`, and
+  integration constants.
 
 ## 🚀 0.1.0
 
@@ -165,6 +223,8 @@ Initial experimental MVP.
 - Added character binary sensors for inventory full and needs attention.
 - Added diagnostics with source redaction.
 - Added HACS custom repository metadata.
+- Added CI, metadata checks, community health files, documentation, and project
+  icon assets.
 
 🔒 v1 does not ask for Idleon credentials and does not implement login, Steam
 login, browser scraping, session/token scraping, write actions, or services.
