@@ -21,7 +21,7 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import IdleonRuntimeData
+from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
 from .models import IdleonCharacter
@@ -691,6 +691,13 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         return self.entity_description.value_fn(self.coordinator)
 
     @property
+    def entity_picture(self) -> str | None:
+        """Return the current coin tier picture for formatted money."""
+        if self.entity_description.key != "account_money":
+            return None
+        return _money_entity_picture(_account_money_raw(self.coordinator))
+
+    @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return account timestamp details where useful."""
         if self.entity_description.key == "account_last_updated":
@@ -773,6 +780,14 @@ class IdleonCharacterSensor(
         if isinstance(value, datetime):
             return value
         return value
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Return the current coin tier picture for formatted money."""
+        character = self._character
+        if self.entity_description.key != "character_money" or character is None:
+            return None
+        return _money_entity_picture(_character_money_raw(character))
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
@@ -1001,6 +1016,13 @@ def _money_attributes(raw_value: str) -> dict[str, str]:
         "number_suffix": formatted_number.suffix,
         "number_mantissa": formatted_number.mantissa,
     }
+
+
+def _money_entity_picture(raw_value: str) -> str:
+    """Return the image URL for the current money coin tier."""
+    formatted_money = idleon_money_parts(raw_value)
+    coin_slug = formatted_money.coin_tier.lower().replace(" ", "_")
+    return f"{STATIC_URL_PATH}/coin_{coin_slug}.png"
 
 
 def _money_breakdown_attributes(

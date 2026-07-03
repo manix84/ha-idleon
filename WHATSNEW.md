@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.22.3
+
+- Bundle Idleon coin tier PNGs with the integration and serve them from a local static path.
+- Set account and character money entity pictures to the current coin tier image.
+
 ## 🚀 0.22.2
 
 - Use Idleon large-number suffix formatting as the visible state for account and character money sensors.

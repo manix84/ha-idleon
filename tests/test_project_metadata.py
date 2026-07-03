@@ -61,6 +61,37 @@ def test_brand_assets_exist() -> None:
         assert path.stat().st_size > 0
 
 
+def test_coin_assets_exist() -> None:
+    """Test money coin assets are bundled with the integration."""
+    coin_names = {
+        "copper",
+        "silver",
+        "gold",
+        "platinum",
+        "dementia",
+        "void",
+        "lustre",
+        "starfire",
+        "dreadlo",
+        "godshard",
+        "sunder",
+        "tydal",
+        "marbiglass",
+        "orberal",
+        "eclipse",
+        "neuro",
+        "isometric",
+        "cyber",
+        "synthesis",
+        "polarity",
+    }
+
+    for coin_name in coin_names:
+        path = ROOT / f"custom_components/idleon/assets/coin_{coin_name}.png"
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
 def test_served_brand_assets_are_transparent_pngs() -> None:
     """Test Home Assistant served brand assets preserve transparency."""
     for path in (

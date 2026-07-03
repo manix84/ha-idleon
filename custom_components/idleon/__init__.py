@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
@@ -28,6 +30,9 @@ from .idleon_data import IdleonClient
 from .models import IdleonDataSource
 from .steam_auth import async_register_steam_auth_callback_view
 
+STATIC_URL_PATH = "/idleon_static"
+STATIC_ASSET_PATH = Path(__file__).parent / "assets"
+
 
 @dataclass(slots=True)
 class IdleonRuntimeData:
@@ -44,6 +49,16 @@ type IdleonConfigEntry = ConfigEntry[IdleonRuntimeData]
 async def async_setup(hass: HomeAssistant, _config: dict[str, Any]) -> bool:
     """Set up HA Idleon integration globals."""
     async_register_steam_auth_callback_view(hass)
+    if hass.http is not None:
+        await hass.http.async_register_static_paths(
+            [
+                StaticPathConfig(
+                    STATIC_URL_PATH,
+                    str(STATIC_ASSET_PATH),
+                    cache_headers=True,
+                )
+            ]
+        )
     return True
 
 

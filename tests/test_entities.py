@@ -349,6 +349,10 @@ async def test_account_sensors(
     }
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert (
+        hass.states.get(total_money_entity_id).attributes["entity_picture"]
+        == "/idleon_static/coin_gold.png"
+    )
+    assert (
         hass.states.get(total_money_entity_id).attributes["coin_tier_formatted"]
         == "98.77 Gold"
     )
@@ -618,6 +622,10 @@ async def test_character_sensors(
     assert hass.states.get(money_entity_id).state == "12.34K"
     assert hass.states.get(money_raw_entity_id).state == "12345"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
+    assert (
+        hass.states.get(money_entity_id).attributes["entity_picture"]
+        == "/idleon_static/coin_gold.png"
+    )
     assert (
         hass.states.get(money_entity_id).attributes["coin_tier_formatted"]
         == "1.23 Gold"
