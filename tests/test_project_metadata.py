@@ -8,6 +8,8 @@ import tomllib
 import zipfile
 from pathlib import Path
 
+from PIL import Image
+
 from custom_components.idleon.const import DEFAULT_SCAN_INTERVAL, DOMAIN, VERSION
 from scripts.release_asset_manifest import release_asset_paths
 
@@ -91,7 +93,7 @@ def test_coin_assets_exist() -> None:
         path = ROOT / f"custom_components/idleon/assets/coins/{coin_name}.png"
         assert path.exists()
         assert path.stat().st_size > 0
-        assert _png_dimensions(path) == (32, 32)
+        assert _png_has_transparent_edge_padding(path)
 
 
 def test_gem_asset_exists_with_padding() -> None:
@@ -242,6 +244,15 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     assert not any("/candy/" in name for name in names)
 
 
+def test_release_entity_picture_assets_have_padding() -> None:
+    """Test shipped entity picture assets fit Home Assistant circular crops."""
+    for path in release_asset_paths(ROOT):
+        if path.suffix.lower() == ".png" and path.is_relative_to(
+            Path("custom_components/idleon/assets")
+        ):
+            assert _png_has_transparent_edge_padding(ROOT / path)
+
+
 def _png_color_type(path: Path) -> int:
     """Return a PNG color type from the IHDR chunk."""
     data = path.read_bytes()
@@ -256,3 +267,13 @@ def _png_dimensions(path: Path) -> tuple[int, int]:
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
     assert data[12:16] == b"IHDR"
     return int.from_bytes(data[16:20]), int.from_bytes(data[20:24])
+
+
+def _png_has_transparent_edge_padding(path: Path) -> bool:
+    """Return whether a PNG has transparent padding on at least one edge."""
+    image = Image.open(path).convert("RGBA")
+    alpha_bounds = image.getchannel("A").getbbox()
+    if alpha_bounds is None:
+        return True
+    left, top, right, bottom = alpha_bounds
+    return any((left, top, image.width - right, image.height - bottom))
