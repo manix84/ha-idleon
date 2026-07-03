@@ -1,0 +1,13 @@
+{
+  "name": "ha-idleon",
+  "private": true,
+  "description": "Home Assistant integration for Legends of Idleon account and character stats.",
+  "scripts": {
+    "monsters:rename": "tsx tools/rename-monster-assets.ts",
+    "monsters:rename:dry": "tsx tools/rename-monster-assets.ts --dry-run"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.3"
+  }
+}

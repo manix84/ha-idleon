@@ -8,6 +8,7 @@
 __pycache__/
 *.egg-info/
 *.pyc
+node_modules/
 coverage.xml
 htmlcov/
 debug/
