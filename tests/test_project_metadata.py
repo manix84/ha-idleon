@@ -128,6 +128,7 @@ def test_stat_assets_exist() -> None:
         path = ROOT / f"custom_components/idleon/assets/stats/{stat_name}.png"
         assert path.exists()
         assert path.stat().st_size > 0
+        assert _png_dimensions(path) == (88, 88)
 
 
 def test_served_brand_assets_are_transparent_pngs() -> None:
