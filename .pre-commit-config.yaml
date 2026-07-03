@@ -5,7 +5,8 @@ repos:
         name: HA Idleon smart version bump
         entry: scripts/version-bump-hook
         language: system
-        pass_filenames: false
+        stages: [commit-msg]
+        pass_filenames: true
         always_run: true
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

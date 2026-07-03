@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.9.2
+
+- Generate WHATSNEW entries from commit subjects or body bullets.
+- Install the version bump hook at commit-msg time.
+
 ## 🚀 0.9.1
 
 - Renamed the Home Assistant and HACS display name to `Legends of Idleon`.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smart pre-commit version bumping for HA Idleon."""
+"""Smart commit-time version bumping for HA Idleon."""
 
 from __future__ import annotations
 
@@ -65,7 +65,9 @@ def main() -> int:
 
     current_version = _project_version()
     new_version = _bump_version(current_version, bump)
-    _write_version_files(current_version, new_version, bump)
+    commit_message_path = Path(sys.argv[1]) if len(sys.argv) > 1 else None
+    release_notes = _release_notes(commit_message_path, bump)
+    _write_version_files(current_version, new_version, release_notes)
     _git_add(VERSION_FILES)
     sys.stderr.write(
         f"HA Idleon version bumped {current_version} -> {new_version} ({bump}).\n"
@@ -164,7 +166,11 @@ def _bump_version(version: str, bump: str) -> str:
     raise ValueError(msg)
 
 
-def _write_version_files(current_version: str, new_version: str, bump: str) -> None:
+def _write_version_files(
+    current_version: str,
+    new_version: str,
+    release_notes: tuple[str, ...],
+) -> None:
     """Update version files in place."""
     _replace_text(
         Path("pyproject.toml"),
@@ -187,7 +193,7 @@ def _write_version_files(current_version: str, new_version: str, bump: str) -> N
         f"Version {new_version}",
     )
     _update_manifest(current_version, new_version)
-    _update_whatsnew(new_version, bump)
+    _update_whatsnew(new_version, release_notes)
 
 
 def _replace_text(path: Path, before: str, after: str) -> None:
@@ -209,17 +215,16 @@ def _update_manifest(current_version: str, new_version: str) -> None:
     )
 
 
-def _update_whatsnew(new_version: str, bump: str) -> None:
-    """Add a placeholder What's New section for the bumped version."""
+def _update_whatsnew(new_version: str, release_notes: tuple[str, ...]) -> None:
+    """Add a What's New section for the bumped version."""
     path = ROOT / "WHATSNEW.md"
     text = path.read_text()
     heading = f"## 🚀 {new_version}"
     if heading in text:
         return
 
-    insert = (
-        f"{heading}\n\n- {bump.title()} release placeholder. Update before release.\n\n"
-    )
+    body = "\n".join(f"- {note}" for note in release_notes)
+    insert = f"{heading}\n\n{body}\n\n"
     marker = "## 🚀 "
     marker_index = text.find(marker)
     if marker_index == -1:
@@ -227,6 +232,79 @@ def _update_whatsnew(new_version: str, bump: str) -> None:
         return
 
     path.write_text(f"{text[:marker_index]}{insert}{text[marker_index:]}")
+
+
+def _release_notes(
+    commit_message_path: Path | None,
+    bump: str,
+) -> tuple[str, ...]:
+    """Return generated release notes for a version bump."""
+    env_note = os.environ.get("HA_IDLEON_RELEASE_NOTE", "").strip()
+    if env_note:
+        return (_release_note_sentence(env_note),)
+
+    if commit_message_path is not None:
+        notes = _release_notes_from_commit_message(commit_message_path)
+        if notes:
+            return notes
+
+    return (_release_note_sentence(f"{bump.title()} release"),)
+
+
+def _release_notes_from_commit_message(path: Path) -> tuple[str, ...]:
+    """Return release notes from a commit message file."""
+    message_path = path if path.is_absolute() else ROOT / path
+    if not message_path.exists():
+        return ()
+
+    lines = _commit_message_lines(message_path.read_text())
+    if not lines:
+        return ()
+
+    body_bullets = [
+        _release_note_sentence(line[2:].strip())
+        for line in lines[1:]
+        if line.startswith(("- ", "* ")) and line[2:].strip()
+    ]
+    if body_bullets:
+        return tuple(body_bullets)
+
+    return (_release_note_sentence(_strip_conventional_commit_prefix(lines[0])),)
+
+
+def _commit_message_lines(message: str) -> tuple[str, ...]:
+    """Return meaningful non-comment commit message lines."""
+    lines: list[str] = []
+    for line in message.splitlines():
+        stripped = line.strip()
+        if stripped == "# ------------------------ >8 ------------------------":
+            break
+        if not stripped or stripped.startswith("#"):
+            continue
+        lines.append(stripped)
+    return tuple(lines)
+
+
+def _strip_conventional_commit_prefix(subject: str) -> str:
+    """Return a subject without a conventional-commit prefix."""
+    return re.sub(
+        r"^(?:build|chore|ci|docs|feat|fix|perf|refactor|test)"
+        r"(?:\([^)]+\))?!?:\s+",
+        "",
+        subject,
+        flags=re.IGNORECASE,
+    ).strip()
+
+
+def _release_note_sentence(value: str) -> str:
+    """Return one readable release note sentence."""
+    note = value.strip()
+    if not note:
+        return "Release update."
+    note = note[0].upper() + note[1:]
+    if note[-1] not in ".!?":
+        note = f"{note}."
+    return note
 
 
 def _git_add(paths: tuple[Path, ...]) -> None:

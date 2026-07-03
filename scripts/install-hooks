@@ -8,9 +8,10 @@ source "${SCRIPT_DIR}/_lib.sh"
 cd "${ROOT_DIR}"
 "$(python_bin)" -m pip install -r requirements_test.txt
 "$(tool_bin pre-commit)" install
+"$(tool_bin pre-commit)" install --hook-type commit-msg
 "$(tool_bin pre-commit)" install --hook-type pre-push
 
-for hook in .git/hooks/pre-commit .git/hooks/pre-push; do
+for hook in .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/pre-push; do
   if [[ -f "${hook}" ]] && ! grep -q "PRE_COMMIT_HOME" "${hook}"; then
     "$(python_bin)" - "$hook" <<'PY'
 from pathlib import Path

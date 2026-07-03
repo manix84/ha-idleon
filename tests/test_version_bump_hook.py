@@ -115,3 +115,56 @@ def test_select_bump_respects_override() -> None:
         hook._select_bump((Path("custom_components/idleon/sensor.py"),), "skip")
         == "skip"
     )
+
+
+def test_release_notes_use_commit_subject(tmp_path: Path) -> None:
+    """Test generated release notes use the commit subject."""
+    hook = _load_hook()
+    message_path = tmp_path / "COMMIT_EDITMSG"
+    message_path.write_text("Add better character sensors\n\n# comment\n")
+
+    assert hook._release_notes_from_commit_message(message_path) == (
+        "Add better character sensors.",
+    )
+
+
+def test_release_notes_strip_conventional_commit_prefix(tmp_path: Path) -> None:
+    """Test conventional commit subjects become readable release notes."""
+    hook = _load_hook()
+    message_path = tmp_path / "COMMIT_EDITMSG"
+    message_path.write_text("fix(parser): handle wrapped saves\n")
+
+    assert hook._release_notes_from_commit_message(message_path) == (
+        "Handle wrapped saves.",
+    )
+
+
+def test_release_notes_use_commit_body_bullets(tmp_path: Path) -> None:
+    """Test explicit commit body bullets become release notes."""
+    hook = _load_hook()
+    message_path = tmp_path / "COMMIT_EDITMSG"
+    message_path.write_text(
+        "Improve parser\n\n"
+        "- add skill summaries\n"
+        "* expose equipment counts.\n"
+        "# ignored comment\n"
+    )
+
+    assert hook._release_notes_from_commit_message(message_path) == (
+        "Add skill summaries.",
+        "Expose equipment counts.",
+    )
+
+
+def test_update_whatsnew_uses_release_notes(tmp_path: Path) -> None:
+    """Test What's New entries are created from release notes."""
+    hook = _load_hook()
+    hook.ROOT = tmp_path
+    whatsnew = tmp_path / "WHATSNEW.md"
+    whatsnew.write_text("# What's New\n\n## 🚀 0.1.0\n\n- Initial release.\n")
+
+    hook._update_whatsnew("0.1.1", ("Add useful release notes.",))
+
+    assert whatsnew.read_text().startswith(
+        "# What's New\n\n## 🚀 0.1.1\n\n- Add useful release notes.\n\n## 🚀 0.1.0"
+    )
