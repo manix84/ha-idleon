@@ -1,5 +1,10 @@
 # 📰 What's New
 
+## 🚀 0.12.1
+
+- Align Steam OpenID parameters with the IdleonToolbox login flow.
+- Log Steam authorization failure details before returning auth_failed.
+
 ## 🚀 0.12.0
 
 - Replace the Steam paste-back URL field with a Home Assistant external config-flow step.

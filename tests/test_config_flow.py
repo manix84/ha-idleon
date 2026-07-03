@@ -148,7 +148,7 @@ def _steam_openid_response_url(return_to: str) -> str:
     return str(
         URL(return_to).update_query(
             {
-                "openid.ns": "https://specs.openid.net/auth/2.0",
+                "openid.ns": "http://specs.openid.net/auth/2.0",
                 "openid.mode": "id_res",
                 "openid.op_endpoint": "https://steamcommunity.com/openid/login",
                 "openid.claimed_id": "https://steamcommunity.com/openid/id/123",
@@ -533,7 +533,7 @@ async def test_config_flow_success_idleon_cloud_steam(
     steam_login_url = result["url"]
     assert "steamcommunity.com/openid/login" in steam_login_url
     steam_login_params = parse_qs(urlsplit(steam_login_url).query)
-    assert steam_login_params["openid.ns"] == ["https://specs.openid.net/auth/2.0"]
+    assert steam_login_params["openid.ns"] == ["http://specs.openid.net/auth/2.0"]
     return_to = steam_login_params["openid.return_to"][0]
     assert return_to.startswith(
         "https://ha.example.com/api/idleon/steam/auth/callback?"

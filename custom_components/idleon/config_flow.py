@@ -144,6 +144,7 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None and CONF_STEAM_OPENID_RESPONSE_URL in user_input:
             if user_input.get(CONF_STEAM_CALLBACK_STATE) != self._steam_state:
+                _LOGGER.warning("Steam authorization callback state did not match")
                 self._steam_auth_failed_reason = "auth_failed"
                 return self.async_external_step_done(next_step_id="steam_auth_failed")
             self._steam_openid_response_url = str(
@@ -219,13 +220,17 @@ class IdleonConfigFlow(ConfigFlow, domain=DOMAIN):
                 normalized_input,
             )
             await _async_validate_source(self.hass, data_source)
-        except IdleonAuthFailed:
+        except IdleonAuthFailed as err:
+            _LOGGER.warning("Steam authorization failed: %s", err)
             return self.async_abort(reason="auth_failed")
-        except IdleonCannotConnect:
+        except IdleonCannotConnect as err:
+            _LOGGER.warning("Steam authorization data could not be fetched: %s", err)
             return self.async_abort(reason="cannot_connect")
-        except IdleonInvalidJson:
+        except IdleonInvalidJson as err:
+            _LOGGER.warning("Steam authorization returned invalid JSON: %s", err)
             return self.async_abort(reason="invalid_json")
-        except IdleonInvalidSchema:
+        except IdleonInvalidSchema as err:
+            _LOGGER.warning("Steam authorization returned invalid schema: %s", err)
             return self.async_abort(reason="invalid_schema")
         except Exception:
             _LOGGER.exception("Unexpected error validating Steam authorization")

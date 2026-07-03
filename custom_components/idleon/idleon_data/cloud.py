@@ -37,7 +37,7 @@ GOOGLE_OAUTH_SCOPE = "email profile"
 FIREBASE_AUTH_REQUEST_URI = "http://localhost"
 STEAM_AUTH_PROVIDER_ID = "steam.com"
 STEAM_OPENID_LOGIN_URL = "https://steamcommunity.com/openid/login"
-STEAM_OPENID_NS = "https://specs.openid.net/auth/2.0"
+STEAM_OPENID_NS = "http://specs.openid.net/auth/2.0"
 STEAM_OPENID_IDENTIFIER_SELECT = f"{STEAM_OPENID_NS}/identifier_select"
 STEAM_CUSTOM_TOKEN_URL = "https://us-central1-idlemmo.cloudfunctions.net/asil"
 
@@ -304,7 +304,9 @@ class IdleonCloudClient:
                 return await response.json()
         except ClientResponseError as err:
             if err.status in {400, 401, 403}:
-                raise IdleonAuthFailed(auth_error_message) from err
+                raise IdleonAuthFailed(
+                    f"{auth_error_message} with status {err.status}"
+                ) from err
             raise IdleonCannotConnect("Idleon cloud authentication failed") from err
         except (ClientError, TimeoutError) as err:
             raise IdleonCannotConnect("Idleon cloud authentication failed") from err
