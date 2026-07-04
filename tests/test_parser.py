@@ -793,9 +793,11 @@ def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
     assert storage_capacities["Foods"]["largest_pouch_asset"] == (
         "pouches/food/enormous.png"
     )
-    assert storage_capacities["Mining"]["largest_pouch"] == "Empty Pouch"
-    assert storage_capacities["Mining"]["largest_pouch_capacity"] == 0
-    assert storage_capacities["Mining"]["largest_pouch_asset"] == ("pouches/none.png")
+    assert storage_capacities["Mining"]["largest_pouch"] == "Mini Mining Pouch"
+    assert storage_capacities["Mining"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Mining"]["largest_pouch_asset"] == (
+        "pouches/mining/mini.png"
+    )
     assert storage_capacities["Souls"]["largest_pouch"] == "Volumetric Soul Pouch"
     assert storage_capacities["Souls"]["largest_pouch_capacity"] == 10000
     assert storage_capacities["Souls"]["largest_pouch_asset"] == (
@@ -808,8 +810,8 @@ def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
     )
 
 
-def test_parser_uses_empty_pouch_for_below_cramped_capacity() -> None:
-    """Test capacities below 50 use the explicit empty pouch icon."""
+def test_parser_uses_empty_pouch_for_below_mini_capacity() -> None:
+    """Test capacities below 25 use the explicit empty pouch icon."""
     account = parse_idleon_account(
         {
             "CharacterClass_0": 14,
@@ -817,8 +819,8 @@ def test_parser_uses_empty_pouch_for_below_cramped_capacity() -> None:
             "Lv0_0": [1103],
             "MaxCarryCap_0": {
                 "Bugs": 10,
-                "Fishing": 25,
-                "Souls": 49,
+                "Fishing": 24,
+                "Souls": 0,
             },
         }
     )
@@ -831,6 +833,38 @@ def test_parser_uses_empty_pouch_for_below_cramped_capacity() -> None:
         assert storage_capacity["largest_pouch"] == "Empty Pouch"
         assert storage_capacity["largest_pouch_capacity"] == 0
         assert storage_capacity["largest_pouch_asset"] == "pouches/none.png"
+
+
+def test_parser_uses_mini_pouch_for_mini_capacity() -> None:
+    """Test capacities of 25 use the mini pouch tier."""
+    account = parse_idleon_account(
+        {
+            "CharacterClass_0": 14,
+            "CurrentMap_0": 325,
+            "Lv0_0": [1103],
+            "MaxCarryCap_0": {
+                "Bugs": 25,
+                "Fishing": 25,
+                "Mining": 25,
+            },
+        }
+    )
+
+    storage_capacities = account.characters[0].details["storage_capacities"]
+
+    assert storage_capacities["Bugs"]["largest_pouch"] == "Mini Bug Pouch"
+    assert storage_capacities["Bugs"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Bugs"]["largest_pouch_asset"] == "pouches/bug/mini.png"
+    assert storage_capacities["Fishing"]["largest_pouch"] == "Mini Fishing Pouch"
+    assert storage_capacities["Fishing"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Fishing"]["largest_pouch_asset"] == (
+        "pouches/fishing/mini.png"
+    )
+    assert storage_capacities["Mining"]["largest_pouch"] == "Mini Mining Pouch"
+    assert storage_capacities["Mining"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Mining"]["largest_pouch_asset"] == (
+        "pouches/mining/mini.png"
+    )
 
 
 def test_parser_accepts_wrapped_idleon_export(fixture_path: Path) -> None:

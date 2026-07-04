@@ -33,7 +33,7 @@ MAX_CARRY_CAPACITY_LABELS = {
 MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES = {
     "Materials": "bCraft",
 }
-EMPTY_POUCH_CAPACITY_LIMIT = 50
+EMPTY_POUCH_CAPACITY_LIMIT = 25
 EMPTY_POUCH_ASSET = "pouches/none.png"
 POUCH_TIERS = (
     ("mini", 25),
@@ -975,7 +975,7 @@ def _carry_bag_asset_filename(display_name: str) -> str:
     storage_type = parts[-2]
     storage_type = POUCH_STORAGE_TYPE_ALIASES.get(storage_type, storage_type)
     prefix = "_".join(parts[:-2])
-    if storage_type == "material" and prefix in {"miniature", "miniscule"}:
+    if prefix in {"miniature", "miniscule"}:
         prefix = "mini"
     if not prefix:
         return f"pouches/{storage_type}.png"
