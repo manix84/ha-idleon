@@ -859,7 +859,7 @@ def test_character_current_activity_picture_uses_monster_asset() -> None:
 
     assert (
         _activity_entity_picture(character)
-        == "/idleon_static/monsters/151_pirate_deckhand.png"
+        == "/idleon_static/monsters/114_pirate_deckhand.png"
     )
 
 

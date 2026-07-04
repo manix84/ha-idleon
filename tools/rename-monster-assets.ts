@@ -17,10 +17,12 @@ const ALIASES: Record<string, string> = {
 const CUSTOM_ASSET_SLUGS = new Set(["nothing", "nothing_2"]);
 
 type MonsterRecord = {
+  MonsterFace?: unknown;
   Name?: unknown;
 };
 
 type CanonicalMonsterName = {
+  monsterFace: number | null;
   slug: string;
 };
 
@@ -37,12 +39,14 @@ type Conflict = {
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
+const useMonsterFacePrefix = args.has("--monster-face-prefix");
 
 if (args.has("--help") || args.has("-h")) {
-  console.log(`Usage: tsx tools/rename-monster-assets.ts [--dry-run]
+  console.log(`Usage: tsx tools/rename-monster-assets.ts [--dry-run] [--monster-face-prefix]
 
 Safely renames assets/monsters/*.png name portions to canonical monster names.
-Numeric filename prefixes are preserved.`);
+Numeric filename prefixes are preserved by default. Pass --monster-face-prefix
+to replace numeric prefixes with websiteData MonsterFace numbers.`);
   process.exit(0);
 }
 
@@ -81,7 +85,16 @@ for (const filename of assetFiles) {
     continue;
   }
 
-  const target = `${parsed.prefix}${canonicalName.slug}${variant.suffix}.png`;
+  if (useMonsterFacePrefix && canonicalName.monsterFace === null) {
+    unknown.push(filename);
+    continue;
+  }
+
+  const prefix =
+    useMonsterFacePrefix && canonicalName.monsterFace !== null
+      ? `${String(canonicalName.monsterFace).padStart(3, "0")}_`
+      : parsed.prefix;
+  const target = `${prefix}${canonicalName.slug}${variant.suffix}.png`;
   if (target === filename) {
     alreadyCorrect += 1;
     continue;
@@ -165,6 +178,7 @@ function loadCanonicalMonsterNames(
     }
 
     names.set(normalizedName, {
+      monsterFace: parseMonsterFace(monster.MonsterFace),
       slug: normalizedName,
     });
   }
@@ -204,4 +218,16 @@ function parseVariantSuffix(normalizedName: string): {
   }
 
   return { baseName: match[1], suffix: match[2] };
+}
+
+function parseMonsterFace(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    return Number(value);
+  }
+
+  return null;
 }
