@@ -7,9 +7,14 @@ const MONSTER_ASSETS_DIR = "assets/monsters";
 const ALIASES: Record<string, string> = {
   board_bean: "bored_bean",
   pirate_captain: "dreadnaught_captain",
+  flying_wurm: "flying_worm",
+  hound: "demon_hound",
   jellyfish: "jellofish",
   rift: "the_rift",
+  gloomy_mushroom: "gloomie_mushroom",
 };
+
+const CUSTOM_ASSET_SLUGS = new Set(["nothing", "nothing_2"]);
 
 type MonsterRecord = {
   Name?: unknown;
@@ -48,6 +53,7 @@ const assetFiles = readdirSync(MONSTER_ASSETS_DIR)
 
 const plannedRenames: RenamePlan[] = [];
 const unknown: string[] = [];
+const customSkipped: string[] = [];
 const conflicts: Conflict[] = [];
 let alreadyCorrect = 0;
 
@@ -56,7 +62,18 @@ const targetOwners = new Map<string, string>();
 for (const filename of assetFiles) {
   const parsed = parseMonsterAssetFilename(filename);
   const normalizedName = normalizeName(parsed.name);
-  const canonicalKey = ALIASES[normalizedName] ?? normalizedName;
+  const variant = parseVariantSuffix(normalizedName);
+
+  if (
+    CUSTOM_ASSET_SLUGS.has(normalizedName) ||
+    CUSTOM_ASSET_SLUGS.has(variant.baseName)
+  ) {
+    customSkipped.push(filename);
+    continue;
+  }
+
+  const canonicalKey =
+    ALIASES[normalizedName] ?? ALIASES[variant.baseName] ?? variant.baseName;
   const canonicalName = canonicalMonsterNames.get(canonicalKey);
 
   if (!canonicalName) {
@@ -64,7 +81,7 @@ for (const filename of assetFiles) {
     continue;
   }
 
-  const target = `${parsed.prefix}${canonicalName.slug}.png`;
+  const target = `${parsed.prefix}${canonicalName.slug}${variant.suffix}.png`;
   if (target === filename) {
     alreadyCorrect += 1;
     continue;
@@ -103,6 +120,10 @@ for (const filename of unknown) {
   console.log(`Unknown: ${filename}`);
 }
 
+for (const filename of customSkipped) {
+  console.log(`Skipped custom: ${filename}`);
+}
+
 for (const rename of plannedRenames) {
   const line = `${rename.source} -> ${rename.target}`;
   if (dryRun) {
@@ -122,6 +143,7 @@ console.log(`Already correct: ${alreadyCorrect}`);
 console.log(`Renamed: ${plannedRenames.length}`);
 console.log(`Unknown: ${unknown.length}`);
 console.log(`Conflicts: ${conflicts.length}`);
+console.log(`Skipped custom: ${customSkipped.length}`);
 
 function loadCanonicalMonsterNames(
   monstersDataPath: string,
@@ -170,4 +192,16 @@ function normalizeName(value: string): string {
     .replace(/[^a-z0-9_]/g, "")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");
+}
+
+function parseVariantSuffix(normalizedName: string): {
+  baseName: string;
+  suffix: string;
+} {
+  const match = normalizedName.match(/^(.+?)(_\d+)$/);
+  if (!match) {
+    return { baseName: normalizedName, suffix: "" };
+  }
+
+  return { baseName: match[1], suffix: match[2] };
 }
