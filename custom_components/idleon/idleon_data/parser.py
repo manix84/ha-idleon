@@ -35,9 +35,45 @@ MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES = {
 }
 EMPTY_POUCH_CAPACITY_LIMIT = 50
 EMPTY_POUCH_ASSET = "pouches/none.png"
+POUCH_TIERS = (
+    ("mini", 25),
+    ("cramped", 50),
+    ("small", 100),
+    ("average", 250),
+    ("sizable", 500),
+    ("big", 1000),
+    ("large", 2000),
+    ("massive", 5000),
+    ("volumetric", 10000),
+    ("colossal", 20000),
+    ("gargantuan", 25000),
+    ("herculean", 30000),
+    ("enormous", 35000),
+)
+POUCH_STORAGE_FOLDERS = {
+    "Bugs": "bug",
+    "Chopping": "chopping",
+    "Critters": "critter",
+    "Fishing": "fishing",
+    "Foods": "food",
+    "Materials": "material",
+    "Mining": "mining",
+    "Souls": "soul",
+}
+POUCH_STORAGE_DISPLAY_TYPES = {
+    "Bugs": "Bug",
+    "Chopping": "Chopping",
+    "Critters": "Critter",
+    "Fishing": "Fishing",
+    "Foods": "Food",
+    "Materials": "Material",
+    "Mining": "Mining",
+    "Souls": "Soul",
+}
 POUCH_STORAGE_TYPE_ALIASES = {
     "choppin": "chopping",
     "critta": "critter",
+    "fish": "fishing",
     "materials": "material",
     "matty": "material",
 }
@@ -827,37 +863,36 @@ def _indexed_storage_capacity_details(
             continue
 
         label = _max_carry_capacity_label(raw_key)
-        base_capacity = maximum_capacity
-        largest_pouch_label = "Unknown"
-        largest_pouch_asset = None
-        largest_pouch_capacity: int | None = None
-        largest_pouch = None
-        if maximum_capacity < EMPTY_POUCH_CAPACITY_LIMIT:
-            base_capacity = 0
-            largest_pouch_label = "Empty Pouch"
-            largest_pouch_asset = EMPTY_POUCH_ASSET
-            largest_pouch_capacity = 0
-        else:
+        pouch_details = _pouch_details_for_capacity(label, maximum_capacity)
+        if pouch_details is None:
             largest_pouch = _largest_carry_bag(carry_bags, raw_key, maximum_capacity)
-
-        if largest_pouch:
-            bag_capacity, display_name = largest_pouch
-            base_capacity = bag_capacity
-            largest_pouch_label = _clean_display_text(display_name)
-            largest_pouch_asset = _carry_bag_asset_filename(display_name)
-            largest_pouch_capacity = base_capacity
+            if largest_pouch:
+                bag_capacity, display_name = largest_pouch
+                pouch_details = {
+                    "base_capacity": bag_capacity,
+                    "largest_pouch": _clean_display_text(display_name),
+                    "largest_pouch_asset": _carry_bag_asset_filename(display_name),
+                    "largest_pouch_capacity": bag_capacity,
+                }
+            else:
+                pouch_details = {
+                    "base_capacity": maximum_capacity,
+                    "largest_pouch": "Unknown",
+                    "largest_pouch_asset": None,
+                    "largest_pouch_capacity": None,
+                }
 
         details = {
             "storage_type": label,
             "raw_storage_type": raw_key,
-            "base_capacity": base_capacity,
-            "capacity_per_slot": base_capacity,
+            "base_capacity": pouch_details["base_capacity"],
+            "capacity_per_slot": pouch_details["base_capacity"],
             "maximum_capacity": maximum_capacity,
-            "largest_pouch": largest_pouch_label,
-            "largest_pouch_asset": largest_pouch_asset,
+            "largest_pouch": pouch_details["largest_pouch"],
+            "largest_pouch_asset": pouch_details["largest_pouch_asset"],
         }
-        if largest_pouch_capacity is not None:
-            details["largest_pouch_capacity"] = largest_pouch_capacity
+        if pouch_details["largest_pouch_capacity"] is not None:
+            details["largest_pouch_capacity"] = pouch_details["largest_pouch_capacity"]
         storage_capacities[label] = _remove_empty_detail_values(details)
 
     if not storage_capacities:
@@ -894,6 +929,41 @@ def _largest_carry_bag(
         ):
             selected = (capacity, display_name)
     return selected
+
+
+def _pouch_details_for_capacity(
+    storage_type: str,
+    maximum_capacity: int,
+) -> dict[str, Any] | None:
+    """Return deterministic pouch details for supported storage categories."""
+    folder = POUCH_STORAGE_FOLDERS.get(storage_type)
+    display_type = POUCH_STORAGE_DISPLAY_TYPES.get(storage_type)
+    if folder is None or display_type is None:
+        return None
+
+    if maximum_capacity < EMPTY_POUCH_CAPACITY_LIMIT:
+        return {
+            "base_capacity": 0,
+            "largest_pouch": "Empty Pouch",
+            "largest_pouch_asset": EMPTY_POUCH_ASSET,
+            "largest_pouch_capacity": 0,
+        }
+
+    selected_slug = "cramped"
+    selected_capacity = EMPTY_POUCH_CAPACITY_LIMIT
+    for slug, capacity in POUCH_TIERS:
+        if capacity <= maximum_capacity and capacity >= EMPTY_POUCH_CAPACITY_LIMIT:
+            selected_slug = slug
+            selected_capacity = capacity
+
+    return {
+        "base_capacity": selected_capacity,
+        "largest_pouch": (
+            f"{selected_slug.replace('_', ' ').title()} {display_type} Pouch"
+        ),
+        "largest_pouch_asset": f"pouches/{folder}/{selected_slug}.png",
+        "largest_pouch_capacity": selected_capacity,
+    }
 
 
 def _carry_bag_asset_filename(display_name: str) -> str:

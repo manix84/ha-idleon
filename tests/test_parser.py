@@ -783,10 +783,10 @@ def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
     assert storage_capacities["Critters"]["largest_pouch_asset"] == (
         "pouches/critter/massive.png"
     )
-    assert storage_capacities["Fishing"]["largest_pouch"] == "Cramped Fish Pouch"
+    assert storage_capacities["Fishing"]["largest_pouch"] == "Cramped Fishing Pouch"
     assert storage_capacities["Fishing"]["largest_pouch_capacity"] == 50
     assert storage_capacities["Fishing"]["largest_pouch_asset"] == (
-        "pouches/fish/cramped.png"
+        "pouches/fishing/cramped.png"
     )
     assert storage_capacities["Foods"]["largest_pouch"] == "Enormous Food Pouch"
     assert storage_capacities["Foods"]["largest_pouch_capacity"] == 35000
@@ -801,9 +801,7 @@ def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
     assert storage_capacities["Souls"]["largest_pouch_asset"] == (
         "pouches/soul/volumetric.png"
     )
-    assert storage_capacities["Materials"]["largest_pouch"] == (
-        "Sizable Materials Pouch"
-    )
+    assert storage_capacities["Materials"]["largest_pouch"] == "Sizable Material Pouch"
     assert storage_capacities["Materials"]["largest_pouch_capacity"] == 500
     assert storage_capacities["Materials"]["largest_pouch_asset"] == (
         "pouches/material/sizable.png"
