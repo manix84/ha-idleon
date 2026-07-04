@@ -810,8 +810,8 @@ def test_parser_selects_largest_applied_pouch_per_storage_category() -> None:
     )
 
 
-def test_parser_uses_empty_pouch_for_below_mini_capacity() -> None:
-    """Test capacities below 25 use the explicit empty pouch icon."""
+def test_parser_uses_empty_pouch_below_storage_minimum_capacity() -> None:
+    """Test capacities below the storage category minimum use the empty pouch icon."""
     account = parse_idleon_account(
         {
             "CharacterClass_0": 14,
@@ -819,8 +819,10 @@ def test_parser_uses_empty_pouch_for_below_mini_capacity() -> None:
             "Lv0_0": [1103],
             "MaxCarryCap_0": {
                 "Bugs": 10,
-                "Fishing": 24,
-                "Souls": 0,
+                "Critters": 25,
+                "Fishing": 25,
+                "Souls": 49,
+                "Mining": 24,
             },
         }
     )
@@ -835,16 +837,17 @@ def test_parser_uses_empty_pouch_for_below_mini_capacity() -> None:
         assert storage_capacity["largest_pouch_asset"] == "pouches/none.png"
 
 
-def test_parser_uses_mini_pouch_for_mini_capacity() -> None:
-    """Test capacities of 25 use the mini pouch tier."""
+def test_parser_uses_mini_pouch_for_categories_with_mini_capacity() -> None:
+    """Test capacities of 25 use mini only for categories with mini pouches."""
     account = parse_idleon_account(
         {
             "CharacterClass_0": 14,
             "CurrentMap_0": 325,
             "Lv0_0": [1103],
             "MaxCarryCap_0": {
-                "Bugs": 25,
-                "Fishing": 25,
+                "Chopping": 25,
+                "Foods": 25,
+                "bCraft": 25,
                 "Mining": 25,
             },
         }
@@ -852,13 +855,20 @@ def test_parser_uses_mini_pouch_for_mini_capacity() -> None:
 
     storage_capacities = account.characters[0].details["storage_capacities"]
 
-    assert storage_capacities["Bugs"]["largest_pouch"] == "Mini Bug Pouch"
-    assert storage_capacities["Bugs"]["largest_pouch_capacity"] == 25
-    assert storage_capacities["Bugs"]["largest_pouch_asset"] == "pouches/bug/mini.png"
-    assert storage_capacities["Fishing"]["largest_pouch"] == "Mini Fishing Pouch"
-    assert storage_capacities["Fishing"]["largest_pouch_capacity"] == 25
-    assert storage_capacities["Fishing"]["largest_pouch_asset"] == (
-        "pouches/fishing/mini.png"
+    assert storage_capacities["Chopping"]["largest_pouch"] == "Mini Chopping Pouch"
+    assert storage_capacities["Chopping"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Chopping"]["largest_pouch_asset"] == (
+        "pouches/chopping/mini.png"
+    )
+    assert storage_capacities["Foods"]["largest_pouch"] == "Mini Food Pouch"
+    assert storage_capacities["Foods"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Foods"]["largest_pouch_asset"] == (
+        "pouches/food/mini.png"
+    )
+    assert storage_capacities["Materials"]["largest_pouch"] == "Mini Material Pouch"
+    assert storage_capacities["Materials"]["largest_pouch_capacity"] == 25
+    assert storage_capacities["Materials"]["largest_pouch_asset"] == (
+        "pouches/material/mini.png"
     )
     assert storage_capacities["Mining"]["largest_pouch"] == "Mini Mining Pouch"
     assert storage_capacities["Mining"]["largest_pouch_capacity"] == 25

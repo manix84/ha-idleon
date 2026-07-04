@@ -35,6 +35,12 @@ MAX_CARRY_CAPACITY_STORAGE_KEY_ALIASES = {
 }
 EMPTY_POUCH_CAPACITY_LIMIT = 25
 EMPTY_POUCH_ASSET = "pouches/none.png"
+POUCH_STORAGE_MINIMUM_CAPACITIES = {
+    "Bugs": 50,
+    "Critters": 50,
+    "Fishing": 50,
+    "Souls": 50,
+}
 POUCH_TIERS = (
     ("mini", 25),
     ("cramped", 50),
@@ -941,7 +947,12 @@ def _pouch_details_for_capacity(
     if folder is None or display_type is None:
         return None
 
-    if maximum_capacity < EMPTY_POUCH_CAPACITY_LIMIT:
+    minimum_capacity = POUCH_STORAGE_MINIMUM_CAPACITIES.get(
+        storage_type,
+        EMPTY_POUCH_CAPACITY_LIMIT,
+    )
+
+    if maximum_capacity < minimum_capacity:
         return {
             "base_capacity": 0,
             "largest_pouch": "Empty Pouch",
@@ -949,10 +960,12 @@ def _pouch_details_for_capacity(
             "largest_pouch_capacity": 0,
         }
 
-    selected_slug = "cramped"
-    selected_capacity = EMPTY_POUCH_CAPACITY_LIMIT
+    selected_slug = (
+        "mini" if minimum_capacity == EMPTY_POUCH_CAPACITY_LIMIT else "cramped"
+    )
+    selected_capacity = minimum_capacity
     for slug, capacity in POUCH_TIERS:
-        if capacity <= maximum_capacity and capacity >= EMPTY_POUCH_CAPACITY_LIMIT:
+        if capacity <= maximum_capacity and capacity >= minimum_capacity:
             selected_slug = slug
             selected_capacity = capacity
 
