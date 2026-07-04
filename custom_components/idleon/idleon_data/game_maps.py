@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from functools import lru_cache
@@ -123,24 +124,67 @@ def afk_activity_label(value: Any) -> str:
     if value is None:
         return "Unknown"
 
-    target = str(value)
-    monster = _website_monster(target) or MONSTERS.get(target)
+    monster = _afk_target_data(value)
     if not isinstance(monster, Mapping):
-        return f"AFK target {target}"
+        return "Unknown" if value is None else f"AFK target {value}"
 
     monster_name = monster.get("Name") or monster.get("name")
     afk_type = monster.get("AFKtype") or monster.get("afk_type")
     if not _is_real_label(monster_name):
-        return f"AFK target {target}"
+        return f"AFK target {value}"
     if not _is_real_label(afk_type):
         return display_name(str(monster_name))
 
     return f"{display_name(str(afk_type))}: {display_name(str(monster_name))}"
 
 
+def afk_target_monster(value: Any) -> Mapping[str, Any] | None:
+    """Return monster data for an AFK target when the target is fighting."""
+    monster = _afk_target_data(value)
+    if not isinstance(monster, Mapping):
+        return None
+
+    afk_type = monster.get("AFKtype") or monster.get("afk_type")
+    if _is_real_label(afk_type) and normalize_slug(str(afk_type)) != "fighting":
+        return None
+    return monster
+
+
+def _afk_target_data(value: Any) -> Mapping[str, Any] | None:
+    """Return raw websiteData or fallback data for an AFK target."""
+    if value is None:
+        return None
+
+    target = str(value)
+    monster = _website_monster(target) or MONSTERS.get(target)
+    if not isinstance(monster, Mapping):
+        return None
+    return monster
+
+
+def afk_target_monster_slug(value: Any) -> str | None:
+    """Return the canonical monster name slug for a fighting AFK target."""
+    monster = afk_target_monster(value)
+    if not isinstance(monster, Mapping):
+        return None
+
+    monster_name = monster.get("Name") or monster.get("name")
+    if not _is_real_label(monster_name):
+        return None
+    return normalize_slug(str(monster_name))
+
+
 def display_name(value: str) -> str:
     """Return a user-facing label from an Idleon data key."""
     return value.replace("_", " ").title()
+
+
+def normalize_slug(value: str) -> str:
+    """Return a filesystem-safe canonical Idleon data slug."""
+    normalized = re.sub(r"[\s_-]+", "_", value.lower())
+    normalized = re.sub(r"[^a-z0-9_]", "", normalized)
+    normalized = re.sub(r"_+", "_", normalized)
+    return normalized.strip("_")
 
 
 @lru_cache(maxsize=1)

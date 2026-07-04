@@ -18,7 +18,10 @@ from custom_components.idleon.const import (
     DOMAIN,
 )
 from custom_components.idleon.models import IdleonCharacter
-from custom_components.idleon.sensor import _character_device_name
+from custom_components.idleon.sensor import (
+    _activity_entity_picture,
+    _character_device_name,
+)
 
 
 async def test_account_sensors(
@@ -825,6 +828,27 @@ def test_character_device_name_uses_indexed_character_id_fallback() -> None:
     )
 
     assert _character_device_name(character) == "Idleon Character 10 - Manix84_10"
+
+
+def test_character_current_activity_picture_uses_monster_asset() -> None:
+    """Test fighting activities expose the matching monster asset picture."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Pirate Mess Hall",
+        current_activity="Fighting: Pirate Deckhand",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={"afk_target": "w7b11"},
+    )
+
+    assert (
+        _activity_entity_picture(character)
+        == "/idleon_static/monsters/151_pirate_deckhand.png"
+    )
 
 
 async def _setup_entry(

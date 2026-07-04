@@ -25,6 +25,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
+from .idleon_data.game_maps import afk_target_monster_slug
 from .models import IdleonCharacter
 from .utils.number_format import (
     idleon_money_parts,
@@ -814,6 +815,8 @@ class IdleonCharacterSensor(
             return None
         if self.entity_description.key == "character_class":
             return _class_entity_picture(character.character_class)
+        if self.entity_description.key == "character_current_activity":
+            return _activity_entity_picture(character)
         if stat_key := CHARACTER_STAT_SENSOR_KEYS.get(self.entity_description.key):
             return _stat_entity_picture(stat_key)
         if self.entity_description.key != "character_money":
@@ -1167,6 +1170,20 @@ def _stat_entity_picture(stat_key: str) -> str | None:
     if not stat_icon.is_file():
         return None
     return f"{STATIC_URL_PATH}/{stat_icon.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _activity_entity_picture(character: IdleonCharacter) -> str | None:
+    """Return the image URL for the monster a character is fighting."""
+    afk_target = character.details.get("afk_target")
+    monster_slug = afk_target_monster_slug(afk_target)
+    if not monster_slug:
+        return None
+
+    monster_icons = sorted((ASSETS_PATH / "monsters").glob(f"???_{monster_slug}.png"))
+    if not monster_icons:
+        return None
+    monster_icon = monster_icons[0]
+    return f"{STATIC_URL_PATH}/{monster_icon.relative_to(ASSETS_PATH).as_posix()}"
 
 
 def _money_breakdown_attributes(
