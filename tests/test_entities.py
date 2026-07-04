@@ -851,6 +851,26 @@ def test_character_current_activity_picture_uses_monster_asset() -> None:
     )
 
 
+def test_character_current_activity_picture_uses_nothing_asset_for_idle() -> None:
+    """Test idle activities expose the nothing asset picture."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Town",
+        current_activity="AFK target 0",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={"afk_target": "0"},
+    )
+
+    assert (
+        _activity_entity_picture(character) == "/idleon_static/monsters/000_nothing.png"
+    )
+
+
 async def _setup_entry(
     hass: HomeAssistant,
     sample_data_path: Path,

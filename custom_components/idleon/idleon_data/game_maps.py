@@ -174,6 +174,13 @@ def afk_target_monster_slug(value: Any) -> str | None:
     return normalize_slug(str(monster_name))
 
 
+def afk_target_is_idle(value: Any) -> bool:
+    """Return whether an AFK target represents no current activity."""
+    if value is None:
+        return True
+    return normalize_slug(str(value)) in {"", "0", "nothing", "none", "idle"}
+
+
 def display_name(value: str) -> str:
     """Return a user-facing label from an Idleon data key."""
     return value.replace("_", " ").title()

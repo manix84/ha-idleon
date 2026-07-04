@@ -59,6 +59,9 @@ def test_game_maps_fall_back_to_packaged_labels(monkeypatch) -> None:
     assert game_maps.map_name_label(216) == "The Hole"
     assert game_maps.afk_activity_label("caveB") == "Fighting: Gloomie Mushroom"
     assert game_maps.afk_target_monster_slug("w7b11") == "pirate_deckhand"
+    assert game_maps.afk_target_is_idle("0")
+    assert game_maps.afk_target_is_idle(None)
+    assert not game_maps.afk_target_is_idle("w7b11")
 
 
 def test_game_maps_only_return_monster_slug_for_fighting_targets(monkeypatch) -> None:

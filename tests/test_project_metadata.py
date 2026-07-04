@@ -239,6 +239,7 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     )
     assert "custom_components/idleon/assets/pouches/mining/average.png" in names
     assert "custom_components/idleon/assets/stats/strength.png" in names
+    assert "custom_components/idleon/assets/monsters/000_nothing.png" in names
     assert "custom_components/idleon/assets/monsters/151_pirate_deckhand.png" in names
     assert (
         "custom_components/idleon/assets/classes/warrior/death_bringer.png" not in names

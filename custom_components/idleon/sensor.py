@@ -25,7 +25,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
-from .idleon_data.game_maps import afk_target_monster_slug
+from .idleon_data.game_maps import afk_target_is_idle, afk_target_monster_slug
 from .models import IdleonCharacter
 from .utils.number_format import (
     idleon_money_parts,
@@ -1176,13 +1176,20 @@ def _activity_entity_picture(character: IdleonCharacter) -> str | None:
     """Return the image URL for the monster a character is fighting."""
     afk_target = character.details.get("afk_target")
     monster_slug = afk_target_monster_slug(afk_target)
-    if not monster_slug:
+    if monster_slug:
+        monster_icons = sorted(
+            (ASSETS_PATH / "monsters").glob(f"???_{monster_slug}.png")
+        )
+    elif afk_target_is_idle(afk_target):
+        monster_icons = [ASSETS_PATH / "monsters" / "000_nothing.png"]
+    else:
         return None
 
-    monster_icons = sorted((ASSETS_PATH / "monsters").glob(f"???_{monster_slug}.png"))
     if not monster_icons:
         return None
     monster_icon = monster_icons[0]
+    if not monster_icon.is_file():
+        return None
     return f"{STATIC_URL_PATH}/{monster_icon.relative_to(ASSETS_PATH).as_posix()}"
 
 
