@@ -40,6 +40,7 @@ CHARACTER_STAT_SENSOR_KEYS = {
     "character_wisdom": "wisdom",
     "character_luck": "luck",
 }
+EXCLUDED_STORAGE_CAPACITY_ENTITIES = frozenset({"Quests", "Statues"})
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -1030,7 +1031,13 @@ def _character_storage_capacities(
 ) -> Mapping[str, Any]:
     """Return parsed storage capacity details for a character."""
     value = character.details.get("storage_capacities")
-    return value if isinstance(value, Mapping) else {}
+    if not isinstance(value, Mapping):
+        return {}
+    return {
+        storage_type: details
+        for storage_type, details in value.items()
+        if storage_type not in EXCLUDED_STORAGE_CAPACITY_ENTITIES
+    }
 
 
 def _account_detail_value(

@@ -475,6 +475,26 @@
               "largest_pouch": "Small Material Pouch",
               "largest_pouch_capacity": 100,
               "largest_pouch_asset": "pouches/material/small.png"
+            },
+            "Quests": {
+              "storage_type": "Quests",
+              "raw_storage_type": "Quests",
+              "base_capacity": 10,
+              "capacity_per_slot": 10,
+              "maximum_capacity": 10,
+              "largest_pouch": "Empty Pouch",
+              "largest_pouch_capacity": 0,
+              "largest_pouch_asset": "pouches/none.png"
+            },
+            "Statues": {
+              "storage_type": "Statues",
+              "raw_storage_type": "Statues",
+              "base_capacity": 10,
+              "capacity_per_slot": 10,
+              "maximum_capacity": 10,
+              "largest_pouch": "Empty Pouch",
+              "largest_pouch_capacity": 0,
+              "largest_pouch_asset": "pouches/none.png"
             }
           }
         }
