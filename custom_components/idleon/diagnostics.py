@@ -20,11 +20,7 @@ async def async_get_config_entry_diagnostics(
     data_source = runtime_data.data_source
     coordinator = runtime_data.coordinator
     account = coordinator.data
-    last_updated = (
-        account.source_updated_at
-        if account and account.source_updated_at
-        else coordinator.last_successful_update
-    )
+    last_updated = coordinator.last_successful_update
 
     return {
         "integration": {

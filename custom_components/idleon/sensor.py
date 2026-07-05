@@ -122,9 +122,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         key="account_last_updated",
         translation_key="account_last_updated",
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda coordinator: (
-            coordinator.data.source_updated_at or coordinator.last_successful_update
-        ),
+        value_fn=lambda coordinator: coordinator.last_successful_update,
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
     ),
