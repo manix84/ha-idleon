@@ -728,7 +728,7 @@ async def test_character_sensors(
     )
     assert (
         hass.states.get(selected_trophy_entity_id).attributes["entity_picture"]
-        == "/idleon_static/equipment/trophy/Trophy17.png"
+        == "/idleon_static/equipment/trophy/one_of_the_divine.png"
     )
     assert hass.states.get(selected_name_tag_entity_id).state == "Megafeather Nametag"
     assert (
@@ -737,7 +737,7 @@ async def test_character_sensors(
     )
     assert (
         hass.states.get(selected_name_tag_entity_id).attributes["entity_picture"]
-        == "/idleon_static/equipment/name_tag/EquipmentNametag12.png"
+        == "/idleon_static/equipment/name_tag/megafeather.png"
     )
     assert hass.states.get(bug_storage_entity_id).state == "1250"
     assert hass.states.get(material_storage_entity_id).state == "100"
@@ -1055,11 +1055,11 @@ def test_character_cosmetic_pictures_fall_back_from_replica_assets() -> None:
 
     assert (
         _equipment_entity_picture(character, "selected_trophy_raw")
-        == "/idleon_static/equipment/trophy/Trophy17.png"
+        == "/idleon_static/equipment/trophy/one_of_the_divine.png"
     )
     assert (
         _equipment_entity_picture(character, "selected_name_tag_raw")
-        == "/idleon_static/equipment/name_tag/EquipmentNametag12.png"
+        == "/idleon_static/equipment/name_tag/megafeather.png"
     )
 
 

@@ -44,6 +44,74 @@ SKILL_ASSET_ALIASES = {
     "chopping": "choppin",
 }
 EXCLUDED_STORAGE_CAPACITY_ENTITIES = frozenset({"Quests", "Statues"})
+TROPHY_ASSET_STEMS = {
+    "Trophy1": "king_of_food",
+    "Trophy10": "critter_baron",
+    "Trophy11": "yumyum_sheriff",
+    "Trophy12": "megalodon",
+    "Trophy13": "club_maestro",
+    "Trophy14": "beach_bro",
+    "Trophy15": "frost_prince",
+    "Trophy16": "idle_skiller",
+    "Trophy17": "one_of_the_divine",
+    "Trophy18": "master_of_nothing",
+    "Trophy19": "nebula_royal",
+    "Trophy2": "lucky_lad",
+    "Trophy20": "luckier_lad",
+    "Trophy21": "baller",
+    "Trophy22": "gladiator",
+    "Trophy23": "heroic_spirit",
+    "Trophy24": "nine_dart_finish",
+    "Trophy25": "luckiest_lad",
+    "Trophy3": "club_member",
+    "Trophy4": "i_made_this_game",
+    "Trophy5": "dice_dynamo",
+    "Trophy6": "blunder_hero",
+    "Trophy7": "original_gamer",
+    "Trophy8": "trailblazer",
+    "Trophy9": "ultra_unboxer",
+    "TrophyReplica0": "replica",
+}
+NAME_TAG_ASSET_STEMS = {
+    "EquipmentNametag1": "riftwalker",
+    "EquipmentNametag10": "3rd_anniversary_idleon",
+    "EquipmentNametag11": "nightshade",
+    "EquipmentNametag12": "megafeather",
+    "EquipmentNametag13": "timeless",
+    "EquipmentNametag14": "snowflake",
+    "EquipmentNametag15": "frostyman",
+    "EquipmentNametag16": "lovely_day",
+    "EquipmentNametag17": "spectacular_4th_year",
+    "EquipmentNametag18": "4th_anniversary_idleon",
+    "EquipmentNametag19": "aethermoon",
+    "EquipmentNametag2": "lavas_awesome",
+    "EquipmentNametag20": "deadbones",
+    "EquipmentNametag21": "treasure",
+    "EquipmentNametag22": "tome_apprentice",
+    "EquipmentNametag23": "tome_journeyman",
+    "EquipmentNametag24": "tome_expert",
+    "EquipmentNametag25": "tome_elite",
+    "EquipmentNametag26": "tome_pro",
+    "EquipmentNametag27": "tome_master",
+    "EquipmentNametag28": "tome_legend",
+    "EquipmentNametag29": "reliquarium",
+    "EquipmentNametag3": "balling",
+    "EquipmentNametag30": "cropfall",
+    "EquipmentNametag31": "gingerbread",
+    "EquipmentNametag32": "sweet_chocolate",
+    "EquipmentNametag33": "pot_of_gold",
+    "EquipmentNametag34": "emerald",
+    "EquipmentNametag35": "5th_anniversary_idleon",
+    "EquipmentNametag36": "wonderful_5th_year",
+    "EquipmentNametag37": "grand_egg",
+    "EquipmentNametag4": "vman",
+    "EquipmentNametag41": "all_that_glitters",
+    "EquipmentNametag5": "spring_flowers",
+    "EquipmentNametag6b": "trash_tuna",
+    "EquipmentNametag7": "island_adventurer",
+    "EquipmentNametag8": "summer_shovel",
+    "EquipmentNametag9": "falloween",
+}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -1335,33 +1403,39 @@ def _equipment_entity_picture(
 
 def _equipment_asset_path(raw_item: str) -> Path | None:
     """Return the asset path for a known equipped cosmetic raw ID."""
-    candidate_names: tuple[str, ...]
+    candidate_stems: tuple[str, ...]
     if raw_item.startswith("TrophyReplica"):
-        candidate_names = (
-            raw_item.replace("TrophyReplica", "Trophy", 1),
-            raw_item,
+        base_item = raw_item.replace("TrophyReplica", "Trophy", 1)
+        candidate_stems = _unique_strings(
+            TROPHY_ASSET_STEMS.get(raw_item),
+            TROPHY_ASSET_STEMS.get(base_item),
         )
         folder = ASSETS_PATH / "equipment" / "trophy"
     elif raw_item.startswith("Trophy"):
-        candidate_names = (raw_item,)
+        candidate_stems = _unique_strings(TROPHY_ASSET_STEMS.get(raw_item))
         folder = ASSETS_PATH / "equipment" / "trophy"
     elif raw_item.startswith("EquipmentNametagReplica"):
-        candidate_names = (
-            raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1),
-            raw_item,
+        base_item = raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1)
+        candidate_stems = _unique_strings(
+            NAME_TAG_ASSET_STEMS.get(base_item),
         )
         folder = ASSETS_PATH / "equipment" / "name_tag"
     elif raw_item.startswith("EquipmentNametag"):
-        candidate_names = (raw_item,)
+        candidate_stems = _unique_strings(NAME_TAG_ASSET_STEMS.get(raw_item))
         folder = ASSETS_PATH / "equipment" / "name_tag"
     else:
         return None
 
-    for candidate_name in candidate_names:
-        path = folder / f"{candidate_name}.png"
+    for candidate_stem in candidate_stems:
+        path = folder / f"{candidate_stem}.png"
         if path.is_file():
             return path
     return None
+
+
+def _unique_strings(*values: str | None) -> tuple[str, ...]:
+    """Return unique non-empty strings in insertion order."""
+    return tuple(dict.fromkeys(value for value in values if value))
 
 
 def _activity_entity_picture(character: IdleonCharacter) -> str | None:
