@@ -128,10 +128,10 @@
         "name": "Minigame scores"
       },
       "account_progress_totals": {
-        "name": "Progress totals"
+        "name": "Progress metrics tracked"
       },
       "account_pets": {
-        "name": "Pets"
+        "name": "Companion pets owned"
       },
       "account_task_levels": {
         "name": "Task levels"
@@ -143,13 +143,13 @@
         "name": "Taskboard unlocks"
       },
       "account_world_1_anvil": {
-        "name": "World 1 anvil"
+        "name": "World 1 forge slots"
       },
       "account_world_1_bribes": {
-        "name": "World 1 bribes"
+        "name": "World 1 bribes purchased"
       },
       "account_world_1_stamps": {
-        "name": "World 1 stamps"
+        "name": "World 1 stamp levels"
       },
       "account_world_summaries": {
         "name": "World summaries"

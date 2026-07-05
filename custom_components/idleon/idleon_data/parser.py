@@ -708,6 +708,9 @@ def _indexed_character_details(
         "afk_target": afk_target,
         "afk_seconds": round(afk_seconds, 2),
     }
+    global_time = _indexed_global_time(raw_data)
+    if global_time is not None:
+        details["afk_reference_timestamp"] = round(global_time, 2)
     if f"Money_{character_index}" in raw_data:
         details["money"] = idleon_raw_value(raw_data.get(f"Money_{character_index}"))
     if raw_afk_value != afk_seconds:
@@ -2074,6 +2077,8 @@ def _inventory_slot_is_locked(value: Any) -> bool:
 def _normalized_afk_seconds(value: float, raw_data: Mapping[str, Any]) -> float:
     """Return AFK time normalized to seconds from known export units."""
     global_time = _indexed_global_time(raw_data)
+    if value > 1_000_000_000 and global_time is not None and global_time >= value:
+        return global_time - value
     timestamp_value = value * 1000
     if value > 1_000_000 and global_time is not None and global_time >= timestamp_value:
         return global_time - timestamp_value

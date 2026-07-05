@@ -226,18 +226,16 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_progress_totals",
         translation_key="account_progress_totals",
-        value_fn=lambda coordinator: _account_detail_count(
+        value_fn=lambda coordinator: _account_progress_metric_count(
             coordinator,
-            "progress_totals",
         ),
         detail_keys=("progress_totals",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_pets",
         translation_key="account_pets",
-        value_fn=lambda coordinator: _account_detail_nested_count(
+        value_fn=lambda coordinator: _account_companion_pet_owned_count(
             coordinator,
-            "pets",
         ),
         detail_keys=("pets",),
     ),
@@ -271,27 +269,24 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_world_1_anvil",
         translation_key="account_world_1_anvil",
-        value_fn=lambda coordinator: _account_detail_nested_count(
+        value_fn=lambda coordinator: _account_world_1_forge_slot_count(
             coordinator,
-            "world_1_anvil",
         ),
         detail_keys=("world_1_anvil",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_world_1_bribes",
         translation_key="account_world_1_bribes",
-        value_fn=lambda coordinator: _account_detail_count(
+        value_fn=lambda coordinator: _account_world_1_bribes_purchased_count(
             coordinator,
-            "world_1_bribes",
         ),
         detail_keys=("world_1_bribes",),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_world_1_stamps",
         translation_key="account_world_1_stamps",
-        value_fn=lambda coordinator: _account_detail_nested_count(
+        value_fn=lambda coordinator: _account_world_1_stamp_level_total(
             coordinator,
-            "world_1_stamps",
         ),
         detail_keys=("world_1_stamps",),
     ),
@@ -518,7 +513,7 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         translation_key="character_afk_hours",
         native_unit_of_measurement=UnitOfTime.HOURS,
         value_fn=lambda character: character.afk_hours,
-        detail_keys=("afk_seconds", "raw_afk_value"),
+        detail_keys=("afk_seconds", "raw_afk_value", "afk_reference_timestamp"),
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_inventory_slots_used",
@@ -1067,6 +1062,117 @@ def _account_detail_nested_count(
         else:
             total += 1
     return total
+
+
+def _account_progress_metric_count(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | None:
+    """Return the number of account progress metrics currently parsed."""
+    value = coordinator.data.details.get("progress_totals")
+    if not isinstance(value, Mapping):
+        return None
+    return len(value)
+
+
+def _account_companion_pet_owned_count(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | None:
+    """Return the total owned companion pet count."""
+    value = coordinator.data.details.get("pets")
+    if not isinstance(value, Mapping):
+        return None
+
+    total = 0
+    found_pet = False
+    for category in value.values():
+        if not isinstance(category, Mapping):
+            continue
+        for pet_value in category.values():
+            owned = _owned_count_from_pet_value(pet_value)
+            if owned is None:
+                continue
+            found_pet = True
+            total += owned
+    return total if found_pet else None
+
+
+def _owned_count_from_pet_value(value: Any) -> int | None:
+    """Return owned count from a pet value like '<tradeable>/<owned>'."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        owned_text = value.rsplit("/", maxsplit=1)[-1].strip()
+        try:
+            return int(owned_text)
+        except ValueError:
+            return None
+    if isinstance(value, Mapping):
+        for key in ("owned", "count", "unlocked"):
+            owned = value.get(key)
+            if isinstance(owned, int):
+                return owned
+            if isinstance(owned, str):
+                try:
+                    return int(owned)
+                except ValueError:
+                    continue
+    return None
+
+
+def _account_world_1_forge_slot_count(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | None:
+    """Return the number of active World 1 forge slots."""
+    anvil = coordinator.data.details.get("world_1_anvil")
+    if not isinstance(anvil, Mapping):
+        return None
+    slots = anvil.get("slots")
+    if not isinstance(slots, Mapping):
+        return None
+    return len(slots)
+
+
+def _account_world_1_bribes_purchased_count(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | None:
+    """Return the number of purchased World 1 bribes."""
+    bribes = coordinator.data.details.get("world_1_bribes")
+    if not isinstance(bribes, Mapping):
+        return None
+
+    purchased_count = 0
+    found_bribe = False
+    for bribe in bribes.values():
+        if not isinstance(bribe, Mapping):
+            continue
+        found_bribe = True
+        if str(bribe.get("price")).lower() == "purchased":
+            purchased_count += 1
+    return purchased_count if found_bribe else None
+
+
+def _account_world_1_stamp_level_total(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | None:
+    """Return the total level of all parsed World 1 stamps."""
+    stamps = coordinator.data.details.get("world_1_stamps")
+    if not isinstance(stamps, Mapping):
+        return None
+
+    total = 0
+    found_stamp = False
+    for category in stamps.values():
+        if not isinstance(category, Mapping):
+            continue
+        for stamp in category.values():
+            if not isinstance(stamp, Mapping):
+                continue
+            level = stamp.get("current_level")
+            if not isinstance(level, int):
+                continue
+            found_stamp = True
+            total += level
+    return total if found_stamp else None
 
 
 def _account_detail_value_from_mapping(

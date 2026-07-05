@@ -736,12 +736,12 @@ def test_parser_cleans_indexed_max_carry_capacity_categories() -> None:
         "Foods": {
             "storage_type": "Foods",
             "raw_storage_type": "Foods",
-            "base_capacity": 0,
-            "capacity_per_slot": 0,
+            "base_capacity": 25,
+            "capacity_per_slot": 25,
             "maximum_capacity": 25,
-            "largest_pouch": "Empty Pouch",
-            "largest_pouch_capacity": 0,
-            "largest_pouch_asset": "pouches/none.png",
+            "largest_pouch": "Mini Food Pouch",
+            "largest_pouch_capacity": 25,
+            "largest_pouch_asset": "pouches/food/mini.png",
         },
     }
 
