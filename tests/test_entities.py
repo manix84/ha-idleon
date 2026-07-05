@@ -649,6 +649,10 @@ async def test_character_sensors(
     assert hass.states.get(inventory_used_entity_id).state == "2"
     assert hass.states.get(inventory_free_entity_id).state == "1"
     assert hass.states.get(highest_skill_entity_id).state == "Alchemy (95)"
+    assert (
+        hass.states.get(highest_skill_entity_id).attributes["entity_picture"]
+        == "/idleon_static/skills/alchemy.png"
+    )
     assert hass.states.get(total_skill_entity_id).state == "205"
     assert hass.states.get(money_entity_id).state == "12.34K"
     assert hass.states.get(money_raw_entity_id).state == "12345"

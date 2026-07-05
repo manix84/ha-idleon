@@ -40,6 +40,9 @@ CHARACTER_STAT_SENSOR_KEYS = {
     "character_wisdom": "wisdom",
     "character_luck": "luck",
 }
+SKILL_ASSET_ALIASES = {
+    "chopping": "choppin",
+}
 EXCLUDED_STORAGE_CAPACITY_ENTITIES = frozenset({"Quests", "Statues"})
 
 
@@ -818,6 +821,8 @@ class IdleonCharacterSensor(
             return _class_entity_picture(character.character_class)
         if self.entity_description.key == "character_current_activity":
             return _activity_entity_picture(character)
+        if self.entity_description.key == "character_highest_skill":
+            return _highest_skill_entity_picture(character)
         if stat_key := CHARACTER_STAT_SENSOR_KEYS.get(self.entity_description.key):
             return _stat_entity_picture(stat_key)
         if self.entity_description.key != "character_money":
@@ -1177,6 +1182,23 @@ def _stat_entity_picture(stat_key: str) -> str | None:
     if not stat_icon.is_file():
         return None
     return f"{STATIC_URL_PATH}/{stat_icon.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _highest_skill_entity_picture(character: IdleonCharacter) -> str | None:
+    """Return the image URL for a character's highest skill icon."""
+    highest_skill = character.details.get("highest_skill")
+    if not isinstance(highest_skill, Mapping):
+        return None
+    skill_name = highest_skill.get("name")
+    if not isinstance(skill_name, str):
+        return None
+    skill_slug = SKILL_ASSET_ALIASES.get(_slugify(skill_name), _slugify(skill_name))
+    if not skill_slug:
+        return None
+    skill_icon = ASSETS_PATH / "skills" / f"{skill_slug}.png"
+    if not skill_icon.is_file():
+        return None
+    return f"{STATIC_URL_PATH}/{skill_icon.relative_to(ASSETS_PATH).as_posix()}"
 
 
 def _activity_entity_picture(character: IdleonCharacter) -> str | None:

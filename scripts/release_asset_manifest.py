@@ -33,6 +33,9 @@ def release_asset_paths(root: Path) -> set[Path]:
     for stat_name in CHARACTER_STAT_ASSETS:
         _add_required(assets, root, asset_root / "stats" / f"{stat_name}.png")
 
+    for path in _iter_matching_assets(asset_root / "skills", "*.png"):
+        assets.add(path.relative_to(root))
+
     for path in _iter_matching_assets(asset_root / "classes", "*/*_icon.png"):
         assets.add(path.relative_to(root))
 

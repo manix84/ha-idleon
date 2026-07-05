@@ -217,6 +217,7 @@ def test_release_archive_contains_only_runtime_assets() -> None:
         "custom_components/idleon/assets/coins/gold.png",
         "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
         "custom_components/idleon/assets/pouches/bug/big.png",
+        "custom_components/idleon/assets/skills/alchemy.png",
         "custom_components/idleon/assets/stats/wisdom.png",
     }
     assert expected_runtime_assets <= names
@@ -238,6 +239,7 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
         in names
     )
     assert "custom_components/idleon/assets/pouches/mining/average.png" in names
+    assert "custom_components/idleon/assets/skills/alchemy.png" in names
     assert "custom_components/idleon/assets/stats/strength.png" in names
     assert "custom_components/idleon/assets/monsters/000_nothing.png" in names
     assert "custom_components/idleon/assets/monsters/114_pirate_deckhand.png" in names
