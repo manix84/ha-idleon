@@ -10,6 +10,7 @@ from typing import Any
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
 from .const import (
     CONF_AUTH_PROVIDER,
@@ -23,6 +24,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_STEAM_OPENID_RESPONSE_URL,
     DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
     PLATFORMS,
 )
 from .coordinator import IdleonDataUpdateCoordinator
@@ -82,6 +84,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdleonConfigEntry) -> bo
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _async_repair_character_device_relationships(hass, entry)
     return True
 
 
@@ -116,3 +119,39 @@ async def _async_update_listener(
 ) -> None:
     """Reload the config entry when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _async_repair_character_device_relationships(
+    hass: HomeAssistant,
+    entry: IdleonConfigEntry,
+) -> None:
+    """Ensure existing character devices are connected via the account device."""
+    device_registry = dr.async_get(hass)
+    account_device = device_registry.async_get_device(
+        identifiers={(DOMAIN, _account_device_identifier(entry))}
+    )
+    if account_device is None:
+        return
+
+    for character in entry.runtime_data.coordinator.data.characters:
+        character_device = device_registry.async_get_device(
+            identifiers={(DOMAIN, _character_device_identifier(entry, character))}
+        )
+        if character_device is None:
+            continue
+        if character_device.via_device_id == account_device.id:
+            continue
+        device_registry.async_update_device(
+            character_device.id,
+            via_device_id=account_device.id,
+        )
+
+
+def _account_device_identifier(entry: ConfigEntry) -> str:
+    """Return the account device identifier."""
+    return f"{entry.entry_id}_account"
+
+
+def _character_device_identifier(entry: ConfigEntry, character: Any) -> str:
+    """Return a character device identifier."""
+    return f"{entry.entry_id}_{character.character_id}"

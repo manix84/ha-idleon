@@ -896,6 +896,44 @@ async def test_device_model(
     )
 
 
+async def test_existing_character_devices_are_connected_to_account(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+) -> None:
+    """Test setup repairs existing character devices without an account link."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    entry.add_to_hass(hass)
+    device_registry = dr.async_get(hass)
+    account_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, f"{entry.entry_id}_account")},
+        name="Legends of Idleon Account",
+    )
+    character_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, f"{entry.entry_id}_bubo_main")},
+        name="Idleon Character - Bubo Main",
+    )
+    assert character_device.via_device_id is None
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    repaired_character_device = device_registry.async_get_device(
+        identifiers={(DOMAIN, f"{entry.entry_id}_bubo_main")}
+    )
+    assert repaired_character_device is not None
+    assert repaired_character_device.via_device_id == account_device.id
+
+
 def test_character_device_name_removes_duplicate_character_prefix() -> None:
     """Test indexed parser names become concise device names."""
     character = IdleonCharacter(
