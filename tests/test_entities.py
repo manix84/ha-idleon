@@ -714,14 +714,11 @@ async def test_character_sensors(
     assert hass.states.get(material_storage_entity_id).state == "100"
     assert quests_storage_entity_id is None
     assert statues_storage_entity_id is None
-    assert hass.states.get(wisdom_entity_id) is None
-    wisdom_registry_entry = entity_registry.async_get_entity_id(
-        "sensor",
-        DOMAIN,
-        f"{entry.entry_id}_bubo_main_character_wisdom",
+    assert hass.states.get(wisdom_entity_id).state == "320"
+    assert (
+        hass.states.get(wisdom_entity_id).attributes["entity_picture"]
+        == "/idleon_static/stats/wisdom.png"
     )
-    assert wisdom_registry_entry is not None
-    assert entity_registry.async_get(wisdom_registry_entry).disabled
     assert equipped_items_entity_id is not None
     assert entity_registry.async_get(equipped_items_entity_id).disabled
     assert hass.states.get(equipped_items_entity_id) is None

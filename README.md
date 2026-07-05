@@ -255,8 +255,7 @@ Character sensors:
 - Money, formatted with Idleon's large-number suffixes and the exact copper
   value exposed as a `raw_value` attribute
 - Equipped items is available but disabled by default
-- Strength, agility, wisdom, and luck sensors are available but disabled by
-  default
+- Strength, agility, wisdom, and luck
 
 Character binary sensors:
 

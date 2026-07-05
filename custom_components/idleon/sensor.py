@@ -576,25 +576,21 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         key="character_strength",
         translation_key="character_strength",
         value_fn=lambda character: _stat_value(character, "strength"),
-        entity_registry_enabled_default=False,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_agility",
         translation_key="character_agility",
         value_fn=lambda character: _stat_value(character, "agility"),
-        entity_registry_enabled_default=False,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_wisdom",
         translation_key="character_wisdom",
         value_fn=lambda character: _stat_value(character, "wisdom"),
-        entity_registry_enabled_default=False,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_luck",
         translation_key="character_luck",
         value_fn=lambda character: _stat_value(character, "luck"),
-        entity_registry_enabled_default=False,
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_equipped_items",
