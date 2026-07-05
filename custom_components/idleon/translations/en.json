@@ -88,6 +88,9 @@
       "account_gems": {
         "name": "Gems"
       },
+      "account_pet_crystals": {
+        "name": "Pet crystals"
+      },
       "account_last_updated": {
         "name": "Last updated"
       },

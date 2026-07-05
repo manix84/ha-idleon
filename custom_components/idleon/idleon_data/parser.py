@@ -2199,6 +2199,17 @@ def _account_details(
         details["total_money"] = details["raw_money"]
     if "raw_money" not in details and "total_money" in details:
         details["raw_money"] = details["total_money"]
+    pet_crystals = _first_int(
+        account_data,
+        (
+            "pet_crystals",
+            "petCrystals",
+            "companion_crystals",
+            "companionCrystals",
+        ),
+    )
+    if pet_crystals is not None:
+        details["pet_crystals"] = pet_crystals
     for detail_key, aliases in (
         ("currencies", ("currencies", "currency")),
         ("shrine_levels", ("shrine_levels", "shrineLevels", "shrines")),

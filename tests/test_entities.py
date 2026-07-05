@@ -47,6 +47,11 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_gems",
     )
+    pet_crystals_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_pet_crystals",
+    )
     last_updated_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -264,6 +269,15 @@ async def test_account_sensors(
     assert (
         hass.states.get(gems_entity_id).attributes["entity_picture"]
         == "/idleon_static/gem.png"
+    )
+    assert hass.states.get(pet_crystals_entity_id).state == "4321"
+    assert (
+        hass.states.get(pet_crystals_entity_id).attributes["state_class"]
+        == "measurement"
+    )
+    assert (
+        hass.states.get(pet_crystals_entity_id).attributes["entity_picture"]
+        == "/idleon_static/pet_crystal.png"
     )
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"

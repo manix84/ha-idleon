@@ -110,6 +110,20 @@ def test_gem_asset_exists_with_padding() -> None:
     assert _png_dimensions(served_path) == (88, 88)
 
 
+def test_pet_crystal_asset_exists_with_padding() -> None:
+    """Test the bundled Pet Crystal asset keeps transparent visual padding."""
+    source_path = ROOT / "assets/pet_crystal.png"
+    served_path = ROOT / "custom_components/idleon/assets/pet_crystal.png"
+
+    assert source_path.exists()
+    assert source_path.stat().st_size > 0
+    assert served_path.exists()
+    assert served_path.stat().st_size > 0
+    assert _png_dimensions(source_path) == (72, 72)
+    assert _png_dimensions(served_path) == (72, 72)
+    assert _png_has_transparent_edge_padding(served_path)
+
+
 def test_class_icon_assets_exist() -> None:
     """Test representative class icon assets are bundled with the integration."""
     class_icons = (
@@ -214,6 +228,7 @@ def test_release_archive_contains_only_runtime_assets() -> None:
 
     expected_runtime_assets = {
         "custom_components/idleon/assets/gem.png",
+        "custom_components/idleon/assets/pet_crystal.png",
         "custom_components/idleon/assets/coins/gold.png",
         "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
         "custom_components/idleon/assets/pouches/bug/big.png",
@@ -233,6 +248,7 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     names = {path.as_posix() for path in release_asset_paths(ROOT)}
 
     assert "custom_components/idleon/assets/gem.png" in names
+    assert "custom_components/idleon/assets/pet_crystal.png" in names
     assert "custom_components/idleon/assets/coins/polarity.png" in names
     assert (
         "custom_components/idleon/assets/classes/warrior/death_bringer_icon.png"

@@ -110,6 +110,15 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         value_fn=lambda coordinator: coordinator.data.gems,
     ),
     IdleonAccountSensorEntityDescription(
+        key="account_pet_crystals",
+        translation_key="account_pet_crystals",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "pet_crystals",
+            0,
+        ),
+    ),
+    IdleonAccountSensorEntityDescription(
         key="account_last_updated",
         translation_key="account_last_updated",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -723,6 +732,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         """Return an entity picture for account sensors with visual assets."""
         if self.entity_description.key == "account_gems":
             return f"{STATIC_URL_PATH}/gem.png"
+        if self.entity_description.key == "account_pet_crystals":
+            return f"{STATIC_URL_PATH}/pet_crystal.png"
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
         return None

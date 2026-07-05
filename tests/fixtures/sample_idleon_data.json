@@ -11,6 +11,7 @@
         "bank": 900000,
         "characters": 87654
       },
+      "pet_crystals": 4321,
       "green_stack_count": 3,
       "green_stack_sample": [
         "Oak Logs",

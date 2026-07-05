@@ -25,6 +25,7 @@ def release_asset_paths(root: Path) -> set[Path]:
     assets: set[Path] = set()
 
     _add_existing(assets, root, asset_root / "gem.png")
+    _add_existing(assets, root, asset_root / "pet_crystal.png")
 
     for coin_name, _tier_value in IDLEON_COIN_TIERS:
         coin_slug = coin_name.lower().replace(" ", "_")
