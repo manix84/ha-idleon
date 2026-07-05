@@ -21,6 +21,7 @@ from custom_components.idleon.models import IdleonCharacter
 from custom_components.idleon.sensor import (
     _activity_entity_picture,
     _character_device_name,
+    _cosmetic_detail_value,
     _equipment_entity_picture,
 )
 
@@ -1060,6 +1061,46 @@ def test_character_cosmetic_pictures_fall_back_from_replica_assets() -> None:
     assert (
         _equipment_entity_picture(character, "selected_name_tag_raw")
         == "/idleon_static/equipment/name_tag/megafeather.png"
+    )
+
+
+def test_character_cosmetic_states_fall_back_from_raw_ids() -> None:
+    """Test selected cosmetic states use human labels when parser labels are raw."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Town",
+        current_activity="AFK target 0",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={
+            "selected_trophy": "Trophy17",
+            "selected_trophy_raw": "Trophy17",
+            "selected_name_tag": "EquipmentNametag12",
+            "selected_name_tag_raw": "EquipmentNametag12",
+        },
+    )
+
+    assert (
+        _cosmetic_detail_value(
+            character,
+            "selected_trophy",
+            "selected_trophy_raw",
+            "None",
+        )
+        == "One of the Divine"
+    )
+    assert (
+        _cosmetic_detail_value(
+            character,
+            "selected_name_tag",
+            "selected_name_tag_raw",
+            "None",
+        )
+        == "Megafeather Nametag"
     )
 
 

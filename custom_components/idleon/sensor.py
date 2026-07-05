@@ -44,6 +44,74 @@ SKILL_ASSET_ALIASES = {
     "chopping": "choppin",
 }
 EXCLUDED_STORAGE_CAPACITY_ENTITIES = frozenset({"Quests", "Statues"})
+TROPHY_DISPLAY_LABELS = {
+    "Trophy1": "King of Food",
+    "Trophy10": "Critter Baron",
+    "Trophy11": "YumYum Sheriff",
+    "Trophy12": "Megalodon",
+    "Trophy13": "Club Maestro",
+    "Trophy14": "Beach Bro",
+    "Trophy15": "Frost Prince",
+    "Trophy16": "Idle Skiller",
+    "Trophy17": "One of the Divine",
+    "Trophy18": "Master of Nothing",
+    "Trophy19": "Nebula Royal",
+    "Trophy2": "Lucky Lad",
+    "Trophy20": "Luckier Lad",
+    "Trophy21": "Baller",
+    "Trophy22": "Gladiator",
+    "Trophy23": "Heroic Spirit",
+    "Trophy24": "Nine Dart Finish",
+    "Trophy25": "Luckiest Lad",
+    "Trophy3": "Club Member",
+    "Trophy4": "I Made This Game",
+    "Trophy5": "Dice Dynamo",
+    "Trophy6": "Blunder Hero",
+    "Trophy7": "Original Gamer",
+    "Trophy8": "Trailblazer",
+    "Trophy9": "Ultra Unboxer",
+    "TrophyReplica0": "Replica Trophy",
+}
+NAME_TAG_DISPLAY_LABELS = {
+    "EquipmentNametag1": "Riftwalker Nametag",
+    "EquipmentNametag10": "3rd Anniversary IdleOn Nametag",
+    "EquipmentNametag11": "Nightshade Nametag",
+    "EquipmentNametag12": "Megafeather Nametag",
+    "EquipmentNametag13": "Timeless Nametag",
+    "EquipmentNametag14": "Snowflake Nametag",
+    "EquipmentNametag15": "Frostyman Nametag",
+    "EquipmentNametag16": "Lovely Day Nametag",
+    "EquipmentNametag17": "Spectacular 4th Year Nametag",
+    "EquipmentNametag18": "4th Anniversary IdleOn Nametag",
+    "EquipmentNametag19": "Aethermoon Nametag",
+    "EquipmentNametag2": "Lava's Awesome Nametag",
+    "EquipmentNametag20": "Deadbones Nametag",
+    "EquipmentNametag21": "Treasure Nametag",
+    "EquipmentNametag22": "Tome Apprentice Nametag",
+    "EquipmentNametag23": "Tome Journeyman Nametag",
+    "EquipmentNametag24": "Tome Expert Nametag",
+    "EquipmentNametag25": "Tome Elite Nametag",
+    "EquipmentNametag26": "Tome Pro Nametag",
+    "EquipmentNametag27": "Tome Master Nametag",
+    "EquipmentNametag28": "Tome Legend Nametag",
+    "EquipmentNametag29": "Reliquarium Nametag",
+    "EquipmentNametag3": "Balling Nametag",
+    "EquipmentNametag30": "Cropfall Nametag",
+    "EquipmentNametag31": "Gingerbread Nametag",
+    "EquipmentNametag32": "Sweet Chocolate Nametag",
+    "EquipmentNametag33": "Pot of Gold Nametag",
+    "EquipmentNametag34": "Emerald Nametag",
+    "EquipmentNametag35": "5th Anniversary IdleOn Nametag",
+    "EquipmentNametag36": "Wonderful 5th Year Nametag",
+    "EquipmentNametag37": "Grand Egg Nametag",
+    "EquipmentNametag4": "Vman Nametag",
+    "EquipmentNametag41": "All That Glitters Nametag",
+    "EquipmentNametag5": "Spring Flowers Nametag",
+    "EquipmentNametag6b": "Trash Tuna Nametag",
+    "EquipmentNametag7": "Island Adventurer Nametag",
+    "EquipmentNametag8": "Summer Shovel Nametag",
+    "EquipmentNametag9": "Falloween Nametag",
+}
 TROPHY_ASSET_STEMS = {
     "Trophy1": "king_of_food",
     "Trophy10": "critter_baron",
@@ -638,9 +706,10 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
     IdleonCharacterSensorEntityDescription(
         key="character_selected_trophy",
         translation_key="character_selected_trophy",
-        value_fn=lambda character: _detail_value(
+        value_fn=lambda character: _cosmetic_detail_value(
             character,
             "selected_trophy",
+            "selected_trophy_raw",
             "None",
         ),
         detail_keys=("selected_trophy_raw",),
@@ -648,9 +717,10 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
     IdleonCharacterSensorEntityDescription(
         key="character_selected_name_tag",
         translation_key="character_selected_name_tag",
-        value_fn=lambda character: _detail_value(
+        value_fn=lambda character: _cosmetic_detail_value(
             character,
             "selected_name_tag",
+            "selected_name_tag_raw",
             "None",
         ),
         detail_keys=("selected_name_tag_raw",),
@@ -1104,6 +1174,43 @@ def _detail_value(
 ) -> Any:
     """Return a single parsed character detail value."""
     return character.details.get(key, default)
+
+
+def _cosmetic_detail_value(
+    character: IdleonCharacter,
+    label_key: str,
+    raw_key: str,
+    default: Any = None,
+) -> Any:
+    """Return a human-readable cosmetic label with raw-ID fallback support."""
+    label = character.details.get(label_key)
+    raw_value = character.details.get(raw_key)
+    if isinstance(label, str) and label and label != raw_value:
+        return label
+    if isinstance(raw_value, str):
+        return _cosmetic_display_label(raw_value, default)
+    if isinstance(label, str):
+        return _cosmetic_display_label(label, default)
+    return default
+
+
+def _cosmetic_display_label(raw_item: str, default: Any = None) -> Any:
+    """Return a display label for a known cosmetic raw ID."""
+    if raw_item.startswith("TrophyReplica"):
+        base_item = raw_item.replace("TrophyReplica", "Trophy", 1)
+        return (
+            TROPHY_DISPLAY_LABELS.get(raw_item)
+            or TROPHY_DISPLAY_LABELS.get(base_item)
+            or default
+        )
+    if raw_item.startswith("Trophy"):
+        return TROPHY_DISPLAY_LABELS.get(raw_item, default)
+    if raw_item.startswith("EquipmentNametagReplica"):
+        base_item = raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1)
+        return NAME_TAG_DISPLAY_LABELS.get(base_item, default)
+    if raw_item.startswith("EquipmentNametag"):
+        return NAME_TAG_DISPLAY_LABELS.get(raw_item, default)
+    return default
 
 
 def _character_storage_capacities(
