@@ -59,6 +59,17 @@ def test_game_maps_fall_back_to_packaged_labels(monkeypatch) -> None:
     assert game_maps.map_name_label(216) == "The Hole"
     assert game_maps.afk_activity_label("caveB") == "Fighting: Gloomie Mushroom"
     assert game_maps.afk_target_monster_slug("w7b11") == "pirate_deckhand"
+    assert game_maps.afk_activity_label("0") == "Nothing"
+    assert game_maps.afk_activity_label("_") == "Nothing"
+    assert game_maps.afk_activity_label("Nothing") == "Nothing"
+    assert game_maps.afk_activity_label("Copper") == "Mining: Copper"
+    assert game_maps.afk_activity_label("OakTree") == "Choppin: Oak Tree"
+    assert game_maps.afk_activity_label("FishSmall") == "Fishing: Small Fish"
+    assert game_maps.afk_activity_label("Bug1") == "Catching: Flies"
+    assert game_maps.afk_target_skill_slug("Copper") == "mining"
+    assert game_maps.afk_target_skill_slug("OakTree") == "choppin"
+    assert game_maps.afk_target_skill_slug("FishSmall") == "fishing"
+    assert game_maps.afk_target_skill_slug("Bug1") == "catching"
     assert game_maps.afk_target_is_idle("0")
     assert game_maps.afk_target_is_idle(None)
     assert not game_maps.afk_target_is_idle("w7b11")

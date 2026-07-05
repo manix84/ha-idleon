@@ -1036,6 +1036,24 @@ def test_character_current_activity_picture_uses_nothing_asset_for_idle() -> Non
     )
 
 
+def test_character_current_activity_picture_uses_skill_asset_for_skilling() -> None:
+    """Test skilling activities expose the matching skill asset picture."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Freefall Caverns",
+        current_activity="Mining: Copper",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={"afk_target": "Copper"},
+    )
+
+    assert _activity_entity_picture(character) == "/idleon_static/skills/mining.png"
+
+
 def test_character_cosmetic_pictures_fall_back_from_replica_assets() -> None:
     """Test replica cosmetic IDs reuse the matching base item art."""
     character = IdleonCharacter(

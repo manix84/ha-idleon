@@ -74,6 +74,70 @@ MAP_NAMES: dict[int, str] = {
 }
 
 MONSTERS: dict[str, dict[str, str]] = {
+    "AlienTree": {"name": "Alien_Tree", "afk_type": "CHOPPIN"},
+    "BirchTree": {"name": "Birch_Tree", "afk_type": "CHOPPIN"},
+    "Bravery_Monument": {"name": "Bravery", "afk_type": "Paying_Respect"},
+    "Bug1": {"name": "Flies", "afk_type": "CATCHING"},
+    "Bug10": {"name": "Dust_Mote", "afk_type": "CATCHING"},
+    "Bug11": {"name": "Dream_Particulate", "afk_type": "CATCHING"},
+    "Bug12": {"name": "Ladybug", "afk_type": "CATCHING"},
+    "Bug13": {"name": "Firefly", "afk_type": "CATCHING"},
+    "Bug14": {"name": "Fractalfly", "afk_type": "CATCHING"},
+    "Bug15": {"name": "Litterbug", "afk_type": "CATCHING"},
+    "Bug2": {"name": "Butterflies", "afk_type": "CATCHING"},
+    "Bug3": {"name": "Sentient_Cereal", "afk_type": "CATCHING"},
+    "Bug4": {"name": "Fruitflies", "afk_type": "CATCHING"},
+    "Bug5": {"name": "Mosquisnow", "afk_type": "CATCHING"},
+    "Bug6": {"name": "Flycicle", "afk_type": "CATCHING"},
+    "Bug7": {"name": "Bumble_Bee", "afk_type": "CATCHING"},
+    "Bug8": {"name": "Fairy", "afk_type": "CATCHING"},
+    "Bug9": {"name": "Scarab", "afk_type": "CATCHING"},
+    "Cooking": {"name": "Cooking", "afk_type": "COOKING"},
+    "Copper": {"name": "Copper", "afk_type": "MINING"},
+    "Dementia": {"name": "Dementia", "afk_type": "MINING"},
+    "Divinity": {"name": "Divinity", "afk_type": "DIVINITY"},
+    "Dreadlo": {"name": "Dreadlo", "afk_type": "MINING"},
+    "FishBig": {"name": "Large_Fish", "afk_type": "FISHING"},
+    "FishEquinox": {"name": "Equinox_Fish", "afk_type": "FISHING"},
+    "FishMed": {"name": "Medium_Fish", "afk_type": "FISHING"},
+    "FishSmall": {"name": "Small_Fish", "afk_type": "FISHING"},
+    "ForestTree": {"name": "Forest_Tree", "afk_type": "CHOPPIN"},
+    "Godshard": {"name": "Godshard", "afk_type": "MINING"},
+    "Gold": {"name": "Gold", "afk_type": "MINING"},
+    "Iron": {"name": "Iron", "afk_type": "MINING"},
+    "JungleTree": {"name": "Jungle_Tree", "afk_type": "CHOPPIN"},
+    "Justice_Monument": {"name": "Justice", "afk_type": "Paying_Respect"},
+    "Laboratory": {"name": "Laboratory", "afk_type": "LABORATORY"},
+    "Lustre": {"name": "Lustre", "afk_type": "MINING"},
+    "Marble": {"name": "Marble", "afk_type": "MINING"},
+    "Motherlode": {"name": "Motherlode", "afk_type": "MINING"},
+    "MotherlodeFISH": {"name": "Trench_Fish", "afk_type": "FISHING"},
+    "MotherlodeTREE": {"name": "Evertree", "afk_type": "CHOPPIN"},
+    "Nothing": {"name": "_", "afk_type": "Nothing"},
+    "OakTree": {"name": "Oak_Tree", "afk_type": "CHOPPIN"},
+    "PalmTree": {"name": "Palm_Tree", "afk_type": "CHOPPIN"},
+    "Plat": {"name": "Plat", "afk_type": "MINING"},
+    "Prehistrium": {"name": "Prehistrium", "afk_type": "MINING"},
+    "SaharanFoal": {"name": "Saharan_Foal", "afk_type": "CHOPPIN"},
+    "Spelunking0": {"name": "Fearful_Tunnel", "afk_type": "SPELUNKING"},
+    "Spelunking1": {"name": "Decaying_Crevasse", "afk_type": "SPELUNKING"},
+    "Spelunking2": {"name": "Buried_Church", "afk_type": "SPELUNKING"},
+    "Spelunking3": {"name": "One_Way_Opening", "afk_type": "SPELUNKING"},
+    "Spelunking4": {"name": "Plunder_Cranny", "afk_type": "SPELUNKING"},
+    "Spelunking5": {"name": "Kelp_Forest", "afk_type": "SPELUNKING"},
+    "Starfire": {"name": "Starfire", "afk_type": "MINING"},
+    "StumpTree": {"name": "Stump_Tree", "afk_type": "CHOPPIN"},
+    "ToiletTree": {"name": "Toilet_Tree", "afk_type": "CHOPPIN"},
+    "Tree10": {"name": "Dandelioli_Tree", "afk_type": "CHOPPIN"},
+    "Tree11": {"name": "Equinox_Willow", "afk_type": "CHOPPIN"},
+    "Tree12": {"name": "Bamboo", "afk_type": "CHOPPIN"},
+    "Tree13": {"name": "Effervescent_Eucalyptus", "afk_type": "CHOPPIN"},
+    "Tree14": {"name": "Ancient_Seaweed", "afk_type": "CHOPPIN"},
+    "Tree7": {"name": "Wispy_Tree", "afk_type": "CHOPPIN"},
+    "Tree8": {"name": "Cubed_Tree", "afk_type": "CHOPPIN"},
+    "Tree9": {"name": "Maple_Tree", "afk_type": "CHOPPIN"},
+    "Void": {"name": "Void", "afk_type": "MINING"},
+    "Wisdom_Monument": {"name": "Wisdom", "afk_type": "Paying_Respect"},
     "caveB": {
         "name": "Gloomie_Mushroom",
         "afk_type": "FIGHTING",
@@ -93,6 +157,16 @@ MONSTERS: dict[str, dict[str, str]] = {
 }
 
 PLACEHOLDER_LABELS = {"", "0", "_", "error", "filler", "nope", "z"}
+AFK_TYPE_SKILL_SLUGS = {
+    "catching": "catching",
+    "choppin": "choppin",
+    "cooking": "cooking",
+    "divinity": "divinity",
+    "fishing": "fishing",
+    "laboratory": "laboratory",
+    "mining": "mining",
+    "spelunking": "spelunking",
+}
 
 
 def class_name_label(value: Any) -> str:
@@ -121,19 +195,25 @@ def map_name_label(value: Any) -> str:
 
 def afk_activity_label(value: Any) -> str:
     """Return a display activity for a raw Idleon AFK target."""
-    if value is None:
-        return "Unknown"
+    if afk_target_is_idle(value):
+        return "Nothing"
 
     monster = _afk_target_data(value)
     if not isinstance(monster, Mapping):
-        return "Unknown" if value is None else f"AFK target {value}"
+        return f"AFK target {value}"
 
     monster_name = monster.get("Name") or monster.get("name")
     afk_type = monster.get("AFKtype") or monster.get("afk_type")
-    if not _is_real_label(monster_name):
-        return f"AFK target {value}"
+    if _afk_type_is_idle(afk_type):
+        return "Nothing"
     if not _is_real_label(afk_type):
-        return display_name(str(monster_name))
+        return (
+            display_name(str(monster_name))
+            if _is_real_label(monster_name)
+            else (f"AFK target {value}")
+        )
+    if not _is_real_label(monster_name):
+        return display_name(str(afk_type))
 
     return f"{display_name(str(afk_type))}: {display_name(str(monster_name))}"
 
@@ -172,6 +252,18 @@ def afk_target_monster_slug(value: Any) -> str | None:
     if not _is_real_label(monster_name):
         return None
     return normalize_slug(str(monster_name))
+
+
+def afk_target_skill_slug(value: Any) -> str | None:
+    """Return the canonical skill slug for a non-fighting AFK target."""
+    monster = _afk_target_data(value)
+    if not isinstance(monster, Mapping):
+        return None
+
+    afk_type = monster.get("AFKtype") or monster.get("afk_type")
+    if not _is_real_label(afk_type):
+        return None
+    return AFK_TYPE_SKILL_SLUGS.get(normalize_slug(str(afk_type)))
 
 
 def afk_target_is_idle(value: Any) -> bool:
@@ -256,3 +348,10 @@ def _is_real_label(value: Any) -> bool:
     if value is None:
         return False
     return str(value).strip().lower() not in PLACEHOLDER_LABELS
+
+
+def _afk_type_is_idle(value: Any) -> bool:
+    """Return whether an AFK type represents no current activity."""
+    if value is None:
+        return False
+    return normalize_slug(str(value)) in {"nothing", "none", "idle"}

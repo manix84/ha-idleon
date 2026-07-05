@@ -25,7 +25,11 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
-from .idleon_data.game_maps import afk_target_is_idle, afk_target_monster_slug
+from .idleon_data.game_maps import (
+    afk_target_is_idle,
+    afk_target_monster_slug,
+    afk_target_skill_slug,
+)
 from .models import IdleonCharacter
 from .utils.number_format import (
     idleon_money_parts,
@@ -1485,6 +1489,11 @@ def _highest_skill_entity_picture(character: IdleonCharacter) -> str | None:
     skill_name = highest_skill.get("name")
     if not isinstance(skill_name, str):
         return None
+    return _skill_entity_picture(skill_name)
+
+
+def _skill_entity_picture(skill_name: str) -> str | None:
+    """Return the image URL for a skill icon."""
     skill_slug = SKILL_ASSET_ALIASES.get(_slugify(skill_name), _slugify(skill_name))
     if not skill_slug:
         return None
@@ -1546,7 +1555,7 @@ def _unique_strings(*values: str | None) -> tuple[str, ...]:
 
 
 def _activity_entity_picture(character: IdleonCharacter) -> str | None:
-    """Return the image URL for the monster a character is fighting."""
+    """Return the image URL for the current AFK activity."""
     afk_target = character.details.get("afk_target")
     monster_slug = afk_target_monster_slug(afk_target)
     if monster_slug:
@@ -1556,6 +1565,9 @@ def _activity_entity_picture(character: IdleonCharacter) -> str | None:
     elif afk_target_is_idle(afk_target):
         monster_icons = [ASSETS_PATH / "monsters" / "000_nothing.png"]
     else:
+        skill_slug = afk_target_skill_slug(afk_target)
+        if skill_slug:
+            return _skill_entity_picture(skill_slug)
         return None
 
     if not monster_icons:
