@@ -103,9 +103,6 @@
       "account_money": {
         "name": "Money"
       },
-      "account_money_raw": {
-        "name": "Money raw"
-      },
       "account_green_stacks": {
         "name": "Green stacks"
       },
@@ -324,9 +321,6 @@
       },
       "character_money": {
         "name": "Money"
-      },
-      "character_money_raw": {
-        "name": "Money raw"
       },
       "character_strength": {
         "name": "Strength"

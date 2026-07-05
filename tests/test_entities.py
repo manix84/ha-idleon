@@ -73,11 +73,6 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_money",
     )
-    raw_money_entity_id = entity_registry.async_get_entity_id(
-        "sensor",
-        DOMAIN,
-        f"{entry.entry_id}_account_money_raw",
-    )
     green_stacks_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -282,7 +277,7 @@ async def test_account_sensors(
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"
     assert hass.states.get(total_money_entity_id).state == "987.65K"
-    assert hass.states.get(raw_money_entity_id).state == "987654"
+    assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert hass.states.get(slab_entity_id).state == "456"
     assert hass.states.get(achievements_entity_id).state == "78"
@@ -653,11 +648,6 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_money",
     )
-    money_raw_entity_id = entity_registry.async_get_entity_id(
-        "sensor",
-        DOMAIN,
-        f"{entry.entry_id}_bubo_main_character_money_raw",
-    )
     bug_storage_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -707,7 +697,6 @@ async def test_character_sensors(
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
     assert hass.states.get(money_entity_id).state == "12.34K"
-    assert hass.states.get(money_raw_entity_id).state == "12345"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
     assert (
         hass.states.get(money_entity_id).attributes["entity_picture"]
@@ -733,7 +722,9 @@ async def test_character_sensors(
     )
     assert wisdom_registry_entry is not None
     assert entity_registry.async_get(wisdom_registry_entry).disabled
-    assert hass.states.get(equipped_items_entity_id).state == "4"
+    assert equipped_items_entity_id is not None
+    assert entity_registry.async_get(equipped_items_entity_id).disabled
+    assert hass.states.get(equipped_items_entity_id) is None
 
     highest_skill_attributes = hass.states.get(highest_skill_entity_id).attributes
     assert highest_skill_attributes["highest_skill"] == {
@@ -760,18 +751,6 @@ async def test_character_sensors(
     assert material_storage_attributes["entity_picture"] == (
         "/idleon_static/pouches/material/small.png"
     )
-
-    equipped_items_attributes = hass.states.get(equipped_items_entity_id).attributes
-    assert equipped_items_attributes["equipped_items"] == [
-        "Farmer Brim",
-        "Orange Tee",
-    ]
-    assert equipped_items_attributes["equipped_tool_count"] == 2
-    assert equipped_items_attributes["equipped_food"] == ["Nomwich"]
-    assert equipped_items_attributes["attack_loadout"] == [
-        "Power Strike",
-        "Book of the Wise",
-    ]
 
     assert "inventory_slots_used" not in hass.states.get(level_entity_id).attributes
     assert "inventory_slots_used" not in hass.states.get(class_entity_id).attributes
@@ -840,6 +819,48 @@ async def test_character_stat_sensor_pictures(
     assert state is not None
     assert state.state == "320"
     assert state.attributes["entity_picture"] == "/idleon_static/stats/wisdom.png"
+
+
+async def test_character_equipped_items_can_be_enabled(
+    hass: HomeAssistant,
+    sample_data_path: Path,
+) -> None:
+    """Test disabled Equipped Items sensor exposes details when enabled."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Idleon Local File",
+        data={
+            CONF_DATA_SOURCE_TYPE: DATA_SOURCE_LOCAL_FILE,
+            CONF_LOCAL_FILE_PATH: str(sample_data_path),
+            CONF_SCAN_INTERVAL: 3600,
+        },
+    )
+    entry.add_to_hass(hass)
+    entity_registry = er.async_get(hass)
+    registry_entry = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_items",
+        suggested_object_id="idleon_bubo_main_equipped_items",
+        disabled_by=None,
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(registry_entry.entity_id)
+    assert state is not None
+    assert state.state == "4"
+    assert state.attributes["equipped_items"] == [
+        "Farmer Brim",
+        "Orange Tee",
+    ]
+    assert state.attributes["equipped_tool_count"] == 2
+    assert state.attributes["equipped_food"] == ["Nomwich"]
+    assert state.attributes["attack_loadout"] == [
+        "Power Strike",
+        "Book of the Wise",
+    ]
 
 
 async def test_device_model(

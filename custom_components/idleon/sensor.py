@@ -153,12 +153,6 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         detail_keys=("money_breakdown",),
     ),
     IdleonAccountSensorEntityDescription(
-        key="account_money_raw",
-        translation_key="account_money_raw",
-        value_fn=lambda coordinator: _account_money_raw(coordinator),
-        detail_keys=("money_breakdown",),
-    ),
-    IdleonAccountSensorEntityDescription(
         key="account_green_stacks",
         translation_key="account_green_stacks",
         value_fn=lambda coordinator: _account_detail_value(
@@ -579,12 +573,6 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         detail_keys=("money",),
     ),
     IdleonCharacterSensorEntityDescription(
-        key="character_money_raw",
-        translation_key="character_money_raw",
-        value_fn=lambda character: _character_money_raw(character),
-        detail_keys=("money",),
-    ),
-    IdleonCharacterSensorEntityDescription(
         key="character_strength",
         translation_key="character_strength",
         value_fn=lambda character: _stat_value(character, "strength"),
@@ -624,6 +612,7 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
             "equipped_food",
             "attack_loadout",
         ),
+        entity_registry_enabled_default=False,
     ),
 )
 
@@ -634,7 +623,6 @@ NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
     not in {
         "account_last_updated",
         "account_money",
-        "account_money_raw",
     }
 )
 NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
@@ -647,7 +635,6 @@ NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
         "character_current_activity",
         "character_highest_skill",
         "character_money",
-        "character_money_raw",
     }
 )
 
@@ -760,12 +747,6 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             if money_breakdown:
                 attributes["money_breakdown"] = money_breakdown
             return attributes
-
-        if self.entity_description.key == "account_money_raw":
-            money_breakdown = _money_breakdown_attributes(self.coordinator)
-            if money_breakdown:
-                return {"money_breakdown": money_breakdown}
-            return None
 
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None

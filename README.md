@@ -173,8 +173,8 @@ Account sensors:
 - Gems
 - Highest character level
 - Total skill level
-- Money, formatted with Idleon's large-number suffixes
-- Money raw, preserving the exact copper value as a string
+- Money, formatted with Idleon's large-number suffixes and the exact copper
+  value exposed as a `raw_value` attribute
 - Green stacks
 - Slab items obtained
 - Achievements completed
@@ -252,9 +252,9 @@ Character sensors:
 - Inventory slots used/free
 - Highest skill
 - Total skill level
-- Money, formatted with Idleon's large-number suffixes
-- Money raw, preserving the exact copper value as a string
-- Equipped items
+- Money, formatted with Idleon's large-number suffixes and the exact copper
+  value exposed as a `raw_value` attribute
+- Equipped items is available but disabled by default
 - Strength, agility, wisdom, and luck sensors are available but disabled by
   default
 
@@ -278,12 +278,12 @@ Large Idleon values should use
 `custom_components/idleon/utils/number_format.py`. Use
 `format_idleon_number()` for generic Idleon suffixes and
 `format_idleon_money()` for copper coin values. Keep exact source values in a
-paired `_raw` sensor or `raw_value` attribute so precision is never lost.
+`raw_value` attribute so precision is never lost.
 
 Money sensors follow this pattern:
 
 - `money`: formatted display value, such as `987.65K`
-- `money_raw`: exact copper value as a string
+- `raw_value` attribute: exact copper value as a string
 
 Formatted money sensors expose `raw_value`, `coin_tier_formatted`,
 `coin_tier`, `coin_tier_value`, `formatted_number`, `number_suffix`, and
