@@ -236,8 +236,10 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
                 {
                     "0": "EquipmentHats1",
                     "1": "EquipmentShirts1",
+                    "10": "Trophy17",
+                    "14": "EquipmentNametag12",
                     "2": "Blank",
-                    "length": 3,
+                    "length": 16,
                 },
                 {"0": "EquipmentTools1", "1": "Blank", "length": 2},
                 {"0": "FoodHealth1", "1": "Blank", "length": 2},
@@ -277,11 +279,20 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     }
     assert character.details["skill_levels"] == {"Character": 1103}
     assert character.details["total_skill_level"] == 0
-    assert character.details["equipped_item_count"] == 2
-    assert character.details["equipped_items"] == ["Farmer Brim", "Orange Tee"]
+    assert character.details["equipped_item_count"] == 4
+    assert character.details["equipped_items"] == [
+        "Farmer Brim",
+        "Orange Tee",
+        "One of the Divine",
+        "Megafeather Nametag",
+    ]
     assert character.details["equipped_tool_count"] == 1
     assert character.details["equipped_food_count"] == 1
     assert character.details["attack_loadout"] == ["90", "91"]
+    assert character.details["selected_trophy"] == "One of the Divine"
+    assert character.details["selected_trophy_raw"] == "Trophy17"
+    assert character.details["selected_name_tag"] == "Megafeather Nametag"
+    assert character.details["selected_name_tag_raw"] == "EquipmentNametag12"
 
 
 def test_parser_normalizes_timestamp_style_afk_time() -> None:

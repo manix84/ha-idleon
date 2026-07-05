@@ -16,6 +16,9 @@ from .game_maps import afk_activity_label, class_name_label, map_name_label
 from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
 
 DETAIL_SAMPLE_LIMIT = 12
+EQUIPMENT_MAIN_GROUP_INDEX = 0
+EQUIPMENT_TROPHY_SLOT = 10
+EQUIPMENT_NAME_TAG_SLOT = 14
 EMPTY_INVENTORY_SLOT_VALUES = {
     "",
     "0",
@@ -1009,6 +1012,16 @@ def _indexed_loadout_details(
         equipment_labels = _equipment_group_labels(equipment, 0)
         tool_labels = _equipment_group_labels(equipment, 1)
         food_labels = _equipment_group_labels(equipment, 2)
+        trophy = _equipment_group_raw_item(
+            equipment,
+            EQUIPMENT_MAIN_GROUP_INDEX,
+            EQUIPMENT_TROPHY_SLOT,
+        )
+        name_tag = _equipment_group_raw_item(
+            equipment,
+            EQUIPMENT_MAIN_GROUP_INDEX,
+            EQUIPMENT_NAME_TAG_SLOT,
+        )
         details.update(
             {
                 "equipped_item_count": len(equipment_labels),
@@ -1019,6 +1032,17 @@ def _indexed_loadout_details(
                 "equipped_food": food_labels[:DETAIL_SAMPLE_LIMIT],
             }
         )
+        if trophy:
+            details["selected_trophy"] = _display_label(
+                trophy, website_data_key="items"
+            )
+            details["selected_trophy_raw"] = trophy
+        if name_tag:
+            details["selected_name_tag"] = _display_label(
+                name_tag,
+                website_data_key="items",
+            )
+            details["selected_name_tag_raw"] = name_tag
 
     attack_loadout = _attack_loadout_labels(raw_data, character_index)
     if attack_loadout:
@@ -2007,6 +2031,23 @@ def _equipment_group_labels(
             continue
         labels.append(_display_label(value, website_data_key="items"))
     return labels
+
+
+def _equipment_group_raw_item(
+    equipment: list[Any],
+    group_index: int,
+    slot_index: int,
+) -> str | None:
+    """Return the raw item ID from one EquipOrder slot."""
+    if group_index >= len(equipment):
+        return None
+    group = equipment[group_index]
+    if not isinstance(group, Mapping):
+        return None
+    value = group.get(str(slot_index))
+    if not _inventory_slot_has_item(value):
+        return None
+    return str(value)
 
 
 def _slot_sort_key(value: Any) -> int:

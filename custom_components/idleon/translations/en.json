@@ -322,6 +322,12 @@
       "character_money": {
         "name": "Money"
       },
+      "character_selected_trophy": {
+        "name": "Selected trophy"
+      },
+      "character_selected_name_tag": {
+        "name": "Selected name tag"
+      },
       "character_strength": {
         "name": "Strength"
       },

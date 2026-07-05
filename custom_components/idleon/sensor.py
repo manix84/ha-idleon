@@ -568,6 +568,26 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
         detail_keys=("money",),
     ),
     IdleonCharacterSensorEntityDescription(
+        key="character_selected_trophy",
+        translation_key="character_selected_trophy",
+        value_fn=lambda character: _detail_value(
+            character,
+            "selected_trophy",
+            "None",
+        ),
+        detail_keys=("selected_trophy_raw",),
+    ),
+    IdleonCharacterSensorEntityDescription(
+        key="character_selected_name_tag",
+        translation_key="character_selected_name_tag",
+        value_fn=lambda character: _detail_value(
+            character,
+            "selected_name_tag",
+            "None",
+        ),
+        detail_keys=("selected_name_tag_raw",),
+    ),
+    IdleonCharacterSensorEntityDescription(
         key="character_strength",
         translation_key="character_strength",
         value_fn=lambda character: _stat_value(character, "strength"),
@@ -626,6 +646,8 @@ NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
         "character_current_activity",
         "character_highest_skill",
         "character_money",
+        "character_selected_trophy",
+        "character_selected_name_tag",
     }
 )
 
@@ -804,6 +826,10 @@ class IdleonCharacterSensor(
             return _activity_entity_picture(character)
         if self.entity_description.key == "character_highest_skill":
             return _highest_skill_entity_picture(character)
+        if self.entity_description.key == "character_selected_trophy":
+            return _equipment_entity_picture(character, "selected_trophy_raw")
+        if self.entity_description.key == "character_selected_name_tag":
+            return _equipment_entity_picture(character, "selected_name_tag_raw")
         if stat_key := CHARACTER_STAT_SENSOR_KEYS.get(self.entity_description.key):
             return _stat_entity_picture(stat_key)
         if self.entity_description.key != "character_money":
@@ -1291,6 +1317,51 @@ def _highest_skill_entity_picture(character: IdleonCharacter) -> str | None:
     if not skill_icon.is_file():
         return None
     return f"{STATIC_URL_PATH}/{skill_icon.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _equipment_entity_picture(
+    character: IdleonCharacter, raw_detail_key: str
+) -> str | None:
+    """Return the image URL for a selected equipment cosmetic."""
+    raw_item = character.details.get(raw_detail_key)
+    if not isinstance(raw_item, str):
+        return None
+
+    asset_path = _equipment_asset_path(raw_item)
+    if asset_path is None:
+        return None
+    return f"{STATIC_URL_PATH}/{asset_path.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _equipment_asset_path(raw_item: str) -> Path | None:
+    """Return the asset path for a known equipped cosmetic raw ID."""
+    candidate_names: tuple[str, ...]
+    if raw_item.startswith("TrophyReplica"):
+        candidate_names = (
+            raw_item.replace("TrophyReplica", "Trophy", 1),
+            raw_item,
+        )
+        folder = ASSETS_PATH / "equipment" / "trophy"
+    elif raw_item.startswith("Trophy"):
+        candidate_names = (raw_item,)
+        folder = ASSETS_PATH / "equipment" / "trophy"
+    elif raw_item.startswith("EquipmentNametagReplica"):
+        candidate_names = (
+            raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1),
+            raw_item,
+        )
+        folder = ASSETS_PATH / "equipment" / "name_tag"
+    elif raw_item.startswith("EquipmentNametag"):
+        candidate_names = (raw_item,)
+        folder = ASSETS_PATH / "equipment" / "name_tag"
+    else:
+        return None
+
+    for candidate_name in candidate_names:
+        path = folder / f"{candidate_name}.png"
+        if path.is_file():
+            return path
+    return None
 
 
 def _activity_entity_picture(character: IdleonCharacter) -> str | None:

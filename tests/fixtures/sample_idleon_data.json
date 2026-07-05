@@ -438,6 +438,10 @@
             "luck": 90
           },
           "money": 12345,
+          "selected_trophy": "One of the Divine",
+          "selected_trophy_raw": "Trophy17",
+          "selected_name_tag": "Megafeather Nametag",
+          "selected_name_tag_raw": "EquipmentNametag12",
           "equipped_item_count": 4,
           "equipped_items": [
             "Farmer Brim",

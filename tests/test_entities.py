@@ -21,6 +21,7 @@ from custom_components.idleon.models import IdleonCharacter
 from custom_components.idleon.sensor import (
     _activity_entity_picture,
     _character_device_name,
+    _equipment_entity_picture,
 )
 
 
@@ -648,6 +649,16 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_money",
     )
+    selected_trophy_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_selected_trophy",
+    )
+    selected_name_tag_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_selected_name_tag",
+    )
     bug_storage_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -710,6 +721,24 @@ async def test_character_sensors(
     assert hass.states.get(money_entity_id).attributes["formatted_number"] == "12.34K"
     assert hass.states.get(money_entity_id).attributes["number_suffix"] == "K"
     assert hass.states.get(money_entity_id).attributes["number_mantissa"] == "12.34"
+    assert hass.states.get(selected_trophy_entity_id).state == "One of the Divine"
+    assert (
+        hass.states.get(selected_trophy_entity_id).attributes["selected_trophy_raw"]
+        == "Trophy17"
+    )
+    assert (
+        hass.states.get(selected_trophy_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/trophy/Trophy17.png"
+    )
+    assert hass.states.get(selected_name_tag_entity_id).state == "Megafeather Nametag"
+    assert (
+        hass.states.get(selected_name_tag_entity_id).attributes["selected_name_tag_raw"]
+        == "EquipmentNametag12"
+    )
+    assert (
+        hass.states.get(selected_name_tag_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/name_tag/EquipmentNametag12.png"
+    )
     assert hass.states.get(bug_storage_entity_id).state == "1250"
     assert hass.states.get(material_storage_entity_id).state == "100"
     assert quests_storage_entity_id is None
@@ -1003,6 +1032,34 @@ def test_character_current_activity_picture_uses_nothing_asset_for_idle() -> Non
 
     assert (
         _activity_entity_picture(character) == "/idleon_static/monsters/000_nothing.png"
+    )
+
+
+def test_character_cosmetic_pictures_fall_back_from_replica_assets() -> None:
+    """Test replica cosmetic IDs reuse the matching base item art."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Town",
+        current_activity="AFK target 0",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={
+            "selected_trophy_raw": "TrophyReplica17",
+            "selected_name_tag_raw": "EquipmentNametagReplica12",
+        },
+    )
+
+    assert (
+        _equipment_entity_picture(character, "selected_trophy_raw")
+        == "/idleon_static/equipment/trophy/Trophy17.png"
+    )
+    assert (
+        _equipment_entity_picture(character, "selected_name_tag_raw")
+        == "/idleon_static/equipment/name_tag/EquipmentNametag12.png"
     )
 
 
