@@ -801,15 +801,26 @@ async def test_device_model(
     account_device = device_registry.async_get_device(
         identifiers={(DOMAIN, f"{entry.entry_id}_account")}
     )
-    character_device = device_registry.async_get_device(
-        identifiers={(DOMAIN, f"{entry.entry_id}_bubo_main")}
-    )
+    character_devices = {
+        "bubo_main": device_registry.async_get_device(
+            identifiers={(DOMAIN, f"{entry.entry_id}_bubo_main")}
+        ),
+        "miner_alt": device_registry.async_get_device(
+            identifiers={(DOMAIN, f"{entry.entry_id}_miner_alt")}
+        ),
+    }
 
     assert account_device is not None
     assert account_device.name == "Legends of Idleon Account"
-    assert character_device is not None
-    assert character_device.name == "Idleon Character - Bubo Main"
-    assert character_device.via_device_id == account_device.id
+    assert character_devices["bubo_main"] is not None
+    assert character_devices["bubo_main"].name == "Idleon Character - Bubo Main"
+    assert character_devices["miner_alt"] is not None
+    assert character_devices["miner_alt"].name == "Idleon Character - Miner Alt"
+    assert all(
+        character_device.via_device_id == account_device.id
+        for character_device in character_devices.values()
+        if character_device is not None
+    )
 
 
 def test_character_device_name_removes_duplicate_character_prefix() -> None:
