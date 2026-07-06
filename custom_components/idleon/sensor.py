@@ -26,6 +26,7 @@ from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
 from .idleon_data.game_maps import (
+    afk_target_activity_icon,
     afk_target_is_idle,
     afk_target_monster_slug,
     afk_target_skill_slug,
@@ -1565,6 +1566,9 @@ def _activity_entity_picture(character: IdleonCharacter) -> str | None:
     elif afk_target_is_idle(afk_target):
         monster_icons = [ASSETS_PATH / "monsters" / "000_nothing.png"]
     else:
+        activity_picture = _activity_target_entity_picture(afk_target)
+        if activity_picture:
+            return activity_picture
         skill_slug = afk_target_skill_slug(afk_target)
         if skill_slug:
             return _skill_entity_picture(skill_slug)
@@ -1576,6 +1580,18 @@ def _activity_entity_picture(character: IdleonCharacter) -> str | None:
     if not monster_icon.is_file():
         return None
     return f"{STATIC_URL_PATH}/{monster_icon.relative_to(ASSETS_PATH).as_posix()}"
+
+
+def _activity_target_entity_picture(afk_target: Any) -> str | None:
+    """Return the image URL for a specific non-fighting AFK target."""
+    activity_icon = afk_target_activity_icon(afk_target)
+    if activity_icon is None:
+        return None
+    folder, slug = activity_icon
+    icon_path = ASSETS_PATH / "activity" / folder / f"{slug}.png"
+    if not icon_path.is_file():
+        return None
+    return f"{STATIC_URL_PATH}/{icon_path.relative_to(ASSETS_PATH).as_posix()}"
 
 
 def _money_breakdown_attributes(

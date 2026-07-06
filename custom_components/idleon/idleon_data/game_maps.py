@@ -167,6 +167,17 @@ AFK_TYPE_SKILL_SLUGS = {
     "mining": "mining",
     "spelunking": "spelunking",
 }
+AFK_TYPE_ACTIVITY_FOLDERS = {
+    "catching": "catching",
+    "choppin": "chopping",
+    "fishing": "fishing",
+    "mining": "mining",
+    "paying_respect": "monuments",
+    "spelunking": "spelunking",
+}
+AFK_TARGET_ACTIVITY_ICON_ALIASES = {
+    ("mining", "plat"): "platinum",
+}
 
 
 def class_name_label(value: Any) -> str:
@@ -264,6 +275,29 @@ def afk_target_skill_slug(value: Any) -> str | None:
     if not _is_real_label(afk_type):
         return None
     return AFK_TYPE_SKILL_SLUGS.get(normalize_slug(str(afk_type)))
+
+
+def afk_target_activity_icon(value: Any) -> tuple[str, str] | None:
+    """Return the activity asset folder and slug for a non-fighting AFK target."""
+    monster = _afk_target_data(value)
+    if not isinstance(monster, Mapping):
+        return None
+
+    afk_type = monster.get("AFKtype") or monster.get("afk_type")
+    monster_name = monster.get("Name") or monster.get("name")
+    if not _is_real_label(afk_type) or not _is_real_label(monster_name):
+        return None
+
+    afk_type_slug = normalize_slug(str(afk_type))
+    folder = AFK_TYPE_ACTIVITY_FOLDERS.get(afk_type_slug)
+    if not folder:
+        return None
+
+    target_slug = normalize_slug(str(monster_name))
+    return folder, AFK_TARGET_ACTIVITY_ICON_ALIASES.get(
+        (afk_type_slug, target_slug),
+        target_slug,
+    )
 
 
 def afk_target_is_idle(value: Any) -> bool:

@@ -1037,7 +1037,7 @@ def test_character_current_activity_picture_uses_nothing_asset_for_idle() -> Non
 
 
 def test_character_current_activity_picture_uses_skill_asset_for_skilling() -> None:
-    """Test skilling activities expose the matching skill asset picture."""
+    """Test skilling activities expose the matching target asset picture."""
     character = IdleonCharacter(
         character_id="character_0",
         name="Manix84",
@@ -1051,7 +1051,49 @@ def test_character_current_activity_picture_uses_skill_asset_for_skilling() -> N
         details={"afk_target": "Copper"},
     )
 
-    assert _activity_entity_picture(character) == "/idleon_static/skills/mining.png"
+    assert _activity_entity_picture(character) == (
+        "/idleon_static/activity/mining/copper.png"
+    )
+
+
+def test_character_current_activity_picture_uses_activity_asset_alias() -> None:
+    """Test activity target asset aliases resolve to existing file names."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Freefall Caverns",
+        current_activity="Mining: Plat",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={"afk_target": "Plat"},
+    )
+
+    assert _activity_entity_picture(character) == (
+        "/idleon_static/activity/mining/platinum.png"
+    )
+
+
+def test_character_current_activity_picture_uses_monument_asset() -> None:
+    """Test paying-respect activities expose the matching monument picture."""
+    character = IdleonCharacter(
+        character_id="character_0",
+        name="Manix84",
+        level=1,
+        character_class="Death Bringer",
+        current_map="Town",
+        current_activity="Paying Respect: Bravery",
+        afk_hours=1.0,
+        inventory_full=False,
+        needs_attention=False,
+        details={"afk_target": "Bravery_Monument"},
+    )
+
+    assert _activity_entity_picture(character) == (
+        "/idleon_static/activity/monuments/bravery.png"
+    )
 
 
 def test_character_cosmetic_pictures_fall_back_from_replica_assets() -> None:
