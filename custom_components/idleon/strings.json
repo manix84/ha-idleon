@@ -124,6 +124,24 @@
       "account_colosseum_scores": {
         "name": "Colosseum scores"
       },
+      "account_colosseum_score_whimsical": {
+        "name": "Whimsical colosseum score"
+      },
+      "account_colosseum_score_astro": {
+        "name": "Astro colosseum score"
+      },
+      "account_colosseum_score_molten": {
+        "name": "Molten colosseum score"
+      },
+      "account_colosseum_score_chillsnap": {
+        "name": "Chillsnap colosseum score"
+      },
+      "account_colosseum_score_sandstone": {
+        "name": "Sandstone colosseum score"
+      },
+      "account_colosseum_score_dewdrop": {
+        "name": "Dewdrop colosseum score"
+      },
       "account_minigame_scores": {
         "name": "Minigame scores"
       },

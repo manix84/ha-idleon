@@ -115,6 +115,38 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_colosseum_scores",
     )
+    colosseum_score_entity_ids = {
+        "whimsical": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_whimsical",
+        ),
+        "astro": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_astro",
+        ),
+        "molten": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_molten",
+        ),
+        "chillsnap": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_chillsnap",
+        ),
+        "sandstone": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_sandstone",
+        ),
+        "dewdrop": entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_colosseum_score_dewdrop",
+        ),
+    }
     minigame_scores_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -298,6 +330,17 @@ async def test_account_sensors(
     assert hass.states.get(shrine_levels_entity_id).state == "236"
     assert hass.states.get(statue_levels_entity_id).state == "848"
     assert hass.states.get(colosseum_scores_entity_id).state == "382839961.69"
+    for slug, state in {
+        "whimsical": "266855608.33",
+        "astro": "79993226.38",
+        "molten": "25077530.87",
+        "chillsnap": "9163910.87",
+        "sandstone": "1349042.18",
+        "dewdrop": "400643.06",
+    }.items():
+        entity_state = hass.states.get(colosseum_score_entity_ids[slug])
+        assert entity_state.state == state
+        assert entity_state.attributes["state_class"] == "measurement"
     assert hass.states.get(minigame_scores_entity_id).state == "1827"
     assert hass.states.get(progress_totals_entity_id).state == "11"
     assert hass.states.get(pets_entity_id).state == "4"

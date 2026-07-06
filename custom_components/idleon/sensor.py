@@ -265,6 +265,34 @@ EQUIPMENT_CHARACTER_SENSOR_DESCRIPTIONS = tuple(
     if slot.key not in {"equipped_trophy", "equipped_name_tag"}
 )
 
+COLOSSEUM_SCORE_SENSORS = (
+    ("whimsical", "Whimsical"),
+    ("astro", "Astro"),
+    ("molten", "Molten"),
+    ("chillsnap", "Chillsnap"),
+    ("sandstone", "Sandstone"),
+    ("dewdrop", "Dewdrop"),
+)
+
+
+def _colosseum_score_sensor_description(
+    slug: str,
+    label: str,
+) -> IdleonAccountSensorEntityDescription:
+    """Return an account sensor description for one colosseum score."""
+    return IdleonAccountSensorEntityDescription(
+        key=f"account_colosseum_score_{slug}",
+        translation_key=f"account_colosseum_score_{slug}",
+        value_fn=lambda coordinator, score_label=label: (
+            _account_detail_value_from_mapping(
+                coordinator,
+                "colosseum_scores",
+                score_label,
+                0,
+            )
+        ),
+    )
+
 
 ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
@@ -395,6 +423,10 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             "colosseum_scores",
         ),
         detail_keys=("colosseum_scores",),
+    ),
+    *(
+        _colosseum_score_sensor_description(slug, label)
+        for slug, label in COLOSSEUM_SCORE_SENSORS
     ),
     IdleonAccountSensorEntityDescription(
         key="account_minigame_scores",
