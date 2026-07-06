@@ -11,6 +11,11 @@ from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
 from ..utils.number_format import idleon_raw_value
+from .equipment import (
+    MAIN_EQUIPMENT_SLOTS,
+    TOOL_EQUIPMENT_SLOTS,
+    equipment_display_label,
+)
 from .exceptions import IdleonInvalidSchema
 from .game_maps import afk_activity_label, class_name_label, map_name_label
 from .website_data import WebsiteDataNotFoundError, load_default_website_data_part
@@ -1032,6 +1037,16 @@ def _indexed_loadout_details(
                 "equipped_food": food_labels[:DETAIL_SAMPLE_LIMIT],
             }
         )
+        for slot in (*MAIN_EQUIPMENT_SLOTS, *TOOL_EQUIPMENT_SLOTS):
+            raw_item = _equipment_group_raw_item(
+                equipment,
+                slot.group_index,
+                slot.slot_index,
+            )
+            if not raw_item:
+                continue
+            details[slot.key] = _display_label(raw_item, website_data_key="items")
+            details[f"{slot.key}_raw"] = raw_item
         if trophy:
             details["selected_trophy"] = _display_label(
                 trophy, website_data_key="items"
@@ -3085,6 +3100,10 @@ def _display_label(value: Any, *, website_data_key: str) -> str:
     fallback = FALLBACK_WEBSITE_LABELS.get(website_data_key, {}).get(raw_value)
     if fallback:
         return fallback
+    if website_data_key == "items":
+        equipment_label = equipment_display_label(raw_value)
+        if equipment_label:
+            return equipment_label
     return _clean_display_text(raw_value)
 
 

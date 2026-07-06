@@ -235,13 +235,18 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
             "EquipOrder_0": [
                 {
                     "0": "EquipmentHats1",
-                    "1": "EquipmentShirts1",
+                    "1": "EquipmentSword1",
                     "10": "Trophy17",
                     "14": "EquipmentNametag12",
-                    "2": "Blank",
+                    "2": "EquipmentShirts1",
                     "length": 16,
                 },
-                {"0": "EquipmentTools1", "1": "Blank", "length": 2},
+                {
+                    "0": "EquipmentTools1",
+                    "1": "EquipmentToolsHatchet1",
+                    "2": "FishingRod1",
+                    "length": 7,
+                },
                 {"0": "FoodHealth1", "1": "Blank", "length": 2},
             ],
             "AttackLoadout_0": [[90, "Null"], [91]],
@@ -279,16 +284,29 @@ def test_parser_normalizes_real_indexed_detail_values() -> None:
     }
     assert character.details["skill_levels"] == {"Character": 1103}
     assert character.details["total_skill_level"] == 0
-    assert character.details["equipped_item_count"] == 4
+    assert character.details["equipped_item_count"] == 5
     assert character.details["equipped_items"] == [
         "Farmer Brim",
+        "Enforced Slasher",
         "Orange Tee",
         "One of the Divine",
         "Megafeather Nametag",
     ]
-    assert character.details["equipped_tool_count"] == 1
+    assert character.details["equipped_tool_count"] == 3
     assert character.details["equipped_food_count"] == 1
     assert character.details["attack_loadout"] == ["90", "91"]
+    assert character.details["equipped_helmet"] == "Farmer Brim"
+    assert character.details["equipped_helmet_raw"] == "EquipmentHats1"
+    assert character.details["equipped_weapon"] == "Enforced Slasher"
+    assert character.details["equipped_weapon_raw"] == "EquipmentSword1"
+    assert character.details["equipped_shirt"] == "Orange Tee"
+    assert character.details["equipped_shirt_raw"] == "EquipmentShirts1"
+    assert character.details["equipped_pickaxe"] == "Junk Pickaxe"
+    assert character.details["equipped_pickaxe_raw"] == "EquipmentTools1"
+    assert character.details["equipped_hatchet"] == "Iron Hatchet"
+    assert character.details["equipped_hatchet_raw"] == "EquipmentToolsHatchet1"
+    assert character.details["equipped_fishing_rod"] == "Wood Fishing Rod"
+    assert character.details["equipped_fishing_rod_raw"] == "FishingRod1"
     assert character.details["selected_trophy"] == "One of the Divine"
     assert character.details["selected_trophy_raw"] == "Trophy17"
     assert character.details["selected_name_tag"] == "Megafeather Nametag"

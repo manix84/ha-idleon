@@ -232,8 +232,16 @@
       "world_2_vote_ballots": {
         "Bonus Ballot": {
           "selected_index": 1,
-          "active_indexes": [1, 3, 5],
-          "percentages": [42, 35, 23]
+          "active_indexes": [
+            1,
+            3,
+            5
+          ],
+          "percentages": [
+            42,
+            35,
+            23
+          ]
         }
       },
       "world_2_killroy": {
@@ -501,7 +509,29 @@
               "largest_pouch_capacity": 0,
               "largest_pouch_asset": "pouches/none.png"
             }
-          }
+          },
+          "equipped_helmet": "Farmer Brim",
+          "equipped_helmet_raw": "EquipmentHats1",
+          "equipped_weapon": "Enforced Slasher",
+          "equipped_weapon_raw": "EquipmentSword1",
+          "equipped_shirt": "Orange Tee",
+          "equipped_shirt_raw": "EquipmentShirts1",
+          "equipped_necklace": "Mint Icey",
+          "equipped_necklace_raw": "EquipmentPendant1",
+          "equipped_pants": "Torn Jeans",
+          "equipped_pants_raw": "EquipmentPants1",
+          "equipped_ring_1": "Gold Ring",
+          "equipped_ring_1_raw": "EquipmentRings1",
+          "equipped_boots": "Copper Boots",
+          "equipped_boots_raw": "EquipmentShoes1",
+          "equipped_ring_2": "Saucy Logfries",
+          "equipped_ring_2_raw": "EquipmentRings2",
+          "equipped_pickaxe": "Junk Pickaxe",
+          "equipped_pickaxe_raw": "EquipmentTools1",
+          "equipped_hatchet": "Iron Hatchet",
+          "equipped_hatchet_raw": "EquipmentToolsHatchet1",
+          "equipped_fishing_rod": "Wood Fishing Rod",
+          "equipped_fishing_rod_raw": "FishingRod1"
         }
       },
       {

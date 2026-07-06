@@ -25,6 +25,14 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import STATIC_URL_PATH, IdleonRuntimeData
 from .const import DOMAIN, NAME
 from .coordinator import IdleonDataUpdateCoordinator
+from .idleon_data.equipment import (
+    MAIN_EQUIPMENT_SLOTS,
+    TOOL_EQUIPMENT_SLOTS,
+    equipment_display_label,
+)
+from .idleon_data.equipment import (
+    equipment_asset_path as equipment_asset_relative_path,
+)
 from .idleon_data.game_maps import (
     afk_target_activity_icon,
     afk_target_is_idle,
@@ -201,6 +209,7 @@ class IdleonCharacterSensorEntityDescription(SensorEntityDescription):
 
     value_fn: Callable[[IdleonCharacter], Any]
     detail_keys: tuple[str, ...] = ()
+    equipment_raw_detail_key: str | None = None
 
 
 LATER_WORLD_ACCOUNT_DETAIL_KEYS = (
@@ -231,6 +240,29 @@ LATER_WORLD_ACCOUNT_DETAIL_KEYS = (
     "world_7_glimbo",
     "world_7_sushi_station",
     "world_7_the_button",
+)
+
+
+def _equipment_sensor_description(
+    slot_key: str,
+) -> IdleonCharacterSensorEntityDescription:
+    """Return an entity description for one fixed equipment slot."""
+    raw_key = f"{slot_key}_raw"
+    return IdleonCharacterSensorEntityDescription(
+        key=f"character_{slot_key}",
+        translation_key=f"character_{slot_key}",
+        value_fn=lambda character, label_key=slot_key, raw_detail_key=raw_key: (
+            _equipment_detail_value(character, label_key, raw_detail_key, "None")
+        ),
+        detail_keys=(raw_key,),
+        equipment_raw_detail_key=raw_key,
+    )
+
+
+EQUIPMENT_CHARACTER_SENSOR_DESCRIPTIONS = tuple(
+    _equipment_sensor_description(slot.key)
+    for slot in (*MAIN_EQUIPMENT_SLOTS, *TOOL_EQUIPMENT_SLOTS)
+    if slot.key not in {"equipped_trophy", "equipped_name_tag"}
 )
 
 
@@ -718,6 +750,7 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
             "None",
         ),
         detail_keys=("selected_trophy_raw",),
+        equipment_raw_detail_key="selected_trophy_raw",
     ),
     IdleonCharacterSensorEntityDescription(
         key="character_selected_name_tag",
@@ -729,7 +762,9 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
             "None",
         ),
         detail_keys=("selected_name_tag_raw",),
+        equipment_raw_detail_key="selected_name_tag_raw",
     ),
+    *EQUIPMENT_CHARACTER_SENSOR_DESCRIPTIONS,
     IdleonCharacterSensorEntityDescription(
         key="character_strength",
         translation_key="character_strength",
@@ -779,19 +814,20 @@ NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
         "account_money",
     }
 )
+TEXT_CHARACTER_SENSOR_KEYS = {
+    "character_class",
+    "character_current_map",
+    "character_current_activity",
+    "character_highest_skill",
+    "character_money",
+    "character_selected_trophy",
+    "character_selected_name_tag",
+    *(description.key for description in EQUIPMENT_CHARACTER_SENSOR_DESCRIPTIONS),
+}
 NUMERIC_CHARACTER_SENSOR_KEYS = frozenset(
     description.key
     for description in CHARACTER_SENSOR_DESCRIPTIONS
-    if description.key
-    not in {
-        "character_class",
-        "character_current_map",
-        "character_current_activity",
-        "character_highest_skill",
-        "character_money",
-        "character_selected_trophy",
-        "character_selected_name_tag",
-    }
+    if description.key not in TEXT_CHARACTER_SENSOR_KEYS
 )
 
 
@@ -969,10 +1005,11 @@ class IdleonCharacterSensor(
             return _activity_entity_picture(character)
         if self.entity_description.key == "character_highest_skill":
             return _highest_skill_entity_picture(character)
-        if self.entity_description.key == "character_selected_trophy":
-            return _equipment_entity_picture(character, "selected_trophy_raw")
-        if self.entity_description.key == "character_selected_name_tag":
-            return _equipment_entity_picture(character, "selected_name_tag_raw")
+        if self.entity_description.equipment_raw_detail_key:
+            return _equipment_entity_picture(
+                character,
+                self.entity_description.equipment_raw_detail_key,
+            )
         if stat_key := CHARACTER_STAT_SENSOR_KEYS.get(self.entity_description.key):
             return _stat_entity_picture(stat_key)
         if self.entity_description.key != "character_money":
@@ -1188,34 +1225,30 @@ def _cosmetic_detail_value(
     default: Any = None,
 ) -> Any:
     """Return a human-readable cosmetic label with raw-ID fallback support."""
+    return _equipment_detail_value(character, label_key, raw_key, default)
+
+
+def _equipment_detail_value(
+    character: IdleonCharacter,
+    label_key: str,
+    raw_key: str,
+    default: Any = None,
+) -> Any:
+    """Return a human-readable equipment label with raw-ID fallback support."""
     label = character.details.get(label_key)
     raw_value = character.details.get(raw_key)
     if isinstance(label, str) and label and label != raw_value:
         return label
     if isinstance(raw_value, str):
-        return _cosmetic_display_label(raw_value, default)
+        return equipment_display_label(raw_value, default)
     if isinstance(label, str):
-        return _cosmetic_display_label(label, default)
+        return equipment_display_label(label, default)
     return default
 
 
 def _cosmetic_display_label(raw_item: str, default: Any = None) -> Any:
     """Return a display label for a known cosmetic raw ID."""
-    if raw_item.startswith("TrophyReplica"):
-        base_item = raw_item.replace("TrophyReplica", "Trophy", 1)
-        return (
-            TROPHY_DISPLAY_LABELS.get(raw_item)
-            or TROPHY_DISPLAY_LABELS.get(base_item)
-            or default
-        )
-    if raw_item.startswith("Trophy"):
-        return TROPHY_DISPLAY_LABELS.get(raw_item, default)
-    if raw_item.startswith("EquipmentNametagReplica"):
-        base_item = raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1)
-        return NAME_TAG_DISPLAY_LABELS.get(base_item, default)
-    if raw_item.startswith("EquipmentNametag"):
-        return NAME_TAG_DISPLAY_LABELS.get(raw_item, default)
-    return default
+    return equipment_display_label(raw_item, default)
 
 
 def _character_storage_capacities(
@@ -1519,34 +1552,13 @@ def _equipment_entity_picture(
 
 
 def _equipment_asset_path(raw_item: str) -> Path | None:
-    """Return the asset path for a known equipped cosmetic raw ID."""
-    candidate_stems: tuple[str, ...]
-    if raw_item.startswith("TrophyReplica"):
-        base_item = raw_item.replace("TrophyReplica", "Trophy", 1)
-        candidate_stems = _unique_strings(
-            TROPHY_ASSET_STEMS.get(raw_item),
-            TROPHY_ASSET_STEMS.get(base_item),
-        )
-        folder = ASSETS_PATH / "equipment" / "trophy"
-    elif raw_item.startswith("Trophy"):
-        candidate_stems = _unique_strings(TROPHY_ASSET_STEMS.get(raw_item))
-        folder = ASSETS_PATH / "equipment" / "trophy"
-    elif raw_item.startswith("EquipmentNametagReplica"):
-        base_item = raw_item.replace("EquipmentNametagReplica", "EquipmentNametag", 1)
-        candidate_stems = _unique_strings(
-            NAME_TAG_ASSET_STEMS.get(base_item),
-        )
-        folder = ASSETS_PATH / "equipment" / "name_tag"
-    elif raw_item.startswith("EquipmentNametag"):
-        candidate_stems = _unique_strings(NAME_TAG_ASSET_STEMS.get(raw_item))
-        folder = ASSETS_PATH / "equipment" / "name_tag"
-    else:
+    """Return the asset path for a known equipped item raw ID."""
+    relative_path = equipment_asset_relative_path(raw_item)
+    if not relative_path:
         return None
-
-    for candidate_stem in candidate_stems:
-        path = folder / f"{candidate_stem}.png"
-        if path.is_file():
-            return path
+    path = ASSETS_PATH / relative_path
+    if path.is_file():
+        return path
     return None
 
 

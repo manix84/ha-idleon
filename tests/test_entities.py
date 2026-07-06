@@ -690,6 +690,26 @@ async def test_character_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_equipped_items",
     )
+    weapon_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_weapon",
+    )
+    shirt_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_shirt",
+    )
+    pickaxe_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_pickaxe",
+    )
+    fishing_rod_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_bubo_main_character_equipped_fishing_rod",
+    )
 
     assert hass.states.get(level_entity_id).state == "210"
     assert hass.states.get(class_entity_id).state == "Bubonic Conjuror"
@@ -739,6 +759,30 @@ async def test_character_sensors(
     assert (
         hass.states.get(selected_name_tag_entity_id).attributes["entity_picture"]
         == "/idleon_static/equipment/name_tag/megafeather.png"
+    )
+    assert hass.states.get(weapon_entity_id).state == "Enforced Slasher"
+    assert (
+        hass.states.get(weapon_entity_id).attributes["equipped_weapon_raw"]
+        == "EquipmentSword1"
+    )
+    assert (
+        hass.states.get(weapon_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/sword/enforced_slasher.png"
+    )
+    assert hass.states.get(shirt_entity_id).state == "Orange Tee"
+    assert (
+        hass.states.get(shirt_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/shirt/orange_tee.png"
+    )
+    assert hass.states.get(pickaxe_entity_id).state == "Junk Pickaxe"
+    assert (
+        hass.states.get(pickaxe_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/pickaxe/junk_pickaxe.png"
+    )
+    assert hass.states.get(fishing_rod_entity_id).state == "Wood Fishing Rod"
+    assert (
+        hass.states.get(fishing_rod_entity_id).attributes["entity_picture"]
+        == "/idleon_static/equipment/fishing_rod/wood_fishing_rod.png"
     )
     assert hass.states.get(bug_storage_entity_id).state == "1250"
     assert hass.states.get(material_storage_entity_id).state == "100"

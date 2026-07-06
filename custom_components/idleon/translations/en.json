@@ -342,6 +342,69 @@
       },
       "character_equipped_items": {
         "name": "Equipped items"
+      },
+      "character_equipped_helmet": {
+        "name": "Helmet"
+      },
+      "character_equipped_weapon": {
+        "name": "Weapon"
+      },
+      "character_equipped_shirt": {
+        "name": "Shirt"
+      },
+      "character_equipped_necklace": {
+        "name": "Necklace"
+      },
+      "character_equipped_pants": {
+        "name": "Pants"
+      },
+      "character_equipped_ring_1": {
+        "name": "Ring 1"
+      },
+      "character_equipped_boots": {
+        "name": "Boots"
+      },
+      "character_equipped_ring_2": {
+        "name": "Ring 2"
+      },
+      "character_equipped_premium_helmet": {
+        "name": "Premium helmet"
+      },
+      "character_equipped_keychain_1": {
+        "name": "Keychain 1"
+      },
+      "character_equipped_keychain_2": {
+        "name": "Keychain 2"
+      },
+      "character_equipped_cape": {
+        "name": "Cape"
+      },
+      "character_equipped_chat_ring": {
+        "name": "Chat ring"
+      },
+      "character_equipped_attire": {
+        "name": "Attire"
+      },
+      "character_equipped_pickaxe": {
+        "name": "Pickaxe"
+      },
+      "character_equipped_hatchet": {
+        "name": "Hatchet"
+      },
+      "character_equipped_fishing_rod": {
+        "name": "Fishing rod"
+      },
+      "character_equipped_bug_catching_net": {
+        "name": "Bug catching net"
+      },
+      "character_equipped_trap_box": {
+        "name": "Trap box"
+      },
+      "character_equipped_worship_skull": {
+        "name": "Worship skull"
+      },
+      "character_equipped_dna_splicer": {
+        "name": "DNA splicer"
       }
     },
     "binary_sensor": {

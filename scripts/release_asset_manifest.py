@@ -16,6 +16,21 @@ INTEGRATION_DIR = Path("custom_components/idleon")
 ASSETS_DIR = INTEGRATION_DIR / "assets"
 
 CHARACTER_STAT_ASSETS = ("strength", "agility", "wisdom", "luck")
+EQUIPMENT_ASSET_FOLDERS = (
+    "axe",
+    "fishing_rod",
+    "fist",
+    "name_tag",
+    "necklace",
+    "pants",
+    "pickaxe",
+    "ring",
+    "shirt",
+    "shoe",
+    "sword",
+    "trophy",
+    "wand",
+)
 STATIC_ASSET_EXTENSIONS = {".png"}
 
 
@@ -49,11 +64,9 @@ def release_asset_paths(root: Path) -> set[Path]:
     for path in _iter_matching_assets(asset_root / "monsters", "*.png"):
         assets.add(path.relative_to(root))
 
-    for path in _iter_matching_assets(asset_root / "equipment" / "trophy", "*.png"):
-        assets.add(path.relative_to(root))
-
-    for path in _iter_matching_assets(asset_root / "equipment" / "name_tag", "*.png"):
-        assets.add(path.relative_to(root))
+    for folder in EQUIPMENT_ASSET_FOLDERS:
+        for path in _iter_matching_assets(asset_root / "equipment" / folder, "*.png"):
+            assets.add(path.relative_to(root))
 
     return assets
 
