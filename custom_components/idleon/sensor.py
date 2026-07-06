@@ -273,6 +273,10 @@ COLOSSEUM_SCORE_SENSORS = (
     ("sandstone", "Sandstone"),
     ("dewdrop", "Dewdrop"),
 )
+COLOSSEUM_SCORE_SENSOR_PICTURES = {
+    f"account_colosseum_score_{slug}": f"{STATIC_URL_PATH}/colosseum/{slug}.png"
+    for slug, _label in COLOSSEUM_SCORE_SENSORS
+}
 
 
 def _colosseum_score_sensor_description(
@@ -956,6 +960,10 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/jade.png"
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
+        if picture := COLOSSEUM_SCORE_SENSOR_PICTURES.get(
+            self.entity_description.key,
+        ):
+            return picture
         return None
 
     @property

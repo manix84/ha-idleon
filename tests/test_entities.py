@@ -341,6 +341,10 @@ async def test_account_sensors(
         entity_state = hass.states.get(colosseum_score_entity_ids[slug])
         assert entity_state.state == state
         assert entity_state.attributes["state_class"] == "measurement"
+        assert (
+            entity_state.attributes["entity_picture"]
+            == f"/idleon_static/colosseum/{slug}.png"
+        )
     assert hass.states.get(minigame_scores_entity_id).state == "1827"
     assert hass.states.get(progress_totals_entity_id).state == "11"
     assert hass.states.get(pets_entity_id).state == "4"

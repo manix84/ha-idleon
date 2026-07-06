@@ -138,6 +138,28 @@ def test_jade_asset_exists_with_padding() -> None:
     assert _png_has_transparent_edge_padding(served_path)
 
 
+def test_colosseum_assets_exist_with_padding() -> None:
+    """Test colosseum score assets are bundled with transparent visual padding."""
+    for colosseum_name in (
+        "astro",
+        "chillsnap",
+        "dewdrop",
+        "molten",
+        "sandstone",
+        "whimsical",
+    ):
+        source_path = ROOT / f"assets/colosseum/{colosseum_name}.png"
+        served_path = (
+            ROOT / f"custom_components/idleon/assets/colosseum/{colosseum_name}.png"
+        )
+
+        assert source_path.exists()
+        assert source_path.stat().st_size > 0
+        assert served_path.exists()
+        assert served_path.stat().st_size > 0
+        assert _png_has_transparent_edge_padding(served_path)
+
+
 def test_class_icon_assets_exist() -> None:
     """Test representative class icon assets are bundled with the integration."""
     class_icons = (
@@ -246,6 +268,7 @@ def test_release_archive_contains_only_runtime_assets() -> None:
         "custom_components/idleon/assets/pet_crystal.png",
         "custom_components/idleon/assets/coins/gold.png",
         "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
+        "custom_components/idleon/assets/colosseum/whimsical.png",
         "custom_components/idleon/assets/pouches/bug/big.png",
         "custom_components/idleon/assets/skills/alchemy.png",
         "custom_components/idleon/assets/stats/wisdom.png",
@@ -270,6 +293,7 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
         "custom_components/idleon/assets/classes/warrior/death_bringer_icon.png"
         in names
     )
+    assert "custom_components/idleon/assets/colosseum/dewdrop.png" in names
     assert "custom_components/idleon/assets/pouches/mining/average.png" in names
     assert "custom_components/idleon/assets/activity/mining/copper.png" in names
     assert (
