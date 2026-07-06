@@ -292,6 +292,15 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
     ),
     IdleonAccountSensorEntityDescription(
+        key="account_jade",
+        translation_key="account_jade",
+        value_fn=lambda coordinator: _account_detail_value(
+            coordinator,
+            "jade",
+            0,
+        ),
+    ),
+    IdleonAccountSensorEntityDescription(
         key="account_last_updated",
         translation_key="account_last_updated",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -911,6 +920,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/gem.png"
         if self.entity_description.key == "account_pet_crystals":
             return f"{STATIC_URL_PATH}/pet_crystal.png"
+        if self.entity_description.key == "account_jade":
+            return f"{STATIC_URL_PATH}/jade.png"
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
         return None

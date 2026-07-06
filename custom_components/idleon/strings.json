@@ -405,6 +405,9 @@
       },
       "character_equipped_dna_splicer": {
         "name": "DNA splicer"
+      },
+      "account_jade": {
+        "name": "Jade"
       }
     },
     "binary_sensor": {

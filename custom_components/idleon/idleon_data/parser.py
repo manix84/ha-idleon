@@ -2409,6 +2409,13 @@ def _account_details(
             value = _first_mapping(account_data, aliases)
             if value:
                 details[detail_key] = dict(value)
+    jade = _first_int(account_data, ("jade", "jade_count", "jadeCount"))
+    if jade is None:
+        sneaking = details.get("world_6_sneaking")
+        if isinstance(sneaking, Mapping):
+            jade = _first_int(sneaking, ("jade", "jade_count", "jadeCount"))
+    if jade is not None:
+        details["jade"] = jade
     return _remove_empty_detail_values(details)
 
 

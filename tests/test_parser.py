@@ -29,6 +29,7 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
                 "accountId": "account-123",
                 "accountName": "Alias Account",
                 "gemCount": "42",
+                "jadeCount": "654321",
                 "petCrystals": "321",
                 "totalMoney": "12345.0",
                 "updatedAt": "2026-06-29T12:00:00Z",
@@ -62,6 +63,7 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.source_updated_at == datetime(2026, 6, 29, 12, tzinfo=UTC)
     assert account.details["highest_character_level"] == 123
     assert account.details["highest_level_character"] == "Wizard One"
+    assert account.details["jade"] == 654321
     assert account.details["pet_crystals"] == 321
     assert account.details["total_money"] == "12345"
     assert account.details["raw_money"] == "12345"
