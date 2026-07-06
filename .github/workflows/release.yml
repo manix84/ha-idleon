@@ -53,7 +53,7 @@ jobs:
           echo "tag=v${version}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload release archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ha-idleon-${{ steps.build.outputs.version }}
           path: ${{ steps.build.outputs.archive_path }}
