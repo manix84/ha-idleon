@@ -10,27 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from custom_components.idleon.idleon_data.equipment import (  # noqa: E402
+    EQUIPMENT_ITEM_ASSETS,
+)
 from custom_components.idleon.utils.number_format import IDLEON_COIN_TIERS  # noqa: E402
 
 INTEGRATION_DIR = Path("custom_components/idleon")
 ASSETS_DIR = INTEGRATION_DIR / "assets"
 
 CHARACTER_STAT_ASSETS = ("strength", "agility", "wisdom", "luck")
-EQUIPMENT_ASSET_FOLDERS = (
-    "axe",
-    "fishing_rod",
-    "fist",
-    "name_tag",
-    "necklace",
-    "pants",
-    "pickaxe",
-    "ring",
-    "shirt",
-    "shoe",
-    "sword",
-    "trophy",
-    "wand",
-)
 STATIC_ASSET_EXTENSIONS = {".png"}
 
 
@@ -64,9 +52,8 @@ def release_asset_paths(root: Path) -> set[Path]:
     for path in _iter_matching_assets(asset_root / "monsters", "*.png"):
         assets.add(path.relative_to(root))
 
-    for folder in EQUIPMENT_ASSET_FOLDERS:
-        for path in _iter_matching_assets(asset_root / "equipment" / folder, "*.png"):
-            assets.add(path.relative_to(root))
+    for relative_asset_path in sorted(set(EQUIPMENT_ITEM_ASSETS.values())):
+        _add_required(assets, root, asset_root / relative_asset_path)
 
     return assets
 
