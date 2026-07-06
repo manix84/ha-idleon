@@ -80,7 +80,7 @@ def test_game_maps_fall_back_to_packaged_labels(monkeypatch) -> None:
     assert game_maps.afk_target_activity_icon("Bug1") == ("catching", "flies")
     assert game_maps.afk_target_activity_icon("Bravery_Monument") == (
         "monuments",
-        "bravery",
+        "paying_respect",
     )
     assert game_maps.afk_target_is_idle("0")
     assert game_maps.afk_target_is_idle(None)

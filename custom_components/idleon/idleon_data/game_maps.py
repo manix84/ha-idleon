@@ -177,6 +177,9 @@ AFK_TYPE_ACTIVITY_FOLDERS = {
 }
 AFK_TARGET_ACTIVITY_ICON_ALIASES = {
     ("mining", "plat"): "platinum",
+    ("paying_respect", "bravery"): "paying_respect",
+    ("paying_respect", "justice"): "paying_respect",
+    ("paying_respect", "wisdom"): "paying_respect",
 }
 
 

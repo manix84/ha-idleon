@@ -1136,7 +1136,7 @@ def test_character_current_activity_picture_uses_monument_asset() -> None:
     )
 
     assert _activity_entity_picture(character) == (
-        "/idleon_static/activity/monuments/bravery.png"
+        "/idleon_static/activity/monuments/paying_respect.png"
     )
 
 

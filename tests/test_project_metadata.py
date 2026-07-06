@@ -256,7 +256,9 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     )
     assert "custom_components/idleon/assets/pouches/mining/average.png" in names
     assert "custom_components/idleon/assets/activity/mining/copper.png" in names
-    assert "custom_components/idleon/assets/activity/monuments/bravery.png" in names
+    assert (
+        "custom_components/idleon/assets/activity/monuments/paying_respect.png" in names
+    )
     assert "custom_components/idleon/assets/skills/alchemy.png" in names
     assert "custom_components/idleon/assets/stats/strength.png" in names
     assert "custom_components/idleon/assets/monsters/000_nothing.png" in names
