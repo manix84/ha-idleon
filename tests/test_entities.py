@@ -366,6 +366,10 @@ async def test_account_sensors(
     assert hass.states.get(minigame_scores_entity_id).state == "1827"
     assert hass.states.get(progress_totals_entity_id).state == "11"
     assert hass.states.get(pets_entity_id).state == "4"
+    assert (
+        hass.states.get(pets_entity_id).attributes["entity_picture"]
+        == "/idleon_static/companions.png"
+    )
     assert hass.states.get(task_levels_entity_id).state == "2"
     assert hass.states.get(taskboard_merits_entity_id).state == "2"
     assert hass.states.get(taskboard_unlocks_entity_id).state == "3"
