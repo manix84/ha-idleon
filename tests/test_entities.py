@@ -304,6 +304,10 @@ async def test_account_sensors(
         hass.states.get(character_count_entity_id).attributes["state_class"]
         == "measurement"
     )
+    assert (
+        hass.states.get(character_count_entity_id).attributes["entity_picture"]
+        == "/idleon_static/character.png"
+    )
     assert hass.states.get(gems_entity_id).state == "1234"
     assert (
         hass.states.get(gems_entity_id).attributes["entity_picture"]
