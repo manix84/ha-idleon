@@ -59,6 +59,11 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_jade",
     )
+    tome_points_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_tome_points",
+    )
     last_updated_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -319,6 +324,19 @@ async def test_account_sensors(
         hass.states.get(jade_entity_id).attributes["entity_picture"]
         == "/idleon_static/jade.png"
     )
+    assert hass.states.get(tome_points_entity_id).state == "9876"
+    assert (
+        hass.states.get(tome_points_entity_id).attributes["state_class"]
+        == "measurement"
+    )
+    assert (
+        hass.states.get(tome_points_entity_id).attributes["entity_picture"]
+        == "/idleon_static/world/tome/tome.png"
+    )
+    assert hass.states.get(tome_points_entity_id).attributes["world_4_tome"] == {
+        "score": 9876,
+        "bonuses_unlocked": 15,
+    }
     assert hass.states.get(highest_level_entity_id).state == "210"
     assert hass.states.get(total_skill_entity_id).state == "205"
     assert hass.states.get(total_money_entity_id).state == "987.65K"

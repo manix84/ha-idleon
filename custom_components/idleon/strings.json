@@ -91,6 +91,9 @@
       "account_pet_crystals": {
         "name": "Pet crystals"
       },
+      "account_tome_points": {
+        "name": "Tome points"
+      },
       "account_last_updated": {
         "name": "Last updated"
       },

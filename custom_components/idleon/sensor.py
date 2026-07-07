@@ -333,6 +333,17 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         ),
     ),
     IdleonAccountSensorEntityDescription(
+        key="account_tome_points",
+        translation_key="account_tome_points",
+        value_fn=lambda coordinator: _account_detail_value_from_mapping(
+            coordinator,
+            "world_4_tome",
+            "score",
+            0,
+        ),
+        detail_keys=("world_4_tome",),
+    ),
+    IdleonAccountSensorEntityDescription(
         key="account_last_updated",
         translation_key="account_last_updated",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -959,6 +970,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/pet_crystal.png"
         if self.entity_description.key == "account_jade":
             return f"{STATIC_URL_PATH}/jade.png"
+        if self.entity_description.key == "account_tome_points":
+            return f"{STATIC_URL_PATH}/world/tome/tome.png"
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
         if picture := COLOSSEUM_SCORE_SENSOR_PICTURES.get(
