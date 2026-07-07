@@ -34,6 +34,7 @@ EMPTY_INVENTORY_SLOT_VALUES = {
     "none",
     "null",
 }
+MAX_SAFE_INTEGER_FLOAT = 9_007_199_254_740_991
 MAX_CARRY_CAPACITY_IGNORED_KEYS = {"fillerz"}
 MAX_CARRY_CAPACITY_LABELS = {
     "bCraft": "Materials",
@@ -1522,7 +1523,7 @@ def _indexed_pet_crystals(raw_data: Mapping[str, Any]) -> int | None:
     )
 
 
-def _indexed_jade(raw_data: Mapping[str, Any]) -> int | str | None:
+def _indexed_jade(raw_data: Mapping[str, Any]) -> int | float | None:
     """Return W6 sneaking Jade from indexed cloud data."""
     ninja = _maybe_json(raw_data.get("Ninja"))
     if not isinstance(ninja, list):
@@ -2620,28 +2621,21 @@ def _coerce_float(value: Any) -> float | None:
 
 def _compact_number(value: float) -> int | float:
     """Return an int when a float has no fractional value."""
-    if value.is_integer():
+    if value.is_integer() and abs(value) <= MAX_SAFE_INTEGER_FLOAT:
         return int(value)
     return round(value, 2)
 
 
-def _large_number_display_value(value: Any) -> str:
-    """Return a readable large value without forcing scientific notation to expand."""
+def _jade_detail_value(value: Any) -> int | float:
+    """Return Jade as a numeric value for Home Assistant history graphs."""
     if isinstance(value, str) and "e" in value.lower():
-        return value.strip()
+        return float(value)
     if isinstance(value, float):
-        return str(value)
-    return idleon_raw_value(value)
-
-
-def _jade_detail_value(value: Any) -> int | str:
-    """Return Jade as an int when small, or a compact string when huge."""
-    if isinstance(value, str) and "e" in value.lower():
-        return _large_number_display_value(value)
-    if isinstance(value, float):
-        return _large_number_display_value(value)
+        return value
     coerced = _coerce_int(value)
-    return coerced if coerced is not None else _large_number_display_value(value)
+    if coerced is not None:
+        return coerced
+    return _coerce_float(value) or 0
 
 
 def _list_value(values: list[Any], index: int) -> Any:

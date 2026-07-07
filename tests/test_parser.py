@@ -102,7 +102,8 @@ def test_parser_extracts_cloud_companion_pet_crystals_and_jade() -> None:
     )
 
     assert account.details["pet_crystals"] == 4450
-    assert account.details["jade"] == "4.54e55"
+    assert account.details["jade"] == 4.54e55
+    assert isinstance(account.details["jade"], float)
 
 
 def test_parser_defaults_invalid_numbers() -> None:

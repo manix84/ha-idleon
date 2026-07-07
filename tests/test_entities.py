@@ -319,7 +319,7 @@ async def test_account_sensors(
         == "/idleon_static/pet_crystal.png"
     )
     assert hass.states.get(jade_entity_id).state == "654321"
-    assert "state_class" not in hass.states.get(jade_entity_id).attributes
+    assert hass.states.get(jade_entity_id).attributes["state_class"] == "measurement"
     assert (
         hass.states.get(jade_entity_id).attributes["entity_picture"]
         == "/idleon_static/jade.png"
