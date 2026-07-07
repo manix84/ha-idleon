@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.28.0
+
+- Add shrine levels entity picture.
+
 ## 🚀 0.27.0
 
 - Add companion pets entity picture.
