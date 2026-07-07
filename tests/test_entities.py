@@ -346,6 +346,10 @@ async def test_account_sensors(
     assert hass.states.get(achievements_entity_id).state == "78"
     assert hass.states.get(currencies_entity_id).state == "12"
     assert hass.states.get(shrine_levels_entity_id).state == "236"
+    assert (
+        hass.states.get(shrine_levels_entity_id).attributes["entity_picture"]
+        == "/idleon_static/shrine.png"
+    )
     assert hass.states.get(statue_levels_entity_id).state == "848"
     assert hass.states.get(colosseum_scores_entity_id).state == "382839961.69"
     for slug, state in {

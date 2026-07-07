@@ -971,6 +971,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/jade.png"
         if self.entity_description.key == "account_pets":
             return f"{STATIC_URL_PATH}/companions.png"
+        if self.entity_description.key == "account_shrine_levels":
+            return f"{STATIC_URL_PATH}/shrine.png"
         if self.entity_description.key == "account_tome_points":
             return f"{STATIC_URL_PATH}/world/tome/tome.png"
         if self.entity_description.key == "account_money":
