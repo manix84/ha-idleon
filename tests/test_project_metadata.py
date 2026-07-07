@@ -133,8 +133,8 @@ def test_jade_asset_exists_with_padding() -> None:
     assert source_path.stat().st_size > 0
     assert served_path.exists()
     assert served_path.stat().st_size > 0
-    assert _png_dimensions(source_path) == (51, 56)
-    assert _png_dimensions(served_path) == (51, 56)
+    assert _png_dimensions(source_path) == (57, 57)
+    assert _png_dimensions(served_path) == (57, 57)
     assert _png_has_transparent_edge_padding(served_path)
 
 
