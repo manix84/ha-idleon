@@ -321,6 +321,7 @@ async def test_config_flow_success_idleon_cloud_email(
             ),
             _FakeJsonResponse(["Manix84"]),
             _FakeJsonResponse(_cloud_firestore_document()),
+            _FakeJsonResponse({"s": 4450}),
         ]
     )
     monkeypatch.setattr(
@@ -428,6 +429,7 @@ async def test_config_flow_success_idleon_cloud_google(
             ),
             _FakeJsonResponse(["Manix84"]),
             _FakeJsonResponse(_cloud_firestore_document()),
+            _FakeJsonResponse({"s": 4450}),
         ]
     )
     monkeypatch.setattr(
@@ -513,6 +515,7 @@ async def test_config_flow_success_idleon_cloud_apple(
             ),
             _FakeJsonResponse(["AppleChar"]),
             _FakeJsonResponse(_cloud_firestore_document()),
+            _FakeJsonResponse({"s": 4450}),
         ]
     )
     monkeypatch.setattr(
@@ -639,6 +642,7 @@ async def test_config_flow_success_idleon_cloud_steam(
             ),
             _FakeJsonResponse(["Manix84"]),
             _FakeJsonResponse(_cloud_firestore_document()),
+            _FakeJsonResponse({"s": 4450}),
         ]
     )
     monkeypatch.setattr(

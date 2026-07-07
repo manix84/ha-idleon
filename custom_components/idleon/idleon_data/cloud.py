@@ -277,9 +277,11 @@ class IdleonCloudClient:
         credentials = await self._async_credentials_from_source(data_source)
         character_names = await self._async_get_character_names(credentials)
         save_data = await self._async_get_save_data(credentials)
+        companion_data = await self._async_get_companion_data(credentials)
         return {
             "charNameData": character_names,
             "saveData": save_data,
+            "companion": companion_data,
         }
 
     async def _async_credentials_from_source(
@@ -348,6 +350,28 @@ class IdleonCloudClient:
         if not isinstance(decoded, dict):
             raise IdleonInvalidSchema("Idleon cloud save data is not an object")
         return decoded
+
+    async def _async_get_companion_data(
+        self,
+        credentials: IdleonCloudCredentials,
+    ) -> dict[str, Any]:
+        """Fetch optional cloud companion data."""
+        user_id = quote(credentials.user_id, safe="")
+        try:
+            data = await self._async_get_json(
+                f"{REALTIME_DATABASE_BASE}/_comp/{user_id}.json"
+                f"?auth={quote(credentials.id_token, safe='')}",
+                credentials,
+            )
+        except IdleonAuthFailed, IdleonCannotConnect:
+            _LOGGER.debug("Idleon cloud companion data could not be fetched")
+            return {}
+        if data is None:
+            return {}
+        if not isinstance(data, dict):
+            _LOGGER.debug("Idleon cloud companion data was not an object")
+            return {}
+        return data
 
     async def _async_get_json(
         self,

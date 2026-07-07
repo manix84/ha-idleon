@@ -81,6 +81,30 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.characters[1].needs_attention is False
 
 
+def test_parser_extracts_cloud_companion_pet_crystals_and_jade() -> None:
+    """Test wrapped cloud data exposes companion crystals and W6 Jade."""
+    ninja = [0] * 108
+    ninja[102] = [0, "4.54e55", 0]
+
+    account = parse_idleon_account(
+        {
+            "charNameData": ["Manix84"],
+            "saveData": {
+                "CharacterClass_0": 14,
+                "Lv0_0": [1103],
+                "Ninja": ninja,
+            },
+            "companion": {
+                "s": 4450,
+                "l": ["0,1,0,605,0"],
+            },
+        }
+    )
+
+    assert account.details["pet_crystals"] == 4450
+    assert account.details["jade"] == "4.54e55"
+
+
 def test_parser_defaults_invalid_numbers() -> None:
     """Test invalid numeric values do not crash flexible parsing."""
     account = parse_idleon_account(

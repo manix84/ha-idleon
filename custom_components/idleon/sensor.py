@@ -856,6 +856,7 @@ NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
     if description.key
     not in {
         "account_last_updated",
+        "account_jade",
         "account_money",
     }
 )

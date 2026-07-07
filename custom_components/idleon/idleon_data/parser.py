@@ -444,7 +444,23 @@ def _indexed_export_fields(raw_data: Mapping[str, Any]) -> Mapping[str, Any]:
     """Return the field mapping from flat or wrapped Idleon exports."""
     save_data = raw_data.get("saveData")
     if isinstance(save_data, Mapping):
-        return save_data
+        fields = dict(save_data)
+        companion_data = _maybe_json(
+            _first_value(
+                raw_data,
+                (
+                    "companion",
+                    "Companion",
+                    "companions",
+                    "Companions",
+                    "companionData",
+                    "CompanionData",
+                ),
+            )
+        )
+        if companion_data:
+            fields["Companions"] = companion_data
+        return fields
     return raw_data
 
 
@@ -1146,6 +1162,14 @@ def _indexed_account_progress_details(
     if pets:
         details["pets"] = pets
 
+    pet_crystals = _indexed_pet_crystals(raw_data)
+    if pet_crystals is not None:
+        details["pet_crystals"] = pet_crystals
+
+    jade = _indexed_jade(raw_data)
+    if jade is not None:
+        details["jade"] = jade
+
     achievement_status = _indexed_achievement_status(raw_data)
     if achievement_status:
         details["achievement_status"] = achievement_status
@@ -1389,19 +1413,7 @@ def _indexed_progress_totals(
 
 def _indexed_companion_pets(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     """Return grouped companion pet ownership from cloud companion data."""
-    companion_data = _maybe_json(
-        _first_value(
-            raw_data,
-            (
-                "companions",
-                "Companions",
-                "companion",
-                "Companion",
-                "companionData",
-                "CompanionData",
-            ),
-        )
-    )
+    companion_data = _indexed_companion_data(raw_data)
     if not isinstance(companion_data, Mapping):
         return {}
 
@@ -1427,6 +1439,11 @@ def _indexed_companion_pets(raw_data: Mapping[str, Any]) -> dict[str, Any]:
         tradeable_counts = companion_data.get("tradeable")
 
     pet_names = _companion_pet_names()
+    if tradeable_counts is None and any(
+        isinstance(value, str) and "," in value for value in owned_counts
+    ):
+        return _indexed_companion_pets_from_entries(owned_counts, pet_names)
+
     grouped: dict[str, dict[str, str]] = {}
     for index, owned_value in enumerate(owned_counts):
         owned = _coerce_int(owned_value) or 0
@@ -1439,6 +1456,86 @@ def _indexed_companion_pets(raw_data: Mapping[str, Any]) -> dict[str, Any]:
         grouped.setdefault(category, {})[pet_name] = f"{tradeable}/{owned}"
 
     return grouped
+
+
+def _indexed_companion_pets_from_entries(
+    entries: list[Any],
+    pet_names: Mapping[int, str],
+) -> dict[str, Any]:
+    """Return companion pet ownership from comma-packed cloud entries."""
+    counts: dict[int, dict[str, int]] = {}
+    for entry in entries:
+        if not isinstance(entry, str):
+            continue
+        parts = entry.split(",")
+        companion_index = _coerce_int(_list_value(parts, 0))
+        if companion_index is None:
+            continue
+        tradeable = _list_value(parts, 1) == "1"
+        current = counts.setdefault(companion_index, {"owned": 0, "tradeable": 0})
+        current["owned"] += 1
+        if tradeable:
+            current["tradeable"] += 1
+
+    grouped: dict[str, dict[str, str]] = {}
+    for companion_index, count in counts.items():
+        category = _companion_pet_category(companion_index)
+        pet_name = pet_names.get(companion_index, f"Pet {companion_index + 1}")
+        grouped.setdefault(category, {})[pet_name] = (
+            f"{count['tradeable']}/{count['owned']}"
+        )
+    return grouped
+
+
+def _indexed_companion_data(raw_data: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Return raw companion data from any supported field name."""
+    companion_data = _maybe_json(
+        _first_value(
+            raw_data,
+            (
+                "companions",
+                "Companions",
+                "companion",
+                "Companion",
+                "companionData",
+                "CompanionData",
+            ),
+        )
+    )
+    return companion_data if isinstance(companion_data, Mapping) else None
+
+
+def _indexed_pet_crystals(raw_data: Mapping[str, Any]) -> int | None:
+    """Return companion pet crystals from cloud companion data."""
+    companion_data = _indexed_companion_data(raw_data)
+    if not isinstance(companion_data, Mapping):
+        return None
+    return _first_int(
+        companion_data,
+        (
+            "s",
+            "pet_crystals",
+            "petCrystals",
+            "companion_crystals",
+            "companionCrystals",
+        ),
+    )
+
+
+def _indexed_jade(raw_data: Mapping[str, Any]) -> int | str | None:
+    """Return W6 sneaking Jade from indexed cloud data."""
+    ninja = _maybe_json(raw_data.get("Ninja"))
+    if not isinstance(ninja, list):
+        return None
+
+    currency_block = _list_value(ninja, 102)
+    if not isinstance(currency_block, list):
+        return None
+
+    jade = _list_value(currency_block, 1)
+    if jade is None:
+        return None
+    return _jade_detail_value(jade)
 
 
 def _indexed_achievement_status(raw_data: Mapping[str, Any]) -> dict[str, Any]:
@@ -2269,6 +2366,10 @@ def _account_details(
             "companionCrystals",
         ),
     )
+    if pet_crystals is None:
+        companion_data = _indexed_companion_data(account_data)
+        if isinstance(companion_data, Mapping):
+            pet_crystals = _first_int(companion_data, ("s",))
     if pet_crystals is not None:
         details["pet_crystals"] = pet_crystals
     for detail_key, aliases in (
@@ -2409,13 +2510,13 @@ def _account_details(
             value = _first_mapping(account_data, aliases)
             if value:
                 details[detail_key] = dict(value)
-    jade = _first_int(account_data, ("jade", "jade_count", "jadeCount"))
+    jade = _first_value(account_data, ("jade", "jade_count", "jadeCount"))
     if jade is None:
         sneaking = details.get("world_6_sneaking")
         if isinstance(sneaking, Mapping):
-            jade = _first_int(sneaking, ("jade", "jade_count", "jadeCount"))
+            jade = _first_value(sneaking, ("jade", "jade_count", "jadeCount"))
     if jade is not None:
-        details["jade"] = jade
+        details["jade"] = _jade_detail_value(jade)
     return _remove_empty_detail_values(details)
 
 
@@ -2522,6 +2623,25 @@ def _compact_number(value: float) -> int | float:
     if value.is_integer():
         return int(value)
     return round(value, 2)
+
+
+def _large_number_display_value(value: Any) -> str:
+    """Return a readable large value without forcing scientific notation to expand."""
+    if isinstance(value, str) and "e" in value.lower():
+        return value.strip()
+    if isinstance(value, float):
+        return str(value)
+    return idleon_raw_value(value)
+
+
+def _jade_detail_value(value: Any) -> int | str:
+    """Return Jade as an int when small, or a compact string when huge."""
+    if isinstance(value, str) and "e" in value.lower():
+        return _large_number_display_value(value)
+    if isinstance(value, float):
+        return _large_number_display_value(value)
+    coerced = _coerce_int(value)
+    return coerced if coerced is not None else _large_number_display_value(value)
 
 
 def _list_value(values: list[Any], index: int) -> Any:
