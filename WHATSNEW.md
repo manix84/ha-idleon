@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.31.0
+
+- Add green stacks entity picture.
+
 ## 🚀 0.30.0
 
 - Add highest character level entity picture.
