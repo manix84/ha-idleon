@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.29.0
+
+- Add character count entity picture.
+
 ## 🚀 0.28.0
 
 - Add shrine levels entity picture.
