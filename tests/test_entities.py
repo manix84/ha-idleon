@@ -350,6 +350,10 @@ async def test_account_sensors(
     assert hass.states.get(total_money_entity_id).state == "987.65K"
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"
+    assert (
+        hass.states.get(green_stacks_entity_id).attributes["entity_picture"]
+        == "/idleon_static/green_stack.png"
+    )
     assert hass.states.get(slab_entity_id).state == "456"
     assert hass.states.get(achievements_entity_id).state == "78"
     assert hass.states.get(currencies_entity_id).state == "12"

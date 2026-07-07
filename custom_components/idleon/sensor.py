@@ -967,6 +967,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/character.png"
         if self.entity_description.key == "account_highest_character_level":
             return f"{STATIC_URL_PATH}/highest_character_level.png"
+        if self.entity_description.key == "account_green_stacks":
+            return f"{STATIC_URL_PATH}/green_stack.png"
         if self.entity_description.key == "account_gems":
             return f"{STATIC_URL_PATH}/gem.png"
         if self.entity_description.key == "account_pet_crystals":
