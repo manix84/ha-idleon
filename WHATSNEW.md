@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.25.0
+
+- Add Tome points account sensor.
+
 ## 🚀 0.24.0
 
 - Fix Jade and pet crystal parsing.
