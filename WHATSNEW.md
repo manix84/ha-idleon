@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.31.1
+
+- Refresh Jade and green stack icons.
+
 ## 🚀 0.31.0
 
 - Add green stacks entity picture.
