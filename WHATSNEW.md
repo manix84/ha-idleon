@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.26.0
+
+- Treat Jade as a numeric sensor.
+
 ## 🚀 0.25.0
 
 - Add Tome points account sensor.
