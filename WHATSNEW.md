@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.30.0
+
+- Add highest character level entity picture.
+
 ## 🚀 0.29.0
 
 - Add character count entity picture.
