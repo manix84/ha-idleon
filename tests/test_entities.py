@@ -342,6 +342,10 @@ async def test_account_sensors(
         "bonuses_unlocked": 15,
     }
     assert hass.states.get(highest_level_entity_id).state == "210"
+    assert (
+        hass.states.get(highest_level_entity_id).attributes["entity_picture"]
+        == "/idleon_static/highest_character_level.png"
+    )
     assert hass.states.get(total_skill_entity_id).state == "205"
     assert hass.states.get(total_money_entity_id).state == "987.65K"
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"

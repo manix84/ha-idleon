@@ -32,6 +32,7 @@ def release_asset_paths(root: Path) -> set[Path]:
     _add_existing(assets, root, asset_root / "pet_crystal.png")
     _add_existing(assets, root, asset_root / "companions.png")
     _add_existing(assets, root, asset_root / "character.png")
+    _add_existing(assets, root, asset_root / "highest_character_level.png")
     _add_existing(assets, root, asset_root / "shrine.png")
     _add_existing(assets, root, asset_root / "world" / "tome" / "tome.png")
 
