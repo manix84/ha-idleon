@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.27.0
+
+- Add companion pets entity picture.
+
 ## 🚀 0.26.0
 
 - Treat Jade as a numeric sensor.
