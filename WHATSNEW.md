@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.24.0
+
+- Fix Jade and pet crystal parsing.
+
 ## 🚀 0.23.5
 
 - Add gem sensor entity picture.
