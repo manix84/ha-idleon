@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.35.0
+
+- Add account currency sensors.
+
 ## 🚀 0.34.0
 
 - Move gem and jade assets under currency.
