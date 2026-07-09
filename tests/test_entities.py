@@ -316,7 +316,7 @@ async def test_account_sensors(
     assert hass.states.get(gems_entity_id).state == "1234"
     assert (
         hass.states.get(gems_entity_id).attributes["entity_picture"]
-        == "/idleon_static/gem.png"
+        == "/idleon_static/currency/gem.png"
     )
     assert hass.states.get(pet_crystals_entity_id).state == "4321"
     assert (
@@ -331,7 +331,7 @@ async def test_account_sensors(
     assert hass.states.get(jade_entity_id).attributes["state_class"] == "measurement"
     assert (
         hass.states.get(jade_entity_id).attributes["entity_picture"]
-        == "/idleon_static/jade.png"
+        == "/idleon_static/currency/jade.png"
     )
     assert hass.states.get(tome_points_entity_id).state == "9876"
     assert (

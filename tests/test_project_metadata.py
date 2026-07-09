@@ -99,8 +99,8 @@ def test_coin_assets_exist() -> None:
 
 def test_gem_asset_exists_with_padding() -> None:
     """Test the bundled gem asset keeps transparent visual padding."""
-    source_path = ROOT / "assets/gem.png"
-    served_path = ROOT / "custom_components/idleon/assets/gem.png"
+    source_path = ROOT / "assets/currency/gem.png"
+    served_path = ROOT / "custom_components/idleon/assets/currency/gem.png"
 
     assert source_path.exists()
     assert source_path.stat().st_size > 0
@@ -126,8 +126,8 @@ def test_pet_crystal_asset_exists_with_padding() -> None:
 
 def test_jade_asset_exists_with_padding() -> None:
     """Test the bundled Jade asset keeps transparent visual padding."""
-    source_path = ROOT / "assets/jade.png"
-    served_path = ROOT / "custom_components/idleon/assets/jade.png"
+    source_path = ROOT / "assets/currency/jade.png"
+    served_path = ROOT / "custom_components/idleon/assets/currency/jade.png"
 
     assert source_path.exists()
     assert source_path.stat().st_size > 0
@@ -263,8 +263,8 @@ def test_release_archive_contains_only_runtime_assets() -> None:
         names = set(archive.namelist())
 
     expected_runtime_assets = {
-        "custom_components/idleon/assets/gem.png",
-        "custom_components/idleon/assets/jade.png",
+        "custom_components/idleon/assets/currency/gem.png",
+        "custom_components/idleon/assets/currency/jade.png",
         "custom_components/idleon/assets/pet_crystal.png",
         "custom_components/idleon/assets/coins/gold.png",
         "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
@@ -285,8 +285,8 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     """Test the release asset manifest includes only runtime asset categories."""
     names = {path.as_posix() for path in release_asset_paths(ROOT)}
 
-    assert "custom_components/idleon/assets/gem.png" in names
-    assert "custom_components/idleon/assets/jade.png" in names
+    assert "custom_components/idleon/assets/currency/gem.png" in names
+    assert "custom_components/idleon/assets/currency/jade.png" in names
     assert "custom_components/idleon/assets/pet_crystal.png" in names
     assert "custom_components/idleon/assets/companions.png" in names
     assert "custom_components/idleon/assets/character.png" in names

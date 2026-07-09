@@ -978,11 +978,11 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         if self.entity_description.key == "account_max_damage":
             return f"{STATIC_URL_PATH}/damage_indicators/damage_blue_m.png"
         if self.entity_description.key == "account_gems":
-            return f"{STATIC_URL_PATH}/gem.png"
+            return f"{STATIC_URL_PATH}/currency/gem.png"
         if self.entity_description.key == "account_pet_crystals":
             return f"{STATIC_URL_PATH}/pet_crystal.png"
         if self.entity_description.key == "account_jade":
-            return f"{STATIC_URL_PATH}/jade.png"
+            return f"{STATIC_URL_PATH}/currency/jade.png"
         if self.entity_description.key == "account_pets":
             return f"{STATIC_URL_PATH}/companions.png"
         if self.entity_description.key == "account_shrine_levels":

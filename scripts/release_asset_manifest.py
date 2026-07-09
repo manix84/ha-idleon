@@ -27,8 +27,8 @@ def release_asset_paths(root: Path) -> set[Path]:
     asset_root = root / ASSETS_DIR
     assets: set[Path] = set()
 
-    _add_existing(assets, root, asset_root / "gem.png")
-    _add_existing(assets, root, asset_root / "jade.png")
+    _add_existing(assets, root, asset_root / "currency" / "gem.png")
+    _add_existing(assets, root, asset_root / "currency" / "jade.png")
     _add_existing(assets, root, asset_root / "pet_crystal.png")
     _add_existing(assets, root, asset_root / "companions.png")
     _add_existing(assets, root, asset_root / "character.png")
