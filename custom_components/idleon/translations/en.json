@@ -103,6 +103,21 @@
       "account_currency_trash": {
         "name": "Trash"
       },
+      "account_boss_key_forest_villa": {
+        "name": "Forest Villa keys"
+      },
+      "account_boss_key_efaunts_tomb": {
+        "name": "Efaunt's Tomb keys"
+      },
+      "account_boss_key_chizoars_cavern": {
+        "name": "Chizoar's Cavern keys"
+      },
+      "account_boss_key_trolls_enclave": {
+        "name": "Troll's Enclave keys"
+      },
+      "account_boss_key_kruks_volcano": {
+        "name": "Kruk's Volcano keys"
+      },
       "account_pet_crystals": {
         "name": "Pet crystals"
       },

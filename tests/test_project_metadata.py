@@ -263,6 +263,11 @@ def test_release_archive_contains_only_runtime_assets() -> None:
         names = set(archive.namelist())
 
     expected_runtime_assets = {
+        "custom_components/idleon/assets/boss_keys/forest_villa.png",
+        "custom_components/idleon/assets/boss_keys/efaunts_tomb.png",
+        "custom_components/idleon/assets/boss_keys/chizoars_cavern.png",
+        "custom_components/idleon/assets/boss_keys/trolls_enclave.png",
+        "custom_components/idleon/assets/boss_keys/kruks_volcano.png",
         "custom_components/idleon/assets/currency/cluster.png",
         "custom_components/idleon/assets/currency/event.png",
         "custom_components/idleon/assets/currency/gem.png",
@@ -290,6 +295,11 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     """Test the release asset manifest includes only runtime asset categories."""
     names = {path.as_posix() for path in release_asset_paths(ROOT)}
 
+    assert "custom_components/idleon/assets/boss_keys/forest_villa.png" in names
+    assert "custom_components/idleon/assets/boss_keys/efaunts_tomb.png" in names
+    assert "custom_components/idleon/assets/boss_keys/chizoars_cavern.png" in names
+    assert "custom_components/idleon/assets/boss_keys/trolls_enclave.png" in names
+    assert "custom_components/idleon/assets/boss_keys/kruks_volcano.png" in names
     assert "custom_components/idleon/assets/currency/cluster.png" in names
     assert "custom_components/idleon/assets/currency/event.png" in names
     assert "custom_components/idleon/assets/currency/gem.png" in names

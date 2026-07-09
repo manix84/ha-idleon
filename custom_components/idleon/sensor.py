@@ -290,6 +290,18 @@ ACCOUNT_CURRENCY_SENSOR_PICTURES = {
     for slug, _label in ACCOUNT_CURRENCY_SENSORS
 }
 
+ACCOUNT_BOSS_KEY_SENSORS = (
+    ("forest_villa", "Forest Villa Keys"),
+    ("efaunts_tomb", "Efaunt's Tomb Keys"),
+    ("chizoars_cavern", "Chizoar's Cavern Keys"),
+    ("trolls_enclave", "Troll's Enclave Keys"),
+    ("kruks_volcano", "Kruk's Volcano Keys"),
+)
+ACCOUNT_BOSS_KEY_SENSOR_PICTURES = {
+    f"account_boss_key_{slug}": f"{STATIC_URL_PATH}/boss_keys/{slug}.png"
+    for slug, _label in ACCOUNT_BOSS_KEY_SENSORS
+}
+
 
 def _colosseum_score_sensor_description(
     slug: str,
@@ -323,6 +335,25 @@ def _currency_sensor_description(
                 coordinator,
                 "currencies",
                 currency_label,
+                0,
+            )
+        ),
+    )
+
+
+def _boss_key_sensor_description(
+    slug: str,
+    label: str,
+) -> IdleonAccountSensorEntityDescription:
+    """Return an account sensor description for one boss key value."""
+    return IdleonAccountSensorEntityDescription(
+        key=f"account_boss_key_{slug}",
+        translation_key=f"account_boss_key_{slug}",
+        value_fn=lambda coordinator, key_label=label: (
+            _account_detail_value_from_mapping(
+                coordinator,
+                "currencies",
+                key_label,
                 0,
             )
         ),
@@ -451,6 +482,10 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     *(
         _currency_sensor_description(slug, label)
         for slug, label in ACCOUNT_CURRENCY_SENSORS
+    ),
+    *(
+        _boss_key_sensor_description(slug, label)
+        for slug, label in ACCOUNT_BOSS_KEY_SENSORS
     ),
     IdleonAccountSensorEntityDescription(
         key="account_shrine_levels",
@@ -1031,6 +1066,10 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         ):
             return picture
         if picture := ACCOUNT_CURRENCY_SENSOR_PICTURES.get(
+            self.entity_description.key,
+        ):
+            return picture
+        if picture := ACCOUNT_BOSS_KEY_SENSOR_PICTURES.get(
             self.entity_description.key,
         ):
             return picture

@@ -118,6 +118,20 @@ async def test_account_sensors(
         )
         for slug in ("cluster", "event", "guild", "shimmer", "trash")
     }
+    boss_key_entity_ids = {
+        slug: entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_boss_key_{slug}",
+        )
+        for slug in (
+            "forest_villa",
+            "efaunts_tomb",
+            "chizoars_cavern",
+            "trolls_enclave",
+            "kruks_volcano",
+        )
+    }
     shrine_levels_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -389,6 +403,19 @@ async def test_account_sensors(
         assert (
             currency_state.attributes["entity_picture"]
             == f"/idleon_static/currency/{slug}.png"
+        )
+    for slug, state in {
+        "forest_villa": "2737",
+        "efaunts_tomb": "14158",
+        "chizoars_cavern": "27164",
+        "trolls_enclave": "13425",
+        "kruks_volcano": "542702",
+    }.items():
+        boss_key_state = hass.states.get(boss_key_entity_ids[slug])
+        assert boss_key_state.state == state
+        assert (
+            boss_key_state.attributes["entity_picture"]
+            == f"/idleon_static/boss_keys/{slug}.png"
         )
     assert hass.states.get(shrine_levels_entity_id).state == "236"
     assert (
