@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -44,12 +43,6 @@ CHARACTER_BINARY_SENSOR_DESCRIPTIONS = (
             "inventory_bag_count",
             "inventory_bags",
         ),
-    ),
-    IdleonCharacterBinarySensorEntityDescription(
-        key="character_needs_attention",
-        translation_key="character_needs_attention",
-        device_class=BinarySensorDeviceClass.PROBLEM,
-        value_fn=lambda character: character.needs_attention,
     ),
 )
 

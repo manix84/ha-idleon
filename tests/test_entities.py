@@ -936,14 +936,14 @@ async def test_binary_sensors(
         DOMAIN,
         f"{entry.entry_id}_bubo_main_character_inventory_full",
     )
-    attention_entity_id = entity_registry.async_get_entity_id(
+    needs_attention_entity_id = entity_registry.async_get_entity_id(
         "binary_sensor",
         DOMAIN,
         f"{entry.entry_id}_miner_alt_character_needs_attention",
     )
 
     assert hass.states.get(inventory_entity_id).state == "on"
-    assert hass.states.get(attention_entity_id).state == "off"
+    assert needs_attention_entity_id is None
 
     inventory_attributes = hass.states.get(inventory_entity_id).attributes
     assert inventory_attributes["inventory_slots_total"] == 3
@@ -951,8 +951,6 @@ async def test_binary_sensors(
     assert inventory_attributes["inventory_slots_used"] == 2
     assert inventory_attributes["inventory_slots_free"] == 1
     assert inventory_attributes["inventory_sample"] == ["Nomwich", "Farmer Brim"]
-
-    assert "inventory_slots_used" not in hass.states.get(attention_entity_id).attributes
 
 
 async def test_character_stat_sensor_pictures(
