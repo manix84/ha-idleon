@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.36.0
+
+- Add account boss key sensors.
+
 ## 🚀 0.35.0
 
 - Add account currency sensors.
