@@ -103,6 +103,9 @@
       "account_total_skill_level": {
         "name": "Total skill level"
       },
+      "account_max_damage": {
+        "name": "Max damage"
+      },
       "account_money": {
         "name": "Money"
       },

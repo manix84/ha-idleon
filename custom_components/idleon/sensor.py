@@ -372,6 +372,11 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         detail_keys=("class_counts",),
     ),
     IdleonAccountSensorEntityDescription(
+        key="account_max_damage",
+        translation_key="account_max_damage",
+        value_fn=lambda coordinator: _account_max_damage_formatted(coordinator),
+    ),
+    IdleonAccountSensorEntityDescription(
         key="account_money",
         translation_key="account_money",
         value_fn=lambda coordinator: _account_money_formatted(coordinator),
@@ -868,6 +873,7 @@ NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
     not in {
         "account_last_updated",
         "account_money",
+        "account_max_damage",
     }
 )
 TEXT_CHARACTER_SENSOR_KEYS = {
@@ -969,6 +975,8 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/highest_character_level.png"
         if self.entity_description.key == "account_green_stacks":
             return f"{STATIC_URL_PATH}/green_stack.png"
+        if self.entity_description.key == "account_max_damage":
+            return f"{STATIC_URL_PATH}/damage_indicators/damage_blue_m.png"
         if self.entity_description.key == "account_gems":
             return f"{STATIC_URL_PATH}/gem.png"
         if self.entity_description.key == "account_pet_crystals":
@@ -1013,6 +1021,9 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             if money_breakdown:
                 attributes["money_breakdown"] = money_breakdown
             return attributes
+
+        if self.entity_description.key == "account_max_damage":
+            return _number_attributes(_account_max_damage_raw(self.coordinator))
 
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
@@ -1537,6 +1548,19 @@ def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
     return idleon_raw_value(value)
 
 
+def _account_max_damage_formatted(coordinator: IdleonDataUpdateCoordinator) -> str:
+    """Return account max damage with Idleon-style number suffixes."""
+    return idleon_number_parts(_account_max_damage_raw(coordinator)).formatted
+
+
+def _account_max_damage_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
+    """Return exact account max damage as a raw value string."""
+    progress_totals = coordinator.data.details.get("progress_totals")
+    if not isinstance(progress_totals, Mapping):
+        return "0"
+    return idleon_raw_value(progress_totals.get("Highest Damage", 0))
+
+
 def _character_money_formatted(character: IdleonCharacter) -> str:
     """Return character money with Idleon-style number suffixes."""
     return idleon_number_parts(_character_money_raw(character)).formatted
@@ -1556,6 +1580,17 @@ def _money_attributes(raw_value: str) -> dict[str, str]:
         "coin_tier_formatted": formatted_money.formatted,
         "coin_tier": formatted_money.coin_tier,
         "coin_tier_value": formatted_money.coin_tier_value,
+        "formatted_number": formatted_number.formatted,
+        "number_suffix": formatted_number.suffix,
+        "number_mantissa": formatted_number.mantissa,
+    }
+
+
+def _number_attributes(raw_value: str) -> dict[str, str]:
+    """Return standard formatted number attributes."""
+    formatted_number = idleon_number_parts(raw_value)
+    return {
+        "raw_value": formatted_number.raw_value,
         "formatted_number": formatted_number.formatted,
         "number_suffix": formatted_number.suffix,
         "number_mantissa": formatted_number.mantissa,

@@ -35,6 +35,11 @@ def release_asset_paths(root: Path) -> set[Path]:
     _add_existing(assets, root, asset_root / "highest_character_level.png")
     _add_existing(assets, root, asset_root / "green_stack.png")
     _add_existing(assets, root, asset_root / "shrine.png")
+    _add_existing(
+        assets,
+        root,
+        asset_root / "damage_indicators" / "damage_blue_m.png",
+    )
     _add_existing(assets, root, asset_root / "world" / "tome" / "tome.png")
 
     for coin_name, _tier_value in IDLEON_COIN_TIERS:

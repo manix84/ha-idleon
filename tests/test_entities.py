@@ -80,6 +80,11 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_total_skill_level",
     )
+    max_damage_entity_id = entity_registry.async_get_entity_id(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_account_max_damage",
+    )
     total_money_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -347,6 +352,13 @@ async def test_account_sensors(
         == "/idleon_static/highest_character_level.png"
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
+    assert hass.states.get(max_damage_entity_id).state == "123.46M"
+    assert hass.states.get(max_damage_entity_id).attributes["raw_value"] == "123456789"
+    assert hass.states.get(max_damage_entity_id).attributes["number_suffix"] == "M"
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["entity_picture"]
+        == "/idleon_static/damage_indicators/damage_blue_m.png"
+    )
     assert hass.states.get(total_money_entity_id).state == "987.65K"
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"

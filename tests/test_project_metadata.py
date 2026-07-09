@@ -293,6 +293,9 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     assert "custom_components/idleon/assets/highest_character_level.png" in names
     assert "custom_components/idleon/assets/green_stack.png" in names
     assert "custom_components/idleon/assets/shrine.png" in names
+    assert (
+        "custom_components/idleon/assets/damage_indicators/damage_blue_m.png" in names
+    )
     assert "custom_components/idleon/assets/world/tome/tome.png" in names
     assert "custom_components/idleon/assets/coins/polarity.png" in names
     assert (
