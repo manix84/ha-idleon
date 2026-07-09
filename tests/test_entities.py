@@ -110,6 +110,14 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_currencies",
     )
+    currency_entity_ids = {
+        slug: entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_currency_{slug}",
+        )
+        for slug in ("cluster", "event", "guild", "shimmer", "trash")
+    }
     shrine_levels_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -368,7 +376,20 @@ async def test_account_sensors(
     )
     assert hass.states.get(slab_entity_id).state == "456"
     assert hass.states.get(achievements_entity_id).state == "78"
-    assert hass.states.get(currencies_entity_id).state == "12"
+    assert hass.states.get(currencies_entity_id).state == "17"
+    for slug, state in {
+        "cluster": "111",
+        "event": "222",
+        "guild": "333",
+        "shimmer": "444",
+        "trash": "555",
+    }.items():
+        currency_state = hass.states.get(currency_entity_ids[slug])
+        assert currency_state.state == state
+        assert (
+            currency_state.attributes["entity_picture"]
+            == f"/idleon_static/currency/{slug}.png"
+        )
     assert hass.states.get(shrine_levels_entity_id).state == "236"
     assert (
         hass.states.get(shrine_levels_entity_id).attributes["entity_picture"]
@@ -506,6 +527,9 @@ async def test_account_sensors(
             "Forest Villa Keys"
         ]
         == 2737
+    )
+    assert (
+        hass.states.get(currencies_entity_id).attributes["currencies"]["Shimmer"] == 444
     )
     assert (
         hass.states.get(shrine_levels_entity_id).attributes["shrine_levels"][

@@ -88,6 +88,21 @@
       "account_gems": {
         "name": "Gems"
       },
+      "account_currency_cluster": {
+        "name": "Cluster"
+      },
+      "account_currency_event": {
+        "name": "Event"
+      },
+      "account_currency_guild": {
+        "name": "Guild"
+      },
+      "account_currency_shimmer": {
+        "name": "Shimmer"
+      },
+      "account_currency_trash": {
+        "name": "Trash"
+      },
       "account_pet_crystals": {
         "name": "Pet crystals"
       },

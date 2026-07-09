@@ -29,6 +29,11 @@ def release_asset_paths(root: Path) -> set[Path]:
 
     _add_existing(assets, root, asset_root / "currency" / "gem.png")
     _add_existing(assets, root, asset_root / "currency" / "jade.png")
+    _add_existing(assets, root, asset_root / "currency" / "cluster.png")
+    _add_existing(assets, root, asset_root / "currency" / "event.png")
+    _add_existing(assets, root, asset_root / "currency" / "guild.png")
+    _add_existing(assets, root, asset_root / "currency" / "shimmer.png")
+    _add_existing(assets, root, asset_root / "currency" / "trash.png")
     _add_existing(assets, root, asset_root / "pet_crystal.png")
     _add_existing(assets, root, asset_root / "companions.png")
     _add_existing(assets, root, asset_root / "character.png")

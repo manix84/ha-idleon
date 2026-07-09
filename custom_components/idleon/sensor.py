@@ -278,6 +278,18 @@ COLOSSEUM_SCORE_SENSOR_PICTURES = {
     for slug, _label in COLOSSEUM_SCORE_SENSORS
 }
 
+ACCOUNT_CURRENCY_SENSORS = (
+    ("cluster", "Cluster"),
+    ("event", "Event"),
+    ("guild", "Guild"),
+    ("shimmer", "Shimmer"),
+    ("trash", "Trash"),
+)
+ACCOUNT_CURRENCY_SENSOR_PICTURES = {
+    f"account_currency_{slug}": f"{STATIC_URL_PATH}/currency/{slug}.png"
+    for slug, _label in ACCOUNT_CURRENCY_SENSORS
+}
+
 
 def _colosseum_score_sensor_description(
     slug: str,
@@ -292,6 +304,25 @@ def _colosseum_score_sensor_description(
                 coordinator,
                 "colosseum_scores",
                 score_label,
+                0,
+            )
+        ),
+    )
+
+
+def _currency_sensor_description(
+    slug: str,
+    label: str,
+) -> IdleonAccountSensorEntityDescription:
+    """Return an account sensor description for one currency value."""
+    return IdleonAccountSensorEntityDescription(
+        key=f"account_currency_{slug}",
+        translation_key=f"account_currency_{slug}",
+        value_fn=lambda coordinator, currency_label=label: (
+            _account_detail_value_from_mapping(
+                coordinator,
+                "currencies",
+                currency_label,
                 0,
             )
         ),
@@ -416,6 +447,10 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
         translation_key="account_currencies",
         value_fn=lambda coordinator: _account_detail_count(coordinator, "currencies"),
         detail_keys=("currencies",),
+    ),
+    *(
+        _currency_sensor_description(slug, label)
+        for slug, label in ACCOUNT_CURRENCY_SENSORS
     ),
     IdleonAccountSensorEntityDescription(
         key="account_shrine_levels",
@@ -992,6 +1027,10 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
         if picture := COLOSSEUM_SCORE_SENSOR_PICTURES.get(
+            self.entity_description.key,
+        ):
+            return picture
+        if picture := ACCOUNT_CURRENCY_SENSOR_PICTURES.get(
             self.entity_description.key,
         ):
             return picture

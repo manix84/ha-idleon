@@ -263,8 +263,13 @@ def test_release_archive_contains_only_runtime_assets() -> None:
         names = set(archive.namelist())
 
     expected_runtime_assets = {
+        "custom_components/idleon/assets/currency/cluster.png",
+        "custom_components/idleon/assets/currency/event.png",
         "custom_components/idleon/assets/currency/gem.png",
+        "custom_components/idleon/assets/currency/guild.png",
         "custom_components/idleon/assets/currency/jade.png",
+        "custom_components/idleon/assets/currency/shimmer.png",
+        "custom_components/idleon/assets/currency/trash.png",
         "custom_components/idleon/assets/pet_crystal.png",
         "custom_components/idleon/assets/coins/gold.png",
         "custom_components/idleon/assets/classes/mage/bubonic_conjuror_icon.png",
@@ -285,8 +290,13 @@ def test_release_asset_manifest_matches_runtime_asset_policy() -> None:
     """Test the release asset manifest includes only runtime asset categories."""
     names = {path.as_posix() for path in release_asset_paths(ROOT)}
 
+    assert "custom_components/idleon/assets/currency/cluster.png" in names
+    assert "custom_components/idleon/assets/currency/event.png" in names
     assert "custom_components/idleon/assets/currency/gem.png" in names
+    assert "custom_components/idleon/assets/currency/guild.png" in names
     assert "custom_components/idleon/assets/currency/jade.png" in names
+    assert "custom_components/idleon/assets/currency/shimmer.png" in names
+    assert "custom_components/idleon/assets/currency/trash.png" in names
     assert "custom_components/idleon/assets/pet_crystal.png" in names
     assert "custom_components/idleon/assets/companions.png" in names
     assert "custom_components/idleon/assets/character.png" in names
