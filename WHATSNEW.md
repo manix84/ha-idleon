@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.34.0
+
+- Move gem and jade assets under currency.
+
 ## 🚀 0.33.0
 
 - Add max damage sensor.
