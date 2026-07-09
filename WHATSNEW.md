@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.32.0
+
+- Disable needs attention binary sensor.
+
 ## 🚀 0.31.1
 
 - Refresh Jade and green stack icons.
