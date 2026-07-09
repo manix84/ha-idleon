@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.33.0
+
+- Add max damage sensor.
+
 ## 🚀 0.32.0
 
 - Disable needs attention binary sensor.
