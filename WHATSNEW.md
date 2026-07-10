@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.37.0
+
+- Fix large Idleon numeric states.
+
 ## 🚀 0.36.0
 
 - Add account boss key sensors.
