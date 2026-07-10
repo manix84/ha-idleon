@@ -7,10 +7,11 @@ import re
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
 from ..models import IdleonAccount, IdleonCharacter
-from ..utils.number_format import idleon_raw_value
+from ..utils.number_format import idleon_raw_value, parse_idleon_decimal
 from .equipment import (
     MAIN_EQUIPMENT_SLOTS,
     TOOL_EQUIPMENT_SLOTS,
@@ -1090,18 +1091,22 @@ def _indexed_account_details(
     """Return compact account-wide attributes for indexed exports."""
     details = _computed_account_details(characters)
 
-    bank_money = int(idleon_raw_value(raw_data.get("MoneyBANK")))
+    bank_money = parse_idleon_decimal(raw_data.get("MoneyBANK")) or Decimal(0)
     character_money = sum(
-        int(idleon_raw_value(raw_data.get(f"Money_{index}")))
-        for index, _character in enumerate(characters)
+        (
+            parse_idleon_decimal(raw_data.get(f"Money_{index}")) or Decimal(0)
+            for index, _character in enumerate(characters)
+        ),
+        Decimal(0),
     )
     raw_money = bank_money + character_money
     if raw_money:
-        details["total_money"] = str(raw_money)
-        details["raw_money"] = str(raw_money)
+        total_money = idleon_raw_value(raw_money)
+        details["total_money"] = total_money
+        details["raw_money"] = total_money
         details["money_breakdown"] = {
-            "bank": str(bank_money),
-            "characters": str(character_money),
+            "bank": idleon_raw_value(bank_money),
+            "characters": idleon_raw_value(character_money),
         }
 
     green_stacks = _maybe_json(raw_data.get("GreenStacks"))
@@ -1523,7 +1528,7 @@ def _indexed_pet_crystals(raw_data: Mapping[str, Any]) -> int | None:
     )
 
 
-def _indexed_jade(raw_data: Mapping[str, Any]) -> int | float | None:
+def _indexed_jade(raw_data: Mapping[str, Any]) -> str | None:
     """Return W6 sneaking Jade from indexed cloud data."""
     ninja = _maybe_json(raw_data.get("Ninja"))
     if not isinstance(ninja, list):
@@ -2626,16 +2631,11 @@ def _compact_number(value: float) -> int | float:
     return round(value, 2)
 
 
-def _jade_detail_value(value: Any) -> int | float:
-    """Return Jade as a numeric value for Home Assistant history graphs."""
-    if isinstance(value, str) and "e" in value.lower():
-        return float(value)
-    if isinstance(value, float):
-        return value
-    coerced = _coerce_int(value)
-    if coerced is not None:
-        return coerced
-    return _coerce_float(value) or 0
+def _jade_detail_value(value: Any) -> str | None:
+    """Return Jade as a raw numeric string without expanding huge values."""
+    if parse_idleon_decimal(value) is None:
+        return None
+    return idleon_raw_value(value)
 
 
 def _list_value(values: list[Any], index: int) -> Any:

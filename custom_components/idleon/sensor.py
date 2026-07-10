@@ -41,9 +41,13 @@ from .idleon_data.game_maps import (
 )
 from .models import IdleonCharacter
 from .utils.number_format import (
+    decimal_to_ha_number,
+    format_decimal_grouped,
+    format_decimal_scientific,
     idleon_money_parts,
     idleon_number_parts,
     idleon_raw_value,
+    parse_idleon_decimal,
 )
 
 ASSETS_PATH = Path(__file__).with_name("assets")
@@ -388,10 +392,9 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_jade",
         translation_key="account_jade",
-        value_fn=lambda coordinator: _account_detail_value(
+        value_fn=lambda coordinator: _account_large_number_state(
             coordinator,
             "jade",
-            0,
         ),
     ),
     IdleonAccountSensorEntityDescription(
@@ -436,12 +439,12 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_max_damage",
         translation_key="account_max_damage",
-        value_fn=lambda coordinator: _account_max_damage_formatted(coordinator),
+        value_fn=lambda coordinator: _account_max_damage_state(coordinator),
     ),
     IdleonAccountSensorEntityDescription(
         key="account_money",
         translation_key="account_money",
-        value_fn=lambda coordinator: _account_money_formatted(coordinator),
+        value_fn=lambda coordinator: _account_money_state(coordinator),
         detail_keys=("money_breakdown",),
     ),
     IdleonAccountSensorEntityDescription(
@@ -868,7 +871,7 @@ CHARACTER_SENSOR_DESCRIPTIONS = (
     IdleonCharacterSensorEntityDescription(
         key="character_money",
         translation_key="character_money",
-        value_fn=lambda character: _character_money_formatted(character),
+        value_fn=lambda character: _character_money_state(character),
         detail_keys=("money",),
     ),
     IdleonCharacterSensorEntityDescription(
@@ -942,8 +945,6 @@ NUMERIC_ACCOUNT_SENSOR_KEYS = frozenset(
     if description.key
     not in {
         "account_last_updated",
-        "account_money",
-        "account_max_damage",
     }
 )
 TEXT_CHARACTER_SENSOR_KEYS = {
@@ -951,7 +952,6 @@ TEXT_CHARACTER_SENSOR_KEYS = {
     "character_current_map",
     "character_current_activity",
     "character_highest_skill",
-    "character_money",
     "character_selected_trophy",
     "character_selected_name_tag",
     *(description.key for description in EQUIPMENT_CHARACTER_SENSOR_DESCRIPTIONS),
@@ -1102,6 +1102,9 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
 
         if self.entity_description.key == "account_max_damage":
             return _number_attributes(_account_max_damage_raw(self.coordinator))
+
+        if self.entity_description.key == "account_jade":
+            return _number_attributes(_account_jade_raw(self.coordinator))
 
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
@@ -1590,6 +1593,17 @@ def _account_detail_value_from_mapping(
     return value.get(value_key, default)
 
 
+def _account_large_number_state(
+    coordinator: IdleonDataUpdateCoordinator,
+    detail_key: str,
+) -> int | float | None:
+    """Return an account detail as a HA-safe numeric state."""
+    raw_value = coordinator.data.details.get(detail_key)
+    if raw_value is None:
+        return None
+    return _large_number_state(idleon_raw_value(raw_value))
+
+
 def _account_detail_sum(
     coordinator: IdleonDataUpdateCoordinator,
     key: str,
@@ -1613,9 +1627,11 @@ def _account_detail_sum(
     return round(total, 2)
 
 
-def _account_money_formatted(coordinator: IdleonDataUpdateCoordinator) -> str:
-    """Return account money with Idleon-style number suffixes."""
-    return idleon_number_parts(_account_money_raw(coordinator)).formatted
+def _account_money_state(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | float | None:
+    """Return account money as a HA-safe numeric state."""
+    return _large_number_state(_account_money_raw(coordinator))
 
 
 def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
@@ -1626,9 +1642,11 @@ def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
     return idleon_raw_value(value)
 
 
-def _account_max_damage_formatted(coordinator: IdleonDataUpdateCoordinator) -> str:
-    """Return account max damage with Idleon-style number suffixes."""
-    return idleon_number_parts(_account_max_damage_raw(coordinator)).formatted
+def _account_max_damage_state(
+    coordinator: IdleonDataUpdateCoordinator,
+) -> int | float | None:
+    """Return account max damage as a HA-safe numeric state."""
+    return _large_number_state(_account_max_damage_raw(coordinator))
 
 
 def _account_max_damage_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
@@ -1639,9 +1657,9 @@ def _account_max_damage_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
     return idleon_raw_value(progress_totals.get("Highest Damage", 0))
 
 
-def _character_money_formatted(character: IdleonCharacter) -> str:
-    """Return character money with Idleon-style number suffixes."""
-    return idleon_number_parts(_character_money_raw(character)).formatted
+def _character_money_state(character: IdleonCharacter) -> int | float | None:
+    """Return character money as a HA-safe numeric state."""
+    return _large_number_state(_character_money_raw(character))
 
 
 def _character_money_raw(character: IdleonCharacter) -> str:
@@ -1649,30 +1667,49 @@ def _character_money_raw(character: IdleonCharacter) -> str:
     return idleon_raw_value(character.details.get("money", 0))
 
 
+def _account_jade_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
+    """Return exact Jade as a raw string."""
+    return idleon_raw_value(coordinator.data.details.get("jade", 0))
+
+
+def _large_number_state(raw_value: str) -> int | float | None:
+    """Return a Home Assistant-compatible numeric state for a large value."""
+    decimal_value = parse_idleon_decimal(raw_value)
+    if decimal_value is None:
+        return None
+    return decimal_to_ha_number(decimal_value)
+
+
 def _money_attributes(raw_value: str) -> dict[str, str]:
     """Return standard formatted money attributes."""
     formatted_money = idleon_money_parts(raw_value)
     formatted_number = idleon_number_parts(raw_value)
-    return {
-        "raw_value": formatted_money.raw_value,
+    source_raw_value = idleon_raw_value(raw_value)
+    return _number_attributes(raw_value) | {
+        "raw_value": source_raw_value,
         "coin_tier_formatted": formatted_money.formatted,
         "coin_tier": formatted_money.coin_tier,
         "coin_tier_value": formatted_money.coin_tier_value,
         "formatted_number": formatted_number.formatted,
-        "number_suffix": formatted_number.suffix,
-        "number_mantissa": formatted_number.mantissa,
     }
 
 
 def _number_attributes(raw_value: str) -> dict[str, str]:
     """Return standard formatted number attributes."""
     formatted_number = idleon_number_parts(raw_value)
-    return {
-        "raw_value": formatted_number.raw_value,
+    source_raw_value = idleon_raw_value(raw_value)
+    attributes = {
+        "raw_value": source_raw_value,
         "formatted_number": formatted_number.formatted,
+        "compact_value": formatted_number.formatted,
         "number_suffix": formatted_number.suffix,
         "number_mantissa": formatted_number.mantissa,
     }
+    decimal_value = parse_idleon_decimal(raw_value)
+    if decimal_value is not None:
+        attributes["formatted_value"] = format_decimal_grouped(decimal_value)
+        attributes["scientific_value"] = format_decimal_scientific(decimal_value)
+    return attributes
 
 
 def _money_entity_picture(raw_value: str) -> str:

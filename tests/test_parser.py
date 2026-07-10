@@ -63,7 +63,7 @@ def test_parser_accepts_mapping_characters_and_aliases() -> None:
     assert account.source_updated_at == datetime(2026, 6, 29, 12, tzinfo=UTC)
     assert account.details["highest_character_level"] == 123
     assert account.details["highest_level_character"] == "Wizard One"
-    assert account.details["jade"] == 654321
+    assert account.details["jade"] == "654321"
     assert account.details["pet_crystals"] == 321
     assert account.details["total_money"] == "12345"
     assert account.details["raw_money"] == "12345"
@@ -102,8 +102,7 @@ def test_parser_extracts_cloud_companion_pet_crystals_and_jade() -> None:
     )
 
     assert account.details["pet_crystals"] == 4450
-    assert account.details["jade"] == 4.54e55
-    assert isinstance(account.details["jade"], float)
+    assert account.details["jade"] == "4.54e55"
 
 
 def test_parser_defaults_invalid_numbers() -> None:

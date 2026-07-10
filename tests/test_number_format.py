@@ -5,11 +5,16 @@ from __future__ import annotations
 from decimal import Decimal
 
 from custom_components.idleon.utils.number_format import (
+    decimal_to_ha_number,
+    format_decimal_exact,
+    format_decimal_grouped,
+    format_decimal_scientific,
     format_idleon_money,
     format_idleon_number,
     idleon_money_parts,
     idleon_number_parts,
     idleon_raw_value,
+    parse_idleon_decimal,
 )
 
 
@@ -66,6 +71,36 @@ def test_idleon_raw_value_preserves_large_integral_strings() -> None:
 
     assert idleon_raw_value(raw_value) == raw_value
     assert idleon_raw_value(Decimal(raw_value)) == raw_value
+
+
+def test_parse_idleon_decimal_accepts_large_scientific_values() -> None:
+    """Test scientific Idleon values parse without binary float expansion."""
+    parsed = parse_idleon_decimal("4.01722506920837e+55")
+
+    assert parsed == Decimal("4.01722506920837e+55")
+    assert decimal_to_ha_number(parsed) == 4.01722506920837e55
+    assert idleon_raw_value("4.01722506920837e+55") == "4.01722506920837e+55"
+
+
+def test_parse_idleon_decimal_rejects_invalid_non_finite_values() -> None:
+    """Test invalid and non-finite values are rejected."""
+    for value in (None, "", "not-a-number", "NaN", "Infinity", "-Infinity"):
+        assert parse_idleon_decimal(value) is None
+
+
+def test_decimal_display_formatters_do_not_use_float_conversion() -> None:
+    """Test large Decimal display attributes stay deterministic."""
+    value = Decimal("4.01722506920837e+55")
+
+    assert (
+        format_decimal_exact(value)
+        == "40172250692083700000000000000000000000000000000000000000"
+    )
+    assert (
+        format_decimal_grouped(value)
+        == "40,172,250,692,083,700,000,000,000,000,000,000,000,000,000,000,000,000,000"
+    )
+    assert format_decimal_scientific(value) == "4.01722506920837e+55"
 
 
 def test_format_idleon_money_tier_boundaries() -> None:

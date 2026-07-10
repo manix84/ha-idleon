@@ -351,6 +351,12 @@ async def test_account_sensors(
     )
     assert hass.states.get(jade_entity_id).state == "654321"
     assert hass.states.get(jade_entity_id).attributes["state_class"] == "measurement"
+    assert hass.states.get(jade_entity_id).attributes["raw_value"] == "654321"
+    assert hass.states.get(jade_entity_id).attributes["formatted_value"] == "654,321"
+    assert (
+        hass.states.get(jade_entity_id).attributes["scientific_value"] == "6.54321e+5"
+    )
+    assert hass.states.get(jade_entity_id).attributes["compact_value"] == "654.32K"
     assert (
         hass.states.get(jade_entity_id).attributes["entity_picture"]
         == "/idleon_static/currency/jade.png"
@@ -374,14 +380,25 @@ async def test_account_sensors(
         == "/idleon_static/highest_character_level.png"
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(max_damage_entity_id).state == "123.46M"
+    assert hass.states.get(max_damage_entity_id).state == "123456789"
     assert hass.states.get(max_damage_entity_id).attributes["raw_value"] == "123456789"
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["formatted_value"]
+        == "123,456,789"
+    )
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["scientific_value"]
+        == "1.23456789e+8"
+    )
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["compact_value"] == "123.46M"
+    )
     assert hass.states.get(max_damage_entity_id).attributes["number_suffix"] == "M"
     assert (
         hass.states.get(max_damage_entity_id).attributes["entity_picture"]
         == "/idleon_static/damage_indicators/damage_blue_m.png"
     )
-    assert hass.states.get(total_money_entity_id).state == "987.65K"
+    assert hass.states.get(total_money_entity_id).state == "987654"
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert (
@@ -534,6 +551,17 @@ async def test_account_sensors(
     assert (
         hass.states.get(total_money_entity_id).attributes["formatted_number"]
         == "987.65K"
+    )
+    assert (
+        hass.states.get(total_money_entity_id).attributes["compact_value"] == "987.65K"
+    )
+    assert (
+        hass.states.get(total_money_entity_id).attributes["formatted_value"]
+        == "987,654"
+    )
+    assert (
+        hass.states.get(total_money_entity_id).attributes["scientific_value"]
+        == "9.87654e+5"
     )
     assert hass.states.get(total_money_entity_id).attributes["number_suffix"] == "K"
     assert (
@@ -887,7 +915,7 @@ async def test_character_sensors(
         == "/idleon_static/skills/alchemy.png"
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(money_entity_id).state == "12.34K"
+    assert hass.states.get(money_entity_id).state == "12345"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
     assert (
         hass.states.get(money_entity_id).attributes["entity_picture"]
@@ -899,6 +927,11 @@ async def test_character_sensors(
     )
     assert hass.states.get(money_entity_id).attributes["coin_tier"] == "Gold"
     assert hass.states.get(money_entity_id).attributes["formatted_number"] == "12.34K"
+    assert hass.states.get(money_entity_id).attributes["compact_value"] == "12.34K"
+    assert hass.states.get(money_entity_id).attributes["formatted_value"] == "12,345"
+    assert (
+        hass.states.get(money_entity_id).attributes["scientific_value"] == "1.2345e+4"
+    )
     assert hass.states.get(money_entity_id).attributes["number_suffix"] == "K"
     assert hass.states.get(money_entity_id).attributes["number_mantissa"] == "12.34"
     assert hass.states.get(selected_trophy_entity_id).state == "One of the Divine"
