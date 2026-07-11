@@ -45,6 +45,7 @@ def release_asset_paths(root: Path) -> set[Path]:
     _add_existing(assets, root, asset_root / "highest_character_level.png")
     _add_existing(assets, root, asset_root / "green_stack.png")
     _add_existing(assets, root, asset_root / "shrine.png")
+    _add_existing(assets, root, asset_root / "statue.png")
     _add_existing(
         assets,
         root,

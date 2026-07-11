@@ -462,6 +462,10 @@ async def test_account_sensors(
         == "/idleon_static/shrine.png"
     )
     assert hass.states.get(statue_levels_entity_id).state == "848"
+    assert (
+        hass.states.get(statue_levels_entity_id).attributes["entity_picture"]
+        == "/idleon_static/statue.png"
+    )
     for slug, state, picture in (
         ("power", "284", "/idleon_static/statue/power_zenith.png"),
         ("speed", "292", "/idleon_static/statue/speed_gold.png"),
