@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.40.0
+
+- Add generic statue level icon.
+
 ## 🚀 0.39.0
 
 - Scale large numeric sensor states.
