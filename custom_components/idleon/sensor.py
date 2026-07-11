@@ -443,7 +443,7 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
     IdleonAccountSensorEntityDescription(
         key="account_jade",
         translation_key="account_jade",
-        value_fn=lambda coordinator: _account_large_number_state(
+        value_fn=lambda coordinator: _account_large_number_scaled_state(
             coordinator,
             "jade",
         ),
@@ -1092,6 +1092,17 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
         return self.entity_description.value_fn(self.coordinator)
 
     @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return dynamic compact suffix units for large account numbers."""
+        if self.entity_description.key == "account_money":
+            return _large_number_unit(_account_money_raw(self.coordinator))
+        if self.entity_description.key == "account_max_damage":
+            return _large_number_unit(_account_max_damage_raw(self.coordinator))
+        if self.entity_description.key == "account_jade":
+            return _large_number_unit(_account_jade_raw(self.coordinator))
+        return self.entity_description.native_unit_of_measurement
+
+    @property
     def entity_picture(self) -> str | None:
         """Return an entity picture for account sensors with visual assets."""
         if self.entity_description.key == "account_character_count":
@@ -1224,6 +1235,16 @@ class IdleonCharacterSensor(
         if isinstance(value, datetime):
             return value
         return value
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return dynamic compact suffix units for large character numbers."""
+        if self.entity_description.key == "character_money":
+            character = self._character
+            if character is None:
+                return None
+            return _large_number_unit(_character_money_raw(character))
+        return self.entity_description.native_unit_of_measurement
 
     @property
     def entity_picture(self) -> str | None:
@@ -1659,15 +1680,15 @@ def _account_detail_value_from_mapping(
     return value.get(value_key, default)
 
 
-def _account_large_number_state(
+def _account_large_number_scaled_state(
     coordinator: IdleonDataUpdateCoordinator,
     detail_key: str,
 ) -> int | float | None:
-    """Return an account detail as a HA-safe numeric state."""
+    """Return an account detail as a graphable compact numeric mantissa."""
     raw_value = coordinator.data.details.get(detail_key)
     if raw_value is None:
         return None
-    return _large_number_state(idleon_raw_value(raw_value))
+    return _large_number_scaled_state(idleon_raw_value(raw_value))
 
 
 def _account_detail_sum(
@@ -1772,8 +1793,8 @@ def _account_statue_details(
 def _account_money_state(
     coordinator: IdleonDataUpdateCoordinator,
 ) -> int | float | None:
-    """Return account money as a HA-safe numeric state."""
-    return _large_number_state(_account_money_raw(coordinator))
+    """Return account money as a graphable compact numeric mantissa."""
+    return _large_number_scaled_state(_account_money_raw(coordinator))
 
 
 def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
@@ -1787,8 +1808,8 @@ def _account_money_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
 def _account_max_damage_state(
     coordinator: IdleonDataUpdateCoordinator,
 ) -> int | float | None:
-    """Return account max damage as a HA-safe numeric state."""
-    return _large_number_state(_account_max_damage_raw(coordinator))
+    """Return account max damage as a graphable compact numeric mantissa."""
+    return _large_number_scaled_state(_account_max_damage_raw(coordinator))
 
 
 def _account_max_damage_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
@@ -1800,8 +1821,8 @@ def _account_max_damage_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
 
 
 def _character_money_state(character: IdleonCharacter) -> int | float | None:
-    """Return character money as a HA-safe numeric state."""
-    return _large_number_state(_character_money_raw(character))
+    """Return character money as a graphable compact numeric mantissa."""
+    return _large_number_scaled_state(_character_money_raw(character))
 
 
 def _character_money_raw(character: IdleonCharacter) -> str:
@@ -1814,12 +1835,23 @@ def _account_jade_raw(coordinator: IdleonDataUpdateCoordinator) -> str:
     return idleon_raw_value(coordinator.data.details.get("jade", 0))
 
 
-def _large_number_state(raw_value: str) -> int | float | None:
-    """Return a Home Assistant-compatible numeric state for a large value."""
+def _large_number_scaled_state(raw_value: str) -> int | float | None:
+    """Return the compact mantissa as a Home Assistant numeric state."""
     decimal_value = parse_idleon_decimal(raw_value)
     if decimal_value is None:
         return None
-    return decimal_to_ha_number(decimal_value)
+    mantissa = parse_idleon_decimal(idleon_number_parts(raw_value).mantissa)
+    if mantissa is None:
+        return None
+    return decimal_to_ha_number(mantissa)
+
+
+def _large_number_unit(raw_value: str) -> str | None:
+    """Return the compact suffix as a Home Assistant unit."""
+    decimal_value = parse_idleon_decimal(raw_value)
+    if decimal_value is None:
+        return None
+    return idleon_number_parts(raw_value).suffix or None
 
 
 def _money_attributes(raw_value: str) -> dict[str, str]:

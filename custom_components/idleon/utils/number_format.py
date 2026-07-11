@@ -180,6 +180,17 @@ def idleon_number_parts(value: int | str | Decimal) -> IdleonFormattedNumber:
         )
 
     suffix, divisor = _number_tier_for_value(absolute_value)
+    if suffix.startswith("E") and absolute_value / divisor >= 1000:
+        exponent = absolute_value.adjusted()
+        mantissa = _format_scaled_decimal(absolute_value / (Decimal(10) ** exponent))
+        signed_mantissa = f"{sign}{mantissa}"
+        return IdleonFormattedNumber(
+            formatted=f"{signed_mantissa}E{exponent}",
+            raw_value=raw_string,
+            suffix=f"E{exponent}",
+            mantissa=signed_mantissa,
+        )
+
     mantissa = _format_scaled_decimal(absolute_value / divisor)
     signed_mantissa = f"{sign}{mantissa}"
     return IdleonFormattedNumber(

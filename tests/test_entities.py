@@ -357,7 +357,8 @@ async def test_account_sensors(
         hass.states.get(pet_crystals_entity_id).attributes["entity_picture"]
         == "/idleon_static/pet_crystal.png"
     )
-    assert hass.states.get(jade_entity_id).state == "654321"
+    assert hass.states.get(jade_entity_id).state == "654.32"
+    assert hass.states.get(jade_entity_id).attributes["unit_of_measurement"] == "K"
     assert hass.states.get(jade_entity_id).attributes["state_class"] == "measurement"
     assert hass.states.get(jade_entity_id).attributes["raw_value"] == "654321"
     assert hass.states.get(jade_entity_id).attributes["formatted_value"] == "654,321"
@@ -388,7 +389,13 @@ async def test_account_sensors(
         == "/idleon_static/highest_character_level.png"
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(max_damage_entity_id).state == "123456789"
+    assert hass.states.get(max_damage_entity_id).state == "123.46"
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["unit_of_measurement"] == "M"
+    )
+    assert (
+        hass.states.get(max_damage_entity_id).attributes["state_class"] == "measurement"
+    )
     assert hass.states.get(max_damage_entity_id).attributes["raw_value"] == "123456789"
     assert (
         hass.states.get(max_damage_entity_id).attributes["formatted_value"]
@@ -406,7 +413,14 @@ async def test_account_sensors(
         hass.states.get(max_damage_entity_id).attributes["entity_picture"]
         == "/idleon_static/damage_indicators/damage_blue_m.png"
     )
-    assert hass.states.get(total_money_entity_id).state == "987654"
+    assert hass.states.get(total_money_entity_id).state == "987.65"
+    assert (
+        hass.states.get(total_money_entity_id).attributes["unit_of_measurement"] == "K"
+    )
+    assert (
+        hass.states.get(total_money_entity_id).attributes["state_class"]
+        == "measurement"
+    )
     assert hass.states.get(total_money_entity_id).attributes["raw_value"] == "987654"
     assert hass.states.get(green_stacks_entity_id).state == "3"
     assert (
@@ -938,7 +952,9 @@ async def test_character_sensors(
         == "/idleon_static/skills/alchemy.png"
     )
     assert hass.states.get(total_skill_entity_id).state == "205"
-    assert hass.states.get(money_entity_id).state == "12345"
+    assert hass.states.get(money_entity_id).state == "12.34"
+    assert hass.states.get(money_entity_id).attributes["unit_of_measurement"] == "K"
+    assert hass.states.get(money_entity_id).attributes["state_class"] == "measurement"
     assert hass.states.get(money_entity_id).attributes["raw_value"] == "12345"
     assert (
         hass.states.get(money_entity_id).attributes["entity_picture"]

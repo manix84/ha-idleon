@@ -52,6 +52,8 @@ def test_format_idleon_number_extended_suffix_boundaries() -> None:
     assert format_idleon_number(10**36) == "1E36"
     assert format_idleon_number(10**38) == "1E38"
     assert format_idleon_number(125 * 10**38) == "125E38"
+    assert format_idleon_number(10**41) == "1E41"
+    assert format_idleon_number("5.14012365021451e55") == "5.14E55"
 
 
 def test_format_idleon_number_large_values_preserve_raw_value() -> None:
