@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.39.0
+
+- Scale large numeric sensor states.
+
 ## 🚀 0.38.0
 
 - Add account statue level sensors.
