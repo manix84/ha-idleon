@@ -1,5 +1,9 @@
 # 📰 What's New
 
+## 🚀 0.38.0
+
+- Add account statue level sensors.
+
 ## 🚀 0.37.0
 
 - Fix large Idleon numeric states.
