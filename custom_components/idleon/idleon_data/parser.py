@@ -183,6 +183,12 @@ STATUE_LEVEL_LABELS = (
     "Spelunky",
     "Reef Coral",
 )
+STATUE_VERSION_LABELS = {
+    0: "Normal",
+    1: "Gold",
+    2: "Obsidian",
+    3: "Zenith",
+}
 COLOSSEUM_SCORE_INDEXES = {
     "Whimsical": 6,
     "Astro": 4,
@@ -1147,6 +1153,9 @@ def _indexed_account_progress_details(
     statue_levels = _indexed_statue_levels(raw_data)
     if statue_levels:
         details["statue_levels"] = statue_levels
+    statue_details = _indexed_statue_details(raw_data)
+    if statue_details:
+        details["statue_details"] = statue_details
 
     colosseum_scores = _indexed_colosseum_scores(raw_data)
     if colosseum_scores:
@@ -1296,13 +1305,7 @@ def _indexed_shrine_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
 
 def _indexed_statue_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     """Return named account-wide statue levels from indexed exports."""
-    statue_data = _maybe_json(raw_data.get("StatueLevels_0"))
-    if not isinstance(statue_data, list):
-        for key, value in raw_data.items():
-            if key.startswith("StatueLevels_"):
-                statue_data = _maybe_json(value)
-                if isinstance(statue_data, list):
-                    break
+    statue_data = _indexed_statue_data(raw_data)
     if not isinstance(statue_data, list):
         return {}
 
@@ -1315,6 +1318,76 @@ def _indexed_statue_levels(raw_data: Mapping[str, Any]) -> dict[str, Any]:
         if value is not None:
             levels[label] = _compact_number(value)
     return levels
+
+
+def _indexed_statue_details(raw_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return named account-wide statue level, progress, and version details."""
+    statue_data = _indexed_statue_data(raw_data)
+    if not isinstance(statue_data, list):
+        return {}
+
+    statue_versions = _maybe_json(raw_data.get("StuG")) or _maybe_json(
+        raw_data.get("StatueG")
+    )
+    if not isinstance(statue_versions, list):
+        statue_versions = []
+
+    details: dict[str, Any] = {}
+    for index, label in enumerate(STATUE_LEVEL_LABELS):
+        statue = _list_value(statue_data, index)
+        if not isinstance(statue, list):
+            continue
+
+        level = _coerce_float(_list_value(statue, 0))
+        if level is None:
+            continue
+
+        version_id = _coerce_int(_list_value(statue_versions, index)) or 0
+        version_id = min(max(version_id, 0), 3)
+        version = STATUE_VERSION_LABELS[version_id]
+        banked = _coerce_float(_list_value(statue, 1))
+        needed = _coerce_float(_list_value(statue, 2))
+
+        detail = {
+            "level": _compact_number(level),
+            "statues_banked": _compact_number(banked) if banked is not None else None,
+            "statues_needed_for_next_level": (
+                _compact_number(needed) if needed is not None else None
+            ),
+            "progress_to_next_level_percent": _progress_percent(banked, needed),
+            "statue_version": version,
+            "statue_version_id": version_id,
+            "statue_index": index,
+            "asset_slug": _statue_asset_slug(label, version_id),
+        }
+        details[label] = _remove_empty_detail_values(detail)
+    return details
+
+
+def _indexed_statue_data(raw_data: Mapping[str, Any]) -> list[Any] | None:
+    """Return the first available per-character statue level table."""
+    statue_data = _maybe_json(raw_data.get("StatueLevels_0"))
+    if isinstance(statue_data, list):
+        return statue_data
+
+    for key, value in raw_data.items():
+        if key.startswith("StatueLevels_"):
+            statue_data = _maybe_json(value)
+            if isinstance(statue_data, list):
+                return statue_data
+    return None
+
+
+def _statue_asset_slug(label: str, version_id: int) -> str:
+    """Return the runtime statue asset stem for a label and version."""
+    slug = _slugify(label)
+    if version_id == 1:
+        return f"{slug}_gold"
+    if version_id == 2:
+        return f"{slug}_obsidian"
+    if version_id >= 3:
+        return f"{slug}_zenith"
+    return slug
 
 
 def _indexed_colosseum_scores(raw_data: Mapping[str, Any]) -> dict[str, Any]:
@@ -2382,6 +2455,7 @@ def _account_details(
         ("currencies", ("currencies", "currency")),
         ("shrine_levels", ("shrine_levels", "shrineLevels", "shrines")),
         ("statue_levels", ("statue_levels", "statueLevels", "statues")),
+        ("statue_details", ("statue_details", "statueDetails")),
         ("colosseum_scores", ("colosseum_scores", "colosseumScores")),
         ("minigame_scores", ("minigame_scores", "minigameScores")),
         ("progress_totals", ("progress_totals", "progressTotals", "totals")),
@@ -2629,6 +2703,15 @@ def _compact_number(value: float) -> int | float:
     if value.is_integer() and abs(value) <= MAX_SAFE_INTEGER_FLOAT:
         return int(value)
     return round(value, 2)
+
+
+def _progress_percent(
+    progress: float | None, needed: float | None
+) -> int | float | None:
+    """Return compact percent progress when both parts are known."""
+    if progress is None or needed is None or needed <= 0:
+        return None
+    return _compact_number(min((progress / needed) * 100, 100))
 
 
 def _jade_detail_value(value: Any) -> str | None:

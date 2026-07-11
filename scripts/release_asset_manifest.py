@@ -68,6 +68,9 @@ def release_asset_paths(root: Path) -> set[Path]:
     for path in _iter_matching_assets(asset_root / "colosseum", "*.png"):
         assets.add(path.relative_to(root))
 
+    for path in _iter_matching_assets(asset_root / "statue", "*.png"):
+        assets.add(path.relative_to(root))
+
     for path in _iter_matching_assets(asset_root / "pouches", "**/*.png"):
         assets.add(path.relative_to(root))
 

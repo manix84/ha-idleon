@@ -305,6 +305,43 @@ ACCOUNT_BOSS_KEY_SENSOR_PICTURES = {
     f"account_boss_key_{slug}": f"{STATIC_URL_PATH}/boss_keys/{slug}.png"
     for slug, _label in ACCOUNT_BOSS_KEY_SENSORS
 }
+ACCOUNT_STATUE_SENSORS = (
+    ("power", "Power"),
+    ("speed", "Speed"),
+    ("mining", "Mining"),
+    ("feasty", "Feasty"),
+    ("health", "Health"),
+    ("kachow", "Kachow"),
+    ("lumberbob", "Lumberbob"),
+    ("thicc_skin", "Thicc Skin"),
+    ("oceanman", "Oceanman"),
+    ("ol_reliable", "Ol Reliable"),
+    ("exp_book", "Exp Book"),
+    ("anvil", "Anvil"),
+    ("cauldron", "Cauldron"),
+    ("beholder", "Beholder"),
+    ("bullseye", "Bullseye"),
+    ("box", "Box"),
+    ("twosoul", "Twosoul"),
+    ("ehexpee", "EhExPee"),
+    ("seesaw", "Seesaw"),
+    ("pecunia", "Pecunia"),
+    ("mutton", "Mutton"),
+    ("egg", "Egg"),
+    ("battleaxe", "Battleaxe"),
+    ("spiral", "Spiral"),
+    ("boat", "Boat"),
+    ("compost", "Compost"),
+    ("stealth", "Stealth"),
+    ("essence", "Essence"),
+    ("villager", "Villager"),
+    ("dragon_warrior", "Dragon Warrior"),
+    ("spelunky", "Spelunky"),
+    ("reef_coral", "Reef Coral"),
+)
+ACCOUNT_STATUE_LABEL_BY_KEY = {
+    f"account_statue_{slug}": label for slug, label in ACCOUNT_STATUE_SENSORS
+}
 
 
 def _colosseum_score_sensor_description(
@@ -360,6 +397,20 @@ def _boss_key_sensor_description(
                 key_label,
                 0,
             )
+        ),
+    )
+
+
+def _statue_sensor_description(
+    slug: str,
+    label: str,
+) -> IdleonAccountSensorEntityDescription:
+    """Return an account sensor description for one statue level."""
+    return IdleonAccountSensorEntityDescription(
+        key=f"account_statue_{slug}",
+        translation_key=f"account_statue_{slug}",
+        value_fn=lambda coordinator, statue_label=label: _account_statue_level(
+            coordinator, statue_label
         ),
     )
 
@@ -507,6 +558,10 @@ ACCOUNT_SENSOR_DESCRIPTIONS = (
             "statue_levels",
         ),
         detail_keys=("statue_levels",),
+    ),
+    *(
+        _statue_sensor_description(slug, label)
+        for slug, label in ACCOUNT_STATUE_SENSORS
     ),
     IdleonAccountSensorEntityDescription(
         key="account_colosseum_scores",
@@ -1059,6 +1114,11 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
             return f"{STATIC_URL_PATH}/shrine.png"
         if self.entity_description.key == "account_tome_points":
             return f"{STATIC_URL_PATH}/world/tome/tome.png"
+        if picture := _account_statue_entity_picture(
+            self.coordinator,
+            self.entity_description.key,
+        ):
+            return picture
         if self.entity_description.key == "account_money":
             return _money_entity_picture(_account_money_raw(self.coordinator))
         if picture := COLOSSEUM_SCORE_SENSOR_PICTURES.get(
@@ -1105,6 +1165,12 @@ class IdleonAccountSensor(CoordinatorEntity[IdleonDataUpdateCoordinator], Sensor
 
         if self.entity_description.key == "account_jade":
             return _number_attributes(_account_jade_raw(self.coordinator))
+
+        if self.entity_description.key in ACCOUNT_STATUE_LABEL_BY_KEY:
+            return _account_statue_attributes(
+                self.coordinator,
+                self.entity_description.key,
+            )
 
         if not self.entity_description.detail_keys or not self.coordinator.data.details:
             return None
@@ -1625,6 +1691,82 @@ def _account_detail_sum(
     if total.is_integer():
         return int(total)
     return round(total, 2)
+
+
+def _account_statue_level(
+    coordinator: IdleonDataUpdateCoordinator,
+    label: str,
+) -> int | float:
+    """Return the current account-wide statue level."""
+    details = _account_statue_details(coordinator, label)
+    if isinstance(details, Mapping):
+        level = details.get("level")
+        if isinstance(level, int | float):
+            return level
+
+    statue_levels = coordinator.data.details.get("statue_levels")
+    if isinstance(statue_levels, Mapping):
+        value = statue_levels.get(label)
+        if isinstance(value, int | float):
+            return value
+        try:
+            return int(value)
+        except TypeError, ValueError:
+            return 0
+    return 0
+
+
+def _account_statue_attributes(
+    coordinator: IdleonDataUpdateCoordinator,
+    entity_key: str,
+) -> Mapping[str, Any] | None:
+    """Return per-statue level progress attributes."""
+    label = ACCOUNT_STATUE_LABEL_BY_KEY.get(entity_key)
+    if label is None:
+        return None
+
+    details = _account_statue_details(coordinator, label)
+    if not isinstance(details, Mapping):
+        return None
+
+    attributes = {
+        "statues_banked": details.get("statues_banked"),
+        "statues_needed_for_next_level": details.get("statues_needed_for_next_level"),
+        "statue_version": details.get("statue_version"),
+        "progress_to_next_level_percent": details.get("progress_to_next_level_percent"),
+        "raw_statue_version_id": details.get("statue_version_id"),
+    }
+    return _remove_none_attributes(_normalize_attribute_value(attributes) or {})
+
+
+def _account_statue_entity_picture(
+    coordinator: IdleonDataUpdateCoordinator,
+    entity_key: str,
+) -> str | None:
+    """Return the version-aware statue entity picture."""
+    label = ACCOUNT_STATUE_LABEL_BY_KEY.get(entity_key)
+    if label is None:
+        return None
+
+    details = _account_statue_details(coordinator, label)
+    if isinstance(details, Mapping):
+        asset_slug = details.get("asset_slug")
+        if isinstance(asset_slug, str) and asset_slug:
+            return f"{STATIC_URL_PATH}/statue/{asset_slug}.png"
+
+    return f"{STATIC_URL_PATH}/statue/{_slugify(label)}.png"
+
+
+def _account_statue_details(
+    coordinator: IdleonDataUpdateCoordinator,
+    label: str,
+) -> Mapping[str, Any] | None:
+    """Return detailed statue attributes for a label."""
+    statue_details = coordinator.data.details.get("statue_details")
+    if not isinstance(statue_details, Mapping):
+        return None
+    details = statue_details.get(label)
+    return details if isinstance(details, Mapping) else None
 
 
 def _account_money_state(

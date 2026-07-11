@@ -157,6 +157,102 @@
       "account_statue_levels": {
         "name": "Statue levels"
       },
+      "account_statue_power": {
+        "name": "Power Statue Level"
+      },
+      "account_statue_speed": {
+        "name": "Speed Statue Level"
+      },
+      "account_statue_mining": {
+        "name": "Mining Statue Level"
+      },
+      "account_statue_feasty": {
+        "name": "Feasty Statue Level"
+      },
+      "account_statue_health": {
+        "name": "Health Statue Level"
+      },
+      "account_statue_kachow": {
+        "name": "Kachow Statue Level"
+      },
+      "account_statue_lumberbob": {
+        "name": "Lumberbob Statue Level"
+      },
+      "account_statue_thicc_skin": {
+        "name": "Thicc Skin Statue Level"
+      },
+      "account_statue_oceanman": {
+        "name": "Oceanman Statue Level"
+      },
+      "account_statue_ol_reliable": {
+        "name": "Ol Reliable Statue Level"
+      },
+      "account_statue_exp_book": {
+        "name": "Exp Book Statue Level"
+      },
+      "account_statue_anvil": {
+        "name": "Anvil Statue Level"
+      },
+      "account_statue_cauldron": {
+        "name": "Cauldron Statue Level"
+      },
+      "account_statue_beholder": {
+        "name": "Beholder Statue Level"
+      },
+      "account_statue_bullseye": {
+        "name": "Bullseye Statue Level"
+      },
+      "account_statue_box": {
+        "name": "Box Statue Level"
+      },
+      "account_statue_twosoul": {
+        "name": "Twosoul Statue Level"
+      },
+      "account_statue_ehexpee": {
+        "name": "EhExPee Statue Level"
+      },
+      "account_statue_seesaw": {
+        "name": "Seesaw Statue Level"
+      },
+      "account_statue_pecunia": {
+        "name": "Pecunia Statue Level"
+      },
+      "account_statue_mutton": {
+        "name": "Mutton Statue Level"
+      },
+      "account_statue_egg": {
+        "name": "Egg Statue Level"
+      },
+      "account_statue_battleaxe": {
+        "name": "Battleaxe Statue Level"
+      },
+      "account_statue_spiral": {
+        "name": "Spiral Statue Level"
+      },
+      "account_statue_boat": {
+        "name": "Boat Statue Level"
+      },
+      "account_statue_compost": {
+        "name": "Compost Statue Level"
+      },
+      "account_statue_stealth": {
+        "name": "Stealth Statue Level"
+      },
+      "account_statue_essence": {
+        "name": "Essence Statue Level"
+      },
+      "account_statue_villager": {
+        "name": "Villager Statue Level"
+      },
+      "account_statue_dragon_warrior": {
+        "name": "Dragon Warrior Statue Level"
+      },
+      "account_statue_spelunky": {
+        "name": "Spelunky Statue Level"
+      },
+      "account_statue_reef_coral": {
+        "name": "Reef Coral Statue Level"
+      },
       "account_colosseum_scores": {
         "name": "Colosseum scores"
       },

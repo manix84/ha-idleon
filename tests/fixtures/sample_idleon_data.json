@@ -54,6 +54,35 @@
         "Speed": 292,
         "Mining": 272
       },
+      "statue_details": {
+        "Power": {
+          "level": 284,
+          "statues_banked": 50,
+          "statues_needed_for_next_level": 100,
+          "progress_to_next_level_percent": 50,
+          "statue_version": "Zenith",
+          "statue_version_id": 3,
+          "asset_slug": "power_zenith"
+        },
+        "Speed": {
+          "level": 292,
+          "statues_banked": 25,
+          "statues_needed_for_next_level": 100,
+          "progress_to_next_level_percent": 25,
+          "statue_version": "Gold",
+          "statue_version_id": 1,
+          "asset_slug": "speed_gold"
+        },
+        "Mining": {
+          "level": 272,
+          "statues_banked": 75,
+          "statues_needed_for_next_level": 100,
+          "progress_to_next_level_percent": 75,
+          "statue_version": "Obsidian",
+          "statue_version_id": 2,
+          "asset_slug": "mining_obsidian"
+        }
+      },
       "colosseum_scores": {
         "Whimsical": 266855608.33,
         "Astro": 79993226.38,

@@ -142,6 +142,14 @@ async def test_account_sensors(
         DOMAIN,
         f"{entry.entry_id}_account_statue_levels",
     )
+    statue_entity_ids = {
+        slug: entity_registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{entry.entry_id}_account_statue_{slug}",
+        )
+        for slug in ("power", "speed", "mining")
+    }
     colosseum_scores_entity_id = entity_registry.async_get_entity_id(
         "sensor",
         DOMAIN,
@@ -440,6 +448,21 @@ async def test_account_sensors(
         == "/idleon_static/shrine.png"
     )
     assert hass.states.get(statue_levels_entity_id).state == "848"
+    for slug, state, picture in (
+        ("power", "284", "/idleon_static/statue/power_zenith.png"),
+        ("speed", "292", "/idleon_static/statue/speed_gold.png"),
+        ("mining", "272", "/idleon_static/statue/mining_obsidian.png"),
+    ):
+        entity_state = hass.states.get(statue_entity_ids[slug])
+        assert entity_state.state == state
+        assert entity_state.attributes["state_class"] == "measurement"
+        assert entity_state.attributes["entity_picture"] == picture
+    power_statue_attributes = hass.states.get(statue_entity_ids["power"]).attributes
+    assert power_statue_attributes["statues_banked"] == 50
+    assert power_statue_attributes["statues_needed_for_next_level"] == 100
+    assert power_statue_attributes["progress_to_next_level_percent"] == 50
+    assert power_statue_attributes["statue_version"] == "Zenith"
+    assert power_statue_attributes["raw_statue_version_id"] == 3
     assert hass.states.get(colosseum_scores_entity_id).state == "382839961.69"
     for slug, state in {
         "whimsical": "266855608.33",

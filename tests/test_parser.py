@@ -405,7 +405,8 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
                 [300, 0, 54, 27, 1, 0],
                 [300, 0, 118, 26, 1, 0],
             ],
-            "StatueLevels_0": [[284, 1], [292, 1], [272, 1]],
+            "StatueLevels_0": [[284, 50, 100], [292, 25, 100], [272, 75, 100]],
+            "StuG": [3, 1, 2],
             "FamValColosseumHighscores": [
                 0,
                 400643.056,
@@ -528,6 +529,18 @@ def test_parser_extracts_indexed_account_progress_groups() -> None:
     assert account.details["currencies"]["Kruk's Volcano Keys"] == 542702
     assert account.details["shrine_levels"]["Woodular Shrine"] == 27
     assert account.details["statue_levels"]["Power"] == 284
+    assert account.details["statue_details"]["Power"] == {
+        "level": 284,
+        "statues_banked": 50,
+        "statues_needed_for_next_level": 100,
+        "progress_to_next_level_percent": 50,
+        "statue_version": "Zenith",
+        "statue_version_id": 3,
+        "statue_index": 0,
+        "asset_slug": "power_zenith",
+    }
+    assert account.details["statue_details"]["Speed"]["asset_slug"] == "speed_gold"
+    assert account.details["statue_details"]["Mining"]["statue_version"] == "Obsidian"
     assert account.details["colosseum_scores"]["Whimsical"] == 266855608.33
     assert account.details["minigame_scores"] == {
         "Poing": 1471,
