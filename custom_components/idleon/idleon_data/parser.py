@@ -99,11 +99,17 @@ FALLBACK_WEBSITE_LABELS = {
         "InvBag100": "Snakeskinventory Bag",
     },
     "items": {
+        "CraftMat1": "Thread",
+        "CraftMat2": "Crimson String",
         "EquipmentHats1": "Farmer Brim",
         "EquipmentShirts1": "Orange Tee",
         "EquipmentTools1": "Copper Pickaxe",
         "FoodHealth1": "Nomwich",
     },
+}
+FALLBACK_COMPANION_PET_NAMES = {
+    0: "King Doot",
+    12: "Ancient Golem",
 }
 SKILL_LEVEL_LABELS = (
     "Character",
@@ -3071,7 +3077,7 @@ def _companion_pet_names() -> dict[int, str]:
     with suppress(WebsiteDataNotFoundError):
         companions = load_default_website_data_part("companions")
         if isinstance(companions, list):
-            names: dict[int, str] = {}
+            names = dict(FALLBACK_COMPANION_PET_NAMES)
             for index, companion in enumerate(companions):
                 if not isinstance(companion, Mapping):
                     continue
@@ -3079,7 +3085,7 @@ def _companion_pet_names() -> dict[int, str]:
                 if isinstance(name, str) and name:
                     names[index] = _clean_display_text(name)
             return names
-    return {}
+    return dict(FALLBACK_COMPANION_PET_NAMES)
 
 
 def _companion_pet_category(index: int) -> str:
