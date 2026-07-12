@@ -1,4 +1,4 @@
-homeassistant==2026.6.4
+homeassistant==2026.7.2
 pre-commit
 pytest
 pytest-homeassistant-custom-component
