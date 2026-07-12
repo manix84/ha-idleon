@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ha-idleon"
-version = "0.40.1"
+version = "0.40.2"
 description = "Home Assistant integration for Legends of Idleon account and character stats."
 readme = "README.md"
 requires-python = ">=3.14.2"
