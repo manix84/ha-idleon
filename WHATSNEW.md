@@ -1,5 +1,13 @@
 # 📰 What's New
 
+## 🚀 0.40.2
+
+- Expand parser fallbacks for CI.
+
+## 🚀 0.40.1
+
+- Add packaged parser label fallbacks.
+
 ## 🚀 0.40.0
 
 - Add generic statue level icon.

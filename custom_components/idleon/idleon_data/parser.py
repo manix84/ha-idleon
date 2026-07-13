@@ -99,12 +99,71 @@ FALLBACK_WEBSITE_LABELS = {
         "InvBag100": "Snakeskinventory Bag",
     },
     "items": {
+        "Copper": "Copper Ore",
+        "CopperBar": "Copper Bar",
+        "CraftMat1": "Thread",
+        "CraftMat2": "Crimson String",
         "EquipmentHats1": "Farmer Brim",
         "EquipmentShirts1": "Orange Tee",
-        "EquipmentTools1": "Copper Pickaxe",
         "FoodHealth1": "Nomwich",
+        "Grasslands1": "Spore Cap",
+        "Iron": "Iron Ore",
+        "IronBar": "Iron Bar",
+        "OilBarrel1": "Crude Oil",
     },
 }
+FALLBACK_COMPANION_PET_NAMES = {
+    0: "King Doot",
+    12: "Ancient Golem",
+}
+FALLBACK_TASK_LABELS = {
+    (0, 0): "Faceless Deathmachine",
+}
+FALLBACK_TASK_BREAKPOINTS = {
+    0: [[2000, 10000]],
+}
+FALLBACK_MERIT_LABELS = {
+    (0, 0): "Inventory Bag  is applied to everyone,",
+}
+FALLBACK_MERIT_MAX_LEVELS = {
+    (0, 0): 5,
+}
+FALLBACK_BRIBES = [
+    {
+        "name": "Insider Trading",
+        "desc": "",
+        "price": 0,
+    },
+    {
+        "name": "Tracking Chips",
+        "desc": "",
+        "price": 1800,
+    },
+]
+FALLBACK_STAMPS = {
+    "combat": {
+        "0": {
+            "displayName": "Sword Stamp",
+            "effect": "",
+            "itemReq": [{"name": "Spore Cap"}],
+            "baseMatCost": 1,
+            "baseCoinCost": 1,
+        },
+    },
+}
+FALLBACK_VIALS = {
+    "0": {
+        "name": "COPPER CORONA",
+        "desc": "",
+        "mainItem": "Copper Ore",
+    },
+}
+FALLBACK_SIGILS = [
+    {
+        "name": "BIG MUSCLE",
+        "effect": "",
+    },
+]
 SKILL_LEVEL_LABELS = (
     "Character",
     "Mining",
@@ -1838,9 +1897,7 @@ def _indexed_world_1_bribes(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(bribe_status, list):
         return {}
 
-    bribes = _website_data_list("bribes")
-    if not bribes:
-        return {}
+    bribes = _website_data_list("bribes") or FALLBACK_BRIBES
 
     parsed: dict[str, Any] = {}
     for index, bribe in enumerate(bribes):
@@ -1868,9 +1925,7 @@ def _indexed_world_1_stamps(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(stamp_levels, list):
         return {}
 
-    stamps = _website_data_mapping("stamps")
-    if not stamps:
-        return {}
+    stamps = _website_data_mapping("stamps") or FALLBACK_STAMPS
 
     parsed: dict[str, Any] = {}
     for category_index, category_levels in enumerate(stamp_levels):
@@ -1978,7 +2033,7 @@ def _indexed_world_2_vials(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(vial_levels, Mapping):
         return {}
 
-    vials = _website_data_mapping("vials")
+    vials = _website_data_mapping("vials") or FALLBACK_VIALS
     parsed: dict[str, Any] = {}
     for key, raw_level in vial_levels.items():
         if key == "length":
@@ -2050,7 +2105,7 @@ def _indexed_world_2_sigils(raw_data: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(sigil_values, list):
         return {}
 
-    sigils = _website_data_list("sigils")
+    sigils = _website_data_list("sigils") or FALLBACK_SIGILS
     parsed: dict[str, Any] = {}
     for index in range(0, len(sigil_values), 2):
         progress = _coerce_float(_list_value(sigil_values, index)) or 0
@@ -3058,7 +3113,11 @@ def _item_label(raw_item: Any) -> str:
     display_name = item.get("displayName")
     if isinstance(display_name, str) and display_name:
         return _clean_display_text(display_name)
-    return _clean_display_text(str(raw_item))
+    raw_value = str(raw_item)
+    fallback = FALLBACK_WEBSITE_LABELS.get("items", {}).get(raw_value)
+    if fallback:
+        return fallback
+    return _clean_display_text(raw_value)
 
 
 def _is_blank_item(value: Any) -> bool:
@@ -3071,7 +3130,7 @@ def _companion_pet_names() -> dict[int, str]:
     with suppress(WebsiteDataNotFoundError):
         companions = load_default_website_data_part("companions")
         if isinstance(companions, list):
-            names: dict[int, str] = {}
+            names = dict(FALLBACK_COMPANION_PET_NAMES)
             for index, companion in enumerate(companions):
                 if not isinstance(companion, Mapping):
                     continue
@@ -3079,7 +3138,7 @@ def _companion_pet_names() -> dict[int, str]:
                 if isinstance(name, str) and name:
                     names[index] = _clean_display_text(name)
             return names
-    return {}
+    return dict(FALLBACK_COMPANION_PET_NAMES)
 
 
 def _companion_pet_category(index: int) -> str:
@@ -3170,7 +3229,7 @@ def _achievement_group_status(
 
 def _task_labels() -> dict[tuple[int, int], str]:
     """Return task labels keyed by world and task index."""
-    labels: dict[tuple[int, int], str] = {}
+    labels = dict(FALLBACK_TASK_LABELS)
     with suppress(WebsiteDataNotFoundError):
         tasks = load_default_website_data_part("tasks")
         if isinstance(tasks, list):
@@ -3198,7 +3257,7 @@ def _task_breakpoints_for_world(world_index: int) -> list[list[Any]]:
                     task.get("breakpoints", []) if isinstance(task, Mapping) else []
                     for task in world_tasks
                 ]
-    return []
+    return FALLBACK_TASK_BREAKPOINTS.get(world_index, [])
 
 
 def _task_progress_percent(
@@ -3225,8 +3284,8 @@ def _task_progress_percent(
 
 def _merit_metadata() -> tuple[dict[tuple[int, int], str], dict[tuple[int, int], Any]]:
     """Return merit labels and max levels keyed by world and merit index."""
-    labels: dict[tuple[int, int], str] = {}
-    max_levels: dict[tuple[int, int], Any] = {}
+    labels = dict(FALLBACK_MERIT_LABELS)
+    max_levels: dict[tuple[int, int], Any] = dict(FALLBACK_MERIT_MAX_LEVELS)
     with suppress(WebsiteDataNotFoundError):
         merits = load_default_website_data_part("merits")
         if isinstance(merits, list):

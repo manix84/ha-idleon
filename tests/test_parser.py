@@ -718,18 +718,37 @@ def test_parser_uses_packaged_item_label_fallbacks(
             "CharacterClass_0": 14,
             "CurrentMap_0": 325,
             "Lv0_0": [1103],
+            "GreenStacks": ["CraftMat1", "CraftMat2"],
             "InventoryOrder_0": ["FoodHealth1", "EquipmentHats1"],
             "InvBagsUsed_0": ["InvBag1", "InvBag100"],
+            "EquipOrder_0": [
+                {},
+                {"0": "EquipmentTools1", "length": 1},
+            ],
+            "TaskZZ0": [[5000]],
+            "TaskZZ1": [[1]],
+            "companion": {
+                "l": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                "t": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            },
         }
     )
 
     character = account.characters[0]
 
+    assert account.details["green_stack_sample"] == ["Thread", "Crimson String"]
+    assert account.details["pets"]["Legacy Pets"]["King Doot"] == "1/2"
+    assert account.details["pets"]["Fallen Spirits"]["Ancient Golem"] == "1/1"
+    assert account.details["task_levels"]["World 1"]["Faceless Deathmachine"] == {
+        "level": "1/10",
+        "progress_percent": 37.5,
+    }
     assert character.details["inventory_sample"] == ["Nomwich", "Farmer Brim"]
     assert character.details["inventory_bags"] == [
         "Inventory Bag A",
         "Snakeskinventory Bag",
     ]
+    assert character.details["equipped_pickaxe"] == "Junk Pickaxe"
 
 
 def test_parser_treats_inventory_as_full_when_all_usable_slots_are_occupied() -> None:
